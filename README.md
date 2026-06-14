@@ -45,6 +45,14 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | `bash scripts/phase3_live.sh` | OTP 登录后创建/分享/通知全流程 |
 | `docs/PHASE3_FILES.md` | Phase 3 功能说明 |
 
+## Phase 4 印刷前稿 AI
+
+| 脚本 / 页面 | 说明 |
+|-------------|------|
+| `/admin/dashboard` → 印刷前稿 | 条码 + 文本/图形 diff 规则引擎 |
+| `bash scripts/phase4_verify.sh` | 前稿 AI 验收 |
+| `docs/PHASE4_PREPRESS.md` | Phase 4 功能说明 |
+
 ## Phase 1.5 西语试点
 
 | 脚本 | 说明 |

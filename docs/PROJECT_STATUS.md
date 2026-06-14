@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 40+、phase15、phase1、phase2、**phase3** |
+| 验收脚本 | ✅ | smoke 41+、phase15、phase1–**phase4** |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图、**合并清单** |
@@ -100,6 +100,19 @@ sudo bash scripts/setup_backup_cron.sh
 
 详见 [PHASE3_FILES.md](PHASE3_FILES.md)。
 
+## Phase 4 印刷前稿 AI
+
+| 功能 | 状态 |
+|------|------|
+| 条码引擎 EAN-13/Code128 | ✅ 校验 + SVG 生成 |
+| 文本 diff | ✅ difflib 相似度 |
+| 图形 diff | ✅ Pillow 像素差异 |
+| 规则引擎 verdict | ✅ passed/warnings/failed |
+| 员工后台印刷前稿 Tab | ✅ `/admin/dashboard` |
+| 验收脚本 | ✅ `phase4_verify.sh` |
+
+详见 [PHASE4_PREPRESS.md](PHASE4_PREPRESS.md)。
+
 ## Phase 1+（ERP 深度对接）
 
 员工门户、工厂目录、订单、包装 AI — 见 [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)，在 Phase 1.5 生产验收通过后启动。
@@ -107,5 +120,5 @@ sudo bash scripts/setup_backup_cron.sh
 ## 仓库
 
 - GitHub: `https://github.com/TBCEXP/smart`
-- 主分支: `main`（已含 Phase 1.5 + Phase 1 + Phase 2 + Phase 3）
+- 主分支: `main`（已含 Phase 1.5 + Phase 1–4）
 - 原功能分支: `cursor/exa-query-latam-pilot-c2f3`（已 fast-forward 合并）

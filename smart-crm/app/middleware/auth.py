@@ -44,6 +44,8 @@ PROTECTED_POST_PATHS = (
     "/api/catalog/documents/",
     "/api/files/transfers",
     "/api/files/transfers/",
+    "/api/prepress/reviews",
+    "/api/prepress/reviews/",
 )
 
 PROTECTED_PATCH_PREFIXES = (

@@ -560,6 +560,38 @@
           }
         }
       ]
+    },
+    {
+      "name": "11 Phase 4 Prepress AI",
+      "item": [
+        {
+          "name": "List Prepress Reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/prepress/reviews"
+          }
+        },
+        {
+          "name": "Validate Barcode",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"value\":\"5901234123457\",\"symbology\":\"ean13\"}"
+            },
+            "url": "{{base_url}}/api/prepress/barcode/validate"
+          }
+        },
+        {
+          "name": "Run Prepress Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/prepress/reviews/REPLACE_REVIEW_ID/run"
+          }
+        }
+      ]
     }
   ]
 }

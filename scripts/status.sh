@@ -19,6 +19,7 @@ echo "Due schedules: $(echo "$READY" | python3 -c "import sys,json; print(json.l
 echo "Phase1: $(echo "$READY" | python3 -c "import sys,json; b=json.load(sys.stdin).get('business',{}).get('phase1',{}); print(f\"factories={b.get('factories',0)} orders={b.get('orders',0)} leads={b.get('leads',0)}\")" 2>/dev/null || echo N/A)"
 echo "Phase2: $(echo "$READY" | python3 -c "import sys,json; b=json.load(sys.stdin).get('business',{}).get('phase2',{}); print(f\"catalogs={b.get('catalog_documents',0)} shares={b.get('share_links',0)} r2={b.get('r2_configured')}\")" 2>/dev/null || echo N/A)"
 echo "Phase3: $(echo "$READY" | python3 -c "import sys,json; b=json.load(sys.stdin).get('business',{}).get('phase3',{}); print(f\"files={b.get('file_transfers',0)} notify={b.get('notify_service')}\")" 2>/dev/null || echo N/A)"
+echo "Phase4: $(echo "$READY" | python3 -c "import sys,json; b=json.load(sys.stdin).get('business',{}).get('phase4',{}); print(f\"prepress={b.get('prepress_reviews',0)} rule={b.get('rule_engine')}\")" 2>/dev/null || echo N/A)"
 
 REPORT=$(curl -sf "$BASE/api/pilot/report" 2>/dev/null || echo '{}')
 echo "Pilot MX intel: $(echo "$REPORT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('countries',{}).get('MX',{}).get('totals',{}).get('intel_reports',0))" 2>/dev/null || echo 0)"

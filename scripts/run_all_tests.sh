@@ -39,6 +39,10 @@ echo ""
 echo ">>> Phase 3 大文件/通知"
 bash "$SCRIPT_DIR/phase3_verify.sh" "$BASE"
 
+echo ""
+echo ">>> Phase 4 印刷前稿 AI"
+bash "$SCRIPT_DIR/phase4_verify.sh" "$BASE"
+
 if [ -f "$ROOT/smart-crm/data/auth_emails.log" ]; then
   echo ""
   echo ">>> Phase 2 Live（OTP）"

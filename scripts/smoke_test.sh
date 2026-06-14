@@ -255,6 +255,11 @@ if curl -sf "$BASE/api/files/transfers" | grep -q 'download_url'; then
 else
   fail "GET /api/files/transfers"
 fi
+if curl -sf "$BASE/api/prepress/reviews" | grep -q 'barcode_expected'; then
+  ok "GET /api/prepress/reviews"
+else
+  fail "GET /api/prepress/reviews"
+fi
 if curl -sf "$BASE/api/system/handoff-report" | grep -q 'SMART CRM 交接报告'; then
   ok "GET /api/system/handoff-report"
 else

@@ -40,6 +40,8 @@ from app.config import (
     ShareLinkRequest,
     FileTransferRequest,
     FileUploadUrlRequest,
+    BarcodeValidateRequest,
+    PrepressReviewRequest,
     TradeShowCrawlRequest,
 )
 from app.database import ASYNC_DB_URL, get_session
@@ -57,6 +59,7 @@ from app.models.entities import (
     SalesOrder,
     SalesOrderLine,
     FileTransfer,
+    PrepressReview,
     ShareLink,
     StrategyAction,
     StrategySession,
@@ -98,6 +101,8 @@ from app.config import settings
 from app.services.r2_client import R2Client
 from app.services.files import file_dict
 from app.services.notify import notify_share_link
+from app.services.prepress import review_dict, run_prepress_analysis, seed_prepress_reviews
+from app.services.barcode_engine import generate_barcode_svg, validate_barcode
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
 from app.services.feishu_client import FeishuClient
@@ -222,6 +227,13 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             .where(FileTransfer.active.is_(True))
         )
     ).scalar_one()
+    prepress_reviews = (
+        await db.execute(
+            select(func.count())
+            .select_from(PrepressReview)
+            .where(PrepressReview.active.is_(True))
+        )
+    ).scalar_one()
     return {
         "phase1": {
             "factories": factories,
@@ -238,6 +250,10 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
         "phase3": {
             "file_transfers": file_transfers,
             "notify_service": True,
+        },
+        "phase4": {
+            "prepress_reviews": prepress_reviews,
+            "rule_engine": True,
         },
     }
 
@@ -274,6 +290,8 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase2_r2_optional": biz["phase2"]["r2_configured"],
             "phase3_files_seeded": biz.get("phase3", {}).get("file_transfers", 0) >= 1,
             "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
+            "phase4_prepress_seeded": biz.get("phase4", {}).get("prepress_reviews", 0) >= 1,
+            "phase4_rule_engine": biz.get("phase4", {}).get("rule_engine", False),
         },
         "business": biz,
         "milestones": (await _phase15_milestones(db))["milestones"],
@@ -324,11 +342,17 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         f"- 大文件元数据: {biz.get('phase3', {}).get('file_transfers', 0)}",
         f"- 分享邮件通知: {'✓' if biz.get('phase3', {}).get('notify_service') else '○'}",
         "",
+        "## Phase 4 印刷前稿 AI",
+        "",
+        f"- 前稿比对任务: {biz.get('phase4', {}).get('prepress_reviews', 0)}",
+        f"- 规则引擎（条码/OCR/图形 diff）: {'✓' if biz.get('phase4', {}).get('rule_engine') else '○'}",
+        "",
         "## 验收命令",
         "",
         "```bash",
         "bash scripts/run_all_tests.sh http://YOUR_HOST:8000",
         "bash scripts/phase3_verify.sh http://YOUR_HOST:8000",
+        "bash scripts/phase4_verify.sh http://YOUR_HOST:8000",
         "bash scripts/phase2_live.sh http://YOUR_HOST:8000",
         "bash scripts/prod_onboard.sh http://YOUR_HOST:8000 --full",
         "```",
@@ -688,6 +712,91 @@ async def file_upload_url(
         transfer.file_url = result["file_url"]
         await db.commit()
     return {"transfer_id": transfer.id, **result}
+
+
+@router.post("/prepress/barcode/validate")
+async def prepress_barcode_validate(req: BarcodeValidateRequest):
+    """条码校验（EAN-13 / Code128 规则引擎）。"""
+    return validate_barcode(req.value, req.symbology)
+
+
+@router.post("/prepress/barcode/generate")
+async def prepress_barcode_generate(req: BarcodeValidateRequest):
+    """生成条码 SVG（用于前稿预览）。"""
+    return generate_barcode_svg(req.value, req.symbology)
+
+
+@router.get("/prepress/reviews")
+async def list_prepress_reviews(db: AsyncSession = Depends(get_db)):
+    """印刷前稿比对任务列表。"""
+    result = await db.execute(
+        select(PrepressReview)
+        .where(PrepressReview.active.is_(True))
+        .order_by(PrepressReview.created_at.desc())
+    )
+    return [review_dict(r) for r in result.scalars().all()]
+
+
+@router.post("/prepress/reviews")
+async def create_prepress_review(
+    req: PrepressReviewRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """创建前稿比对任务。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    review = PrepressReview(
+        title=req.title,
+        order_id=req.order_id or None,
+        reference_image=req.reference_image,
+        candidate_image=req.candidate_image,
+        barcode_expected=req.barcode_expected,
+        barcode_symbology=req.barcode_symbology,
+        reference_text=req.reference_text,
+        candidate_text=req.candidate_text,
+        notes=req.notes,
+        created_by=session.email,
+        status="draft",
+    )
+    db.add(review)
+    await db.commit()
+    await db.refresh(review)
+    return review_dict(review)
+
+
+@router.get("/prepress/reviews/{review_id}")
+async def get_prepress_review(review_id: str, db: AsyncSession = Depends(get_db)):
+    review = await db.get(PrepressReview, review_id)
+    if not review or not review.active:
+        raise HTTPException(404, "Prepress review not found")
+    return review_dict(review)
+
+
+@router.post("/prepress/reviews/{review_id}/run")
+async def run_prepress_review(
+    review_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """运行条码 + 文本 diff + 图形 diff 规则引擎。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    review = await db.get(PrepressReview, review_id)
+    if not review or not review.active:
+        raise HTTPException(404, "Prepress review not found")
+    review.status = "running"
+    await db.commit()
+    result = run_prepress_analysis(review)
+    review.result_json = result
+    review.verdict = result.get("verdict", "pending")
+    review.status = "done"
+    review.ran_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(review)
+    return review_dict(review)
 
 
 @router.post("/leads/{lead_id}/enrich-contact")

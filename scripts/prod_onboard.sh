@@ -111,4 +111,10 @@ if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
   bash "$SCRIPT_DIR/phase3_live.sh" "$BASE" || true
 fi
 echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " Phase 4 — 印刷前稿 AI"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+bash "$SCRIPT_DIR/phase4_verify.sh" "$BASE"
+echo ""
 echo "交接报告: curl -s $BASE/api/system/handoff-report -o handoff.md"

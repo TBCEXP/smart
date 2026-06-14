@@ -369,6 +369,30 @@ class FileTransfer(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class PrepressReview(Base):
+    """Phase 4 印刷前稿比对任务（条码 + 文本 diff + 图形 diff）。"""
+
+    __tablename__ = "prepress_reviews"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    order_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("sales_orders.id"))
+    reference_image: Mapped[str] = mapped_column(String(1024), default="")
+    candidate_image: Mapped[str] = mapped_column(String(1024), default="")
+    barcode_expected: Mapped[str] = mapped_column(String(64), default="")
+    barcode_symbology: Mapped[str] = mapped_column(String(32), default="ean13")
+    reference_text: Mapped[str] = mapped_column(Text, default="")
+    candidate_text: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="draft")
+    verdict: Mapped[str] = mapped_column(String(32), default="")
+    result_json: Mapped[Optional[dict]] = mapped_column(JSON, default=None)
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    ran_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class OutreachLog(Base):
     """人工触达记录（WhatsApp / 邮件），用于 1.5.5 回复率跟踪。"""
 

@@ -305,3 +305,20 @@ class CatalogDocumentUpdateRequest(BaseModel):
     file_size_mb: float | None = None
     notes: str = ""
     active: bool | None = None
+
+
+class BarcodeValidateRequest(BaseModel):
+    value: str
+    symbology: str = "ean13"
+
+
+class PrepressReviewRequest(BaseModel):
+    title: str
+    order_id: str = ""
+    reference_image: str = ""
+    candidate_image: str = ""
+    barcode_expected: str = ""
+    barcode_symbology: str = "ean13"
+    reference_text: str = ""
+    candidate_text: str = ""
+    notes: str = ""
