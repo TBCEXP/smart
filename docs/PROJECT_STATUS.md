@@ -86,6 +86,7 @@ sudo bash scripts/setup_backup_cron.sh
 | ERP 订单只读 | ✅ `GET /api/bridge/tbcexp/orders` |
 | Apollo 联系人补充 | ✅ 线索行 + `enrich-contact` API |
 | 验收脚本 | ✅ `phase2_verify.sh` + `phase2_live.sh` |
+| 报价单分发 | ✅ `doc_type=quote/price_list` + `/portal/quotes` |
 
 ## Phase 1+（ERP 深度对接）
 

@@ -100,5 +100,13 @@ d = json.load(sys.stdin)
 print('storage:', d.get('storage'), '| mode:', d.get('mode'))
 "
 
+echo ">>> [8] 客户报价单"
+curl -sf "${CHDR[@]}" "$BASE/api/portal/quotes" | python3 -c "
+import sys, json
+q = json.load(sys.stdin)
+print('quotes:', len(q))
+assert len(q) >= 1
+"
+
 echo ""
 echo "=== Phase 2 Live 完成 ==="

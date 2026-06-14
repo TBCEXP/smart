@@ -51,10 +51,16 @@ else
   fail "GET /admin/dashboard (catalog documents tab)"
 fi
 
-if curl -sf "$BASE/portal/dashboard" | grep -q '授权目录'; then
-  ok "GET /portal/dashboard (catalogs tab)"
+if curl -sf "$BASE/portal/dashboard" | grep -q '报价单'; then
+  ok "GET /portal/dashboard (quotes tab)"
 else
-  fail "GET /portal/dashboard"
+  fail "GET /portal/dashboard (quotes tab)"
+fi
+
+if curl -sf "$BASE/api/catalog/documents?doc_type=quote" | grep -q 'FOB 报价'; then
+  ok "GET /api/catalog/documents?doc_type=quote"
+else
+  fail "GET /api/catalog/documents?doc_type=quote"
 fi
 
 echo ""

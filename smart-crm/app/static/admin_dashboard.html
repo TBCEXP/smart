@@ -60,6 +60,7 @@
               <th class="py-2 pr-3">评分</th>
               <th class="py-2 pr-3">飞书</th>
               <th class="py-2 pr-3">ERP</th>
+              <th class="py-2 pr-3">联系人</th>
               <th class="py-2 pr-3">负责人</th>
               <th class="py-2 pr-3">操作</th>
             </tr>
@@ -144,6 +145,11 @@
             <input id="doc-title" class="input" placeholder="目录名称（中文）" />
             <input id="doc-title-en" class="input" placeholder="英文名称" />
             <input id="doc-l3" class="input" placeholder="品类 L3 (bakeware,...)" />
+            <select id="doc-type" class="input">
+              <option value="catalog">工厂目录 PDF</option>
+              <option value="quote">FOB 报价单</option>
+              <option value="price_list">批发价目表</option>
+            </select>
             <input id="doc-emails" class="input" placeholder="授权邮箱，逗号分隔（空=全部客户）" />
             <button id="btn-add-document" class="btn-primary w-full">保存元数据</button>
           </div>
@@ -265,8 +271,9 @@
             ? `<a class="text-emerald-400" href="${d.download_url}" target="_blank">下载</a>`
             : `<span class="text-slate-500">${d.storage || '-'}</span>`);
         const emails = (d.authorized_emails || []).join(', ') || '全部门户客户';
+        const typeLabel = { catalog: '目录', quote: '报价', price_list: '价目' }[d.doc_type] || d.doc_type;
         return `<div class="p-3 rounded bg-slate-900/50" data-did="${d.id}">
-          <div class="flex justify-between gap-2"><strong>${d.title}</strong><span>${d.factory_code}</span></div>
+          <div class="flex justify-between gap-2"><strong>${d.title}</strong><span>${d.factory_code} · ${typeLabel}</span></div>
           <div class="text-slate-400">${d.category_l3} · ${d.pages}p · ${d.file_size_mb}MB</div>
           <div class="text-xs text-slate-500 mt-1">授权: ${emails}</div>
           <div class="mt-2 flex flex-wrap gap-2 text-xs">
@@ -388,6 +395,7 @@
           <td class="py-2 pr-3">${lead.lead_score || '-'}</td>
           <td class="py-2 pr-3">${lead.feishu_record_id ? '✓' : '○'}</td>
           <td class="py-2 pr-3">${lead.tbcexp_synced ? '✓' : '○'}</td>
+          <td class="py-2 pr-3 text-xs">${lead.contact_email ? lead.contact_email : '—'}</td>
           <td class="py-2 pr-3">${lead.assigned_to || '-'}</td>
           <td class="py-2 pr-3 whitespace-nowrap">
             ${lead.feishu_record_id ? `<button class="text-xs text-slate-400" onclick="viewFeishu('${lead.feishu_record_id}')">飞书</button>` : ''}
@@ -398,7 +406,7 @@
         tbody.appendChild(tr);
       }
       if (!data.leads?.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="py-6 text-center text-slate-500">暂无线索</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-slate-500">暂无线索</td></tr>';
       }
     }
 
@@ -472,6 +480,7 @@
           title: document.getElementById('doc-title').value,
           title_en: document.getElementById('doc-title-en').value,
           category_l3: document.getElementById('doc-l3').value,
+          doc_type: document.getElementById('doc-type').value,
           authorized_emails: emails,
         }),
       });

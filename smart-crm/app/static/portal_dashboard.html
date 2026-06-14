@@ -19,6 +19,7 @@
     <nav class="max-w-5xl mx-auto px-4 flex gap-2 pb-2">
       <button data-tab="orders" class="tab-btn active">我的订单</button>
       <button data-tab="catalogs" class="tab-btn">授权目录</button>
+      <button data-tab="quotes" class="tab-btn">报价单</button>
     </nav>
   </header>
   <main class="max-w-5xl mx-auto px-4 py-6">
@@ -29,6 +30,10 @@
     <section id="tab-catalogs" class="hidden">
       <p class="text-sm text-slate-400 mb-3">仅显示授权给您的工厂 PDF 目录。R2 配置后可一键下载。</p>
       <div id="catalogs-list" class="space-y-3"></div>
+    </section>
+    <section id="tab-quotes" class="hidden">
+      <p class="text-sm text-slate-400 mb-3">授权 FOB 报价单与价目表（PDF 元数据，R2 配置后可下载）。</p>
+      <div id="quotes-list" class="space-y-3"></div>
     </section>
   </main>
   <script>
@@ -42,7 +47,9 @@
         btn.classList.add('active');
         document.getElementById('tab-orders').classList.toggle('hidden', btn.dataset.tab !== 'orders');
         document.getElementById('tab-catalogs').classList.toggle('hidden', btn.dataset.tab !== 'catalogs');
+        document.getElementById('tab-quotes').classList.toggle('hidden', btn.dataset.tab !== 'quotes');
         if (btn.dataset.tab === 'catalogs') loadCatalogs();
+        if (btn.dataset.tab === 'quotes') loadQuotes();
       };
     });
 
@@ -65,20 +72,30 @@
     }
 
     async function loadCatalogs() {
-      const list = await fetch('/api/portal/catalogs', { headers: headers() }).then((r) => r.json());
-      document.getElementById('catalogs-list').innerHTML = (list || []).map((c) => {
+      const list = await fetch('/api/portal/catalogs?doc_type=catalog', { headers: headers() }).then((r) => r.json());
+      document.getElementById('catalogs-list').innerHTML = renderDocList(list, 'catalogs-list');
+    }
+
+    async function loadQuotes() {
+      const list = await fetch('/api/portal/quotes', { headers: headers() }).then((r) => r.json());
+      document.getElementById('quotes-list').innerHTML = renderDocList(list, 'quotes-list');
+    }
+
+    function renderDocList(list, _id) {
+      return (list || []).map((c) => {
         const status = c.storage === 'r2_pending'
           ? '<span class="text-amber-400">PDF 待 R2 部署</span>'
           : (c.download_url
             ? `<a class="text-emerald-400 underline" href="${c.download_url}" target="_blank" rel="noopener">下载 PDF</a>`
             : `<button class="text-emerald-400 underline" onclick="fetchDownload('${c.id}')">获取下载链接</button>`);
+        const typeLabel = c.doc_type === 'quote' ? '报价' : (c.doc_type === 'price_list' ? '价目' : '目录');
         return `
         <div class="card text-sm">
-          <strong>${c.title}</strong> <span class="text-slate-500">(${c.factory_code})</span>
+          <strong>${c.title}</strong> <span class="text-slate-500">(${c.factory_code} · ${typeLabel})</span>
           <div class="text-slate-400">${c.category_l3} · ${c.pages} 页 · ${c.file_size_mb} MB</div>
           <div class="text-xs mt-1">${status}</div>
         </div>`;
-      }).join('') || '<p class="text-slate-500">暂无授权目录</p>';
+      }).join('') || '<p class="text-slate-500">暂无授权文件</p>';
     }
 
     async function fetchDownload(id) {

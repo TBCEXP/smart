@@ -7,7 +7,8 @@
 | 能力 | API / 页面 |
 |------|------------|
 | 目录元数据 | `GET/POST /api/catalog/documents` |
-| 客户授权目录 | `GET /api/portal/catalogs`（按 `authorized_emails`） |
+| 客户授权目录 | `GET /api/portal/catalogs?doc_type=catalog` |
+| 客户授权报价 | `GET /api/portal/quotes`（quote + price_list） |
 | 分享目录 | `POST /api/share/links` `resource_type=catalog` |
 | 公开查看 | `/s/{token}` + `GET /api/share/{token}` |
 
@@ -18,6 +19,7 @@
 | `factory_id` | 关联工厂 |
 | `title` / `title_en` | 目录名称 |
 | `category_l3` | 品类 |
+| `doc_type` | `catalog` / `quote` / `price_list` |
 | `file_url` | `r2://bucket/path.pdf` 或 HTTPS |
 | `pages` / `file_size_mb` | 元信息 |
 | `authorized_emails` | 空列表 = 所有门户客户可见 |

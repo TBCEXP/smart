@@ -16,6 +16,25 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | Tab8 | **AI 内容工坊** — KEYWORD / SEO META / SLUG / 产品描述 / 文章（含多语言批量） |
 | Tab9 | **试点看板** — 里程碑、WhatsApp 触达、KB 语义检索 |
 
+## Phase 1 员工业务
+
+| 脚本 / 页面 | 说明 |
+|-------------|------|
+| `/admin/dashboard` | 线索 / 工厂 / 订单 / 品类 / **工厂目录** |
+| `bash scripts/phase1_verify.sh` | Phase 1 API 验收 |
+| `bash scripts/phase1_live.sh` | OTP 登录后创建订单 + 分享 |
+
+## Phase 2 目录 / 报价 / 门户
+
+| 脚本 / 页面 | 说明 |
+|-------------|------|
+| `/portal/dashboard` | 客户订单 + 授权目录 + **报价单** |
+| `/s/{token}` | 订单 / 目录分享外链 |
+| `bash scripts/phase2_verify.sh` | 目录元数据 + R2 + Apollo 验收 |
+| `bash scripts/phase2_live.sh` | OTP 门户 + 目录分享验收 |
+| `bash scripts/upload_catalog_r2.sh` | R2 PDF 上传 |
+| `GET /api/system/handoff-report` | Phase 0–2 交接 Markdown |
+
 ## Phase 1.5 西语试点
 
 | 脚本 | 说明 |

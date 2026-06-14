@@ -90,6 +90,19 @@ else
 fi
 
 echo ""
+echo "[8] Phase 1 + 2 业务验收"
+if bash "$(dirname "$0")/phase1_verify.sh" "$BASE"; then
+  ok "phase1_verify.sh"
+else
+  warn "phase1_verify.sh 有失败项"
+fi
+if bash "$(dirname "$0")/phase2_verify.sh" "$BASE"; then
+  ok "phase2_verify.sh"
+else
+  warn "phase2_verify.sh 有失败项"
+fi
+
+echo ""
 echo "=== VPS 验收: ${PASS} 通过, ${WARN} 警告, ${FAIL} 失败 ==="
 if [ "$FAIL" -gt 0 ]; then
   exit 1

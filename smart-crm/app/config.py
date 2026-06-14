@@ -226,6 +226,7 @@ class CatalogDocumentRequest(BaseModel):
     title: str
     title_en: str = ""
     category_l3: str = ""
+    doc_type: str = "catalog"
     file_url: str = ""
     pages: int = 0
     file_size_mb: float = 0.0
@@ -279,6 +280,7 @@ class CatalogDocumentUpdateRequest(BaseModel):
     title: str = ""
     title_en: str = ""
     category_l3: str = ""
+    doc_type: str = ""
     authorized_emails: list[str] | None = None
     pages: int | None = None
     file_size_mb: float | None = None

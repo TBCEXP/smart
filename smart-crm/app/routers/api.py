@@ -455,12 +455,18 @@ async def get_feishu_record(record_id: str):
 
 
 @router.get("/catalog/documents")
-async def list_catalog_documents(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
+async def list_catalog_documents(
+    db: AsyncSession = Depends(get_db),
+    doc_type: str = "",
+):
+    q = (
         select(CatalogDocument)
         .where(CatalogDocument.active.is_(True))
         .order_by(CatalogDocument.created_at.desc())
     )
+    if doc_type:
+        q = q.where(CatalogDocument.doc_type == doc_type)
+    result = await db.execute(q)
     out = []
     for doc in result.scalars().all():
         factory = await db.get(Factory, doc.factory_id)
@@ -475,11 +481,14 @@ async def create_catalog_document(
     factory = await db.get(Factory, req.factory_id)
     if not factory:
         raise HTTPException(404, "Factory not found")
+    allowed_types = {"catalog", "quote", "price_list"}
+    doc_type = req.doc_type if req.doc_type in allowed_types else "catalog"
     doc = CatalogDocument(
         factory_id=req.factory_id,
         title=req.title,
         title_en=req.title_en,
         category_l3=req.category_l3,
+        doc_type=doc_type,
         file_url=req.file_url or "r2://pending/upload.pdf",
         pages=req.pages,
         file_size_mb=req.file_size_mb,
@@ -569,6 +578,8 @@ async def update_catalog_document(
         doc.title_en = req.title_en
     if req.category_l3:
         doc.category_l3 = req.category_l3
+    if req.doc_type and req.doc_type in {"catalog", "quote", "price_list"}:
+        doc.doc_type = req.doc_type
     if req.authorized_emails is not None:
         doc.authorized_emails = req.authorized_emails
     if req.pages is not None:
@@ -1978,12 +1989,37 @@ async def portal_order_detail(
 
 
 @router.get("/portal/catalogs")
-async def portal_catalogs(request: Request, db: AsyncSession = Depends(get_db)):
+async def portal_catalogs(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    doc_type: str = "",
+):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "portal":
+        raise HTTPException(401, "Customer portal session required")
+    q = select(CatalogDocument).where(CatalogDocument.active.is_(True))
+    if doc_type:
+        q = q.where(CatalogDocument.doc_type == doc_type)
+    result = await db.execute(q)
+    out = []
+    for doc in result.scalars().all():
+        if customer_can_view(doc, session.email):
+            factory = await db.get(Factory, doc.factory_id)
+            out.append(catalog_dict(doc, factory, r2_svc))
+    return out
+
+
+@router.get("/portal/quotes")
+async def portal_quotes(request: Request, db: AsyncSession = Depends(get_db)):
+    """客户门户授权报价单（doc_type=quote 或 price_list）。"""
     session = await session_from_request(request, db)
     if not session or session.portal != "portal":
         raise HTTPException(401, "Customer portal session required")
     result = await db.execute(
-        select(CatalogDocument).where(CatalogDocument.active.is_(True))
+        select(CatalogDocument).where(
+            CatalogDocument.active.is_(True),
+            CatalogDocument.doc_type.in_(("quote", "price_list")),
+        )
     )
     out = []
     for doc in result.scalars().all():

@@ -324,6 +324,7 @@ class CatalogDocument(Base):
     title: Mapped[str] = mapped_column(String(256), default="")
     title_en: Mapped[str] = mapped_column(String(256), default="")
     category_l3: Mapped[str] = mapped_column(String(64), default="")
+    doc_type: Mapped[str] = mapped_column(String(32), default="catalog", index=True)
     file_url: Mapped[str] = mapped_column(String(1024), default="")
     pages: Mapped[int] = mapped_column(Integer, default=0)
     file_size_mb: Mapped[float] = mapped_column(Float, default=0.0)
