@@ -7,10 +7,9 @@
 
 ```bash
 cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
+bash scripts/ready.sh http://127.0.0.1:8000
 bash scripts/go_live.sh http://127.0.0.1:8000
-bash scripts/final_acceptance.sh http://127.0.0.1:8000
-bash scripts/release_check.sh http://127.0.0.1:8000
-bash scripts/prod_readiness_check.sh http://127.0.0.1:8000
+bash scripts/export_blockers.sh http://127.0.0.1:8000
 ```
 
 期望：

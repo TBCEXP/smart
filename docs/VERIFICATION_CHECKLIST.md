@@ -15,7 +15,7 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A1 | 健康检查 | `/api/health` → `status: ok` |
 | A2 | 集成状态 | `/api/integrations/status` → `configured_count ≥ 4`（生产） |
 | A3 | API 探测 | `POST /api/integrations/probe` → 四项 live（生产） |
-| A4 | 就绪检查 | `GET /api/system/readiness` → checklist |
+| A4 | 就绪检查 | `GET /api/system/readiness` → `production_blockers` |
 | A5 | Brainstorm | 生成 session + 5 张卡片 |
 | A6 | 获客批次 | `POST /api/run` count=2 → batch 完成 |
 | A7 | MX/CO 试点 | `POST /api/pilot/mx/start` → session_id |
@@ -36,7 +36,12 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A23 | Phase 3 大文件 | `bash scripts/phase3_verify.sh` |
 | A24 | Phase 4 前稿 AI | `bash scripts/phase4_verify.sh` |
 | A25 | Phase 5 实拍 AI | `bash scripts/phase5_verify.sh` |
-| A26 | 路线图终验收 | `bash scripts/final_acceptance.sh` |
+| A26 | 一站式就绪 | `bash scripts/ready.sh` |
+| A27 | 代码终检 | `bash scripts/go_live.sh` |
+| A28 | 阻塞导出 | `bash scripts/export_blockers.sh` |
+
+快捷全量：`bash scripts/ready.sh` → `bash scripts/go_live.sh`
+深度验收（可选）：`bash scripts/final_acceptance.sh`
 
 ## B. 浏览器手动
 
@@ -59,6 +64,8 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | C4 | `sudo bash scripts/setup_https.sh crm.domain.com` |
 | C5 | GitHub Actions CI + Deploy 绿色 |
 | C6 | `sudo bash scripts/backup_daily.sh` + cron 每日备份 |
+| C7 | `bash scripts/ready.sh` + `bash scripts/export_blockers.sh` |
+| C8 | `bash scripts/onboard_checklist.sh` 人工待办已核对 |
 
 ## D. 1.5 期验收（MX → CO）
 

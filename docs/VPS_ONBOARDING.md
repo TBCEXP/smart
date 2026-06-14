@@ -28,9 +28,10 @@ bash scripts/go_live.sh http://127.0.0.1:8000
 bash scripts/prod_onboard.sh http://127.0.0.1:8000
 
 # 4. Tab2 配置 API Key 后全量验收
+bash scripts/ready.sh https://crm.yourdomain.com
 bash scripts/prod_onboard.sh https://crm.yourdomain.com --full
-bash scripts/final_acceptance.sh https://crm.yourdomain.com
 bash scripts/acceptance_report.sh https://crm.yourdomain.com
+bash scripts/export_blockers.sh https://crm.yourdomain.com
 ```
 
 ## HTTPS

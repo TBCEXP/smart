@@ -38,6 +38,12 @@
 - `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
 - `prod_onboard.sh` 首步跑 `deploy_preflight`
 
+### Added (final polish)
+
+- `deploy.yml` — Secrets 未配置时跑 `preflight-only` + 上线提示
+- 文档统一：`ready` → `go_live` → `export_blockers` 为主路径
+- `VERIFICATION_CHECKLIST` / `PRODUCTION_READY` / `VPS_ONBOARDING` 同步
+
 ### Added (blockers export)
 
 - `export_blockers.sh` — 单独导出 `production_blockers` JSON

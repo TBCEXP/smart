@@ -64,13 +64,16 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 ## 路线图终验收（Phase 0–5）
 
 ```bash
-bash scripts/final_acceptance.sh http://127.0.0.1:8000
+bash scripts/ready.sh http://127.0.0.1:8000
+bash scripts/go_live.sh http://127.0.0.1:8000
+bash scripts/export_blockers.sh http://127.0.0.1:8000
 ```
 
 | 文档 / 脚本 | 说明 |
 |-------------|------|
 | [docs/PRODUCTION_READY.md](docs/PRODUCTION_READY.md) | VPS + API Key 上线清单 |
-| `bash scripts/final_acceptance.sh` | pytest + smoke + phase1–5 + pre_merge |
+| `bash scripts/go_live.sh` | 代码侧完整终检 |
+| `bash scripts/final_acceptance.sh` | 路线图深度验收（可选） |
 | 应用版本 | **2.1.0** |
 
 ## Phase 1.5 西语试点
