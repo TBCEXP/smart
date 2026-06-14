@@ -1,0 +1,7 @@
+# 本地验收导出（勿提交）
+production-blockers-*.json
+acceptance-*-pilot.md
+acceptance-*-handoff.md
+acceptance-*-readiness.json
+acceptance-*-blockers.json
+go-live-*.md

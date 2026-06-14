@@ -1,6 +1,6 @@
 # SMART CRM — 项目交接（Agent → 团队）
 
-> 版本 **v2.1.0** · `main` @ `a90b241` · tag `v2.1.0` · 代码侧 **交付关闭**
+> 版本 **v2.1.0** · `main` @ `d1f2076` · tag `v2.1.0` · 代码侧 **交付关闭**
 
 ## 交付范围
 
@@ -15,9 +15,9 @@
 ## 一键验收（本地 Mock）
 
 ```bash
+bash scripts/delivery_complete.sh --static-only
 cd smart-crm && USE_SQLITE=1 DATA_DIR=./data uvicorn main:app --port 8000 &
-bash scripts/ready.sh http://127.0.0.1:8000
-bash scripts/go_live.sh http://127.0.0.1:8000
+bash scripts/delivery_complete.sh http://127.0.0.1:8000
 ```
 
 ## VPS 上线（需团队提供资源）
