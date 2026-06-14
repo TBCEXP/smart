@@ -22,6 +22,7 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 |------|------|
 | `bash scripts/mx_pilot.sh` | 墨西哥 MX：Track B → Brainstorm → Track A 入队 |
 | `bash scripts/co_pilot.sh` | 哥伦比亚 CO：同上 |
+| `bash scripts/latam_full_pilot.sh` | **MX + CO 联合试点** + 报告导出（`--run-due=N`） |
 | `bash scripts/pilot_live.sh` | 真实 API 环境全流程（含飞书 confirm） |
 | `bash scripts/outreach_pilot.sh` | 1.5.5 WhatsApp 触达里程碑（≥5 条） |
 | `bash scripts/trackc_pilot.sh` | 1.5.6 海关 CSV 导入 + 域名匹配 |
@@ -71,7 +72,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 |------|-----------|
 | 复制提示词给 Cursor | [docs/CURSOR_PROMPTS.md](docs/CURSOR_PROMPTS.md) |
 | 改完自动验收 | `bash scripts/smoke_test.sh` 或 `bash scripts/run_all_tests.sh` |
-| 飞书字段对照 | [docs/FEISHU_FIELDS.md](docs/FEISHU_FIELDS.md) |
+| 飞书字段对照 | [docs/FEISHU_FIELDS.md](docs/FEISHU_FIELDS.md) · 面板 `GET /docs/feishu-fields` |
+| 项目交接状态 | [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) |
 | 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | Phase 1.5 全量验收 | `bash scripts/phase15_verify.sh [URL]` |
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |

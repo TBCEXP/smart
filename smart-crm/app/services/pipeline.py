@@ -15,9 +15,9 @@ from app.services.config_store import ConfigStore
 from app.services.feishu_client import FeishuClient
 from app.services.knowledge_base import KnowledgeBaseService
 from app.services.data_loader import (
-    build_exa_query,
     load_geo_config,
     load_prompts,
+    resolve_exa_query,
     save_batch_file,
 )
 
@@ -65,9 +65,21 @@ class PipelineService:
             yield {"event": "start", "batch_id": batch.id, "total": count}
 
             try:
+                exa_query = resolve_exa_query(
+                    keyword,
+                    category_l3=category_l3,
+                    city=city,
+                    country_iso=country_iso,
+                    language=language,
+                    search_type=search_type,
+                )
                 results = await self.exa.search(
-                    keyword, count, search_type=search_type,
-                    country_iso=country_iso, city=city,
+                    exa_query,
+                    count,
+                    search_type=search_type,
+                    country_iso=country_iso,
+                    city=city,
+                    language=language,
                 )
             except Exception as exc:
                 batch.status = "failed"

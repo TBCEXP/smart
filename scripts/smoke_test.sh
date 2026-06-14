@@ -26,6 +26,11 @@ if curl -sf "$BASE/api/health" | grep -q '"version"'; then
 else
   fail "GET /api/health (version)"
 fi
+if curl -sf "$BASE/docs/feishu-fields" | grep -q '飞书多维表格'; then
+  ok "GET /docs/feishu-fields"
+else
+  fail "GET /docs/feishu-fields"
+fi
 if curl -sf "$BASE/api/kb/status" | grep -q 'search_engine'; then
   ok "GET /api/kb/status"
 else

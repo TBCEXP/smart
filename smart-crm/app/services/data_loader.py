@@ -38,6 +38,26 @@ def get_country_config(iso: str) -> dict[str, Any]:
     return load_geo_config().get("countries", {}).get(iso.upper(), {})
 
 
+def resolve_exa_query(
+    keyword: str,
+    category_l3: str = "",
+    city: str = "",
+    country_iso: str = "",
+    language: str = "es",
+    search_type: str = "standard",
+) -> str:
+    """Resolve the Exa search phrase from L3 templates, similar-company templates, or keyword."""
+    if search_type == "similar" and category_l3:
+        anchor = keyword.strip()
+        if anchor and not anchor.lower().startswith("category:company"):
+            return build_exa_query(
+                category_l3, city, country_iso, language, search_type, anchor_brand=anchor
+            )
+    if category_l3:
+        return build_exa_query(category_l3, city, country_iso, language, search_type)
+    return keyword
+
+
 def build_exa_query(
     category_l3: str,
     city: str,

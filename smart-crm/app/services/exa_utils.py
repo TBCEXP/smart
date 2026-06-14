@@ -19,17 +19,55 @@ EXA_EXCLUDE_DOMAINS = [
 ]
 
 
+_SPANISH_QUERY_SIGNALS = (
+    "mayorista",
+    "fabricante",
+    "hostelería",
+    "hosteleria",
+    "distribuidor",
+    "importador",
+    "cocina",
+    "repostería",
+    "reposteria",
+    "cubertería",
+    "cuberteria",
+    "vajilla",
+    "category:company",
+)
+_LATAM_ISO = frozenset({"MX", "CO", "CL", "PE", "AR", "BR", "EC", "PA", "CR", "GT"})
+
+
+def _looks_like_rich_query(query: str) -> bool:
+    q = query.lower()
+    return any(s in q for s in _SPANISH_QUERY_SIGNALS) or len(query.split()) >= 8
+
+
 def build_semantic_exa_query(
     keyword: str,
     search_type: str = "standard",
     country_iso: str = "",
     city: str = "",
+    language: str = "es",
 ) -> str:
     """Turn keyword into Exa-friendly semantic description (not bare keywords)."""
     if search_type == "similar":
         if "category:company" not in keyword.lower():
             return f"category:company {keyword}"
         return keyword
+    if _looks_like_rich_query(keyword):
+        return keyword
+    use_es = language == "es" or country_iso.upper() in _LATAM_ISO
+    loc = f"{city} {country_iso}".strip()
+    if use_es:
+        if loc:
+            return (
+                f"Empresa B2B mayorista o importador de utensilios cocina hostelería "
+                f"en {loc}. {keyword}. Sitio web con catálogo o página mayorista."
+            )
+        return (
+            f"Empresa B2B mayorista o importador de utensilios cocina hostelería. "
+            f"{keyword}. Sitio web con catálogo o página mayorista."
+        )
     if country_iso or city:
         return (
             f"B2B wholesale distributor or importer of hospitality kitchen supplies "

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
@@ -18,6 +18,7 @@ from app.services.config_store import ConfigStore
 from app.services.pipeline import PipelineService
 
 STATIC_DIR = Path(__file__).resolve().parent / "app" / "static"
+DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 pipeline = PipelineService()
 config_store = ConfigStore()
 _scheduler_running = False
@@ -119,3 +120,15 @@ async def customer_portal():
 @app.get("/auth/callback")
 async def auth_callback():
     return FileResponse(STATIC_DIR / "auth_callback.html")
+
+
+@app.get("/docs/feishu-fields")
+async def feishu_fields_doc():
+    """Serve Feishu column mapping for Tab2 configuration."""
+    path = DOCS_DIR / "FEISHU_FIELDS.md"
+    if not path.exists():
+        return PlainTextResponse("FEISHU_FIELDS.md not found", status_code=404)
+    return PlainTextResponse(
+        path.read_text(encoding="utf-8"),
+        media_type="text/markdown; charset=utf-8",
+    )

@@ -39,9 +39,12 @@ class ExaClient:
         search_type: str = "standard",
         country_iso: str = "",
         city: str = "",
+        language: str = "es",
     ) -> list[dict[str, Any]]:
         api_key = self.config.get("exa_api_key")
-        semantic_query = build_semantic_exa_query(query, search_type, country_iso, city)
+        semantic_query = build_semantic_exa_query(
+            query, search_type, country_iso, city, language
+        )
         if not api_key:
             return self._mock_results(semantic_query, num_results, country_iso)
         payload: dict[str, Any] = {
