@@ -34,6 +34,9 @@ jobs:
       - name: Smoke test
         run: bash scripts/smoke_test.sh http://127.0.0.1:8000
 
+      - name: Phase 1.5 quick verify
+        run: bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick
+
       - name: Integrations probe
         run: |
           curl -sf -X POST http://127.0.0.1:8000/api/integrations/probe | grep -q probes

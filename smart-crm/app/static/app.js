@@ -746,10 +746,52 @@ async function loadDashboard() {
       null,
       2
     );
+    if (overview.milestones?.kb_results > 0) {
+      searchKb(document.getElementById('kb-search-q')?.value || 'bakeware MX');
+    }
   } catch (e) {
     cardsEl.innerHTML = `<p class="text-red-400 col-span-3">看板加载失败: ${e}</p>`;
   }
 }
+
+async function searchKb(query) {
+  const el = document.getElementById('kb-search-results');
+  if (!query?.trim()) return;
+  el.innerHTML = '<p class="text-amber-400">检索中…</p>';
+  try {
+    const res = await api(`/kb/search?q=${encodeURIComponent(query.trim())}&limit=8`);
+    renderKbResults(query, res.results || []);
+  } catch (e) {
+    el.innerHTML = `<p class="text-red-400">检索失败: ${e}</p>`;
+  }
+}
+
+function renderKbResults(query, results) {
+  const el = document.getElementById('kb-search-results');
+  if (!results || !results.length) {
+    el.innerHTML = query
+      ? `<p class="text-slate-500">「${query}」无结果 — Mock 模式可试 bakeware MX</p>`
+      : '输入查询后点击搜索';
+    return;
+  }
+  el.innerHTML = results
+    .map(
+      (r) =>
+        `<div class="p-2 bg-slate-800 rounded">
+          <div class="font-medium text-emerald-400">${r.company_name}</div>
+          <div class="text-slate-500">${r.country_iso} · ${r.city || '—'} · ${r.category_l3}</div>
+          ${r.score != null ? `<div class="text-amber-400">score ${r.score}</div>` : ''}
+        </div>`
+    )
+    .join('');
+}
+
+document.getElementById('btn-kb-search')?.addEventListener('click', () => {
+  searchKb(document.getElementById('kb-search-q').value);
+});
+document.getElementById('kb-search-q')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') searchKb(e.target.value);
+});
 
 window.logWhatsApp = async (leadId) => {
   const preview = prompt('WhatsApp 消息摘要（可选，留空使用系统话术）') || '';

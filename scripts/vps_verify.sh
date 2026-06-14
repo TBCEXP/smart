@@ -82,6 +82,14 @@ else
 fi
 
 echo ""
+echo "[7] Phase 1.5 验收（Mock 模式可跑）"
+if bash "$(dirname "$0")/phase15_verify.sh" "$BASE" --quick; then
+  ok "phase15_verify.sh --quick"
+else
+  warn "phase15_verify.sh 有未达标项（生产需真实 API Key）"
+fi
+
+echo ""
 echo "=== VPS 验收: ${PASS} 通过, ${WARN} 警告, ${FAIL} 失败 ==="
 if [ "$FAIL" -gt 0 ]; then
   exit 1
@@ -90,4 +98,5 @@ echo ""
 echo "下一步:"
 echo "  1. Tab2 配置 API Key 后重新运行: bash scripts/vps_verify.sh"
 echo "  2. 真实 Key 就绪后: bash scripts/pilot_live.sh"
+echo "  3. 全量 1.5 验收: bash scripts/phase15_verify.sh $BASE"
 exit 0

@@ -14,6 +14,7 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | Tab6 | Brainstorm Lab AI 策略工作台 |
 | Tab7 | Track C 海关 CSV 导入 + 展会参展商 |
 | Tab8 | **AI 内容工坊** — KEYWORD / SEO META / SLUG / 产品描述 / 文章（含多语言批量） |
+| Tab9 | **试点看板** — 里程碑、WhatsApp 触达、KB 语义检索 |
 
 ## Phase 1.5 西语试点
 
@@ -21,8 +22,14 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 |------|------|
 | `bash scripts/mx_pilot.sh` | 墨西哥 MX：Track B → Brainstorm → Track A 入队 |
 | `bash scripts/co_pilot.sh` | 哥伦比亚 CO：同上 |
+| `bash scripts/pilot_live.sh` | 真实 API 环境全流程（含飞书 confirm） |
+| `bash scripts/outreach_pilot.sh` | 1.5.5 WhatsApp 触达里程碑（≥5 条） |
+| `bash scripts/trackc_pilot.sh` | 1.5.6 海关 CSV 导入 + 域名匹配 |
+| `bash scripts/kb_pilot.sh` | 1.5.7 知识库索引 + 语义召回 |
+| `bash scripts/phase15_verify.sh` | **全量 1.5 验收**（`--quick` 快速模式） |
 | Tab5 面板 | MX / CO 一键试点按钮 |
 | Tab4 面板 | 「执行到期任务」跑入队后的 Track A |
+| Tab9 面板 | 试点里程碑 + WhatsApp 记录 + KB 搜索 |
 
 ## 快速启动（开发）
 
@@ -64,8 +71,10 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 |------|-----------|
 | 复制提示词给 Cursor | [docs/CURSOR_PROMPTS.md](docs/CURSOR_PROMPTS.md) |
 | 改完自动验收 | `bash scripts/smoke_test.sh` |
+| Phase 1.5 全量验收 | `bash scripts/phase15_verify.sh [URL]` |
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |
 | VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
+| 每日数据备份 | `sudo bash scripts/backup_daily.sh` |
 | HTTPS 配置 | `sudo bash scripts/setup_https.sh crm.domain.com` |
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |

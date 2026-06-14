@@ -250,11 +250,21 @@
     <!-- Tab9 Pilot Dashboard -->
     <section id="tab-dashboard" class="tab-panel hidden">
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="dash-cards"></div>
-      <div class="grid md:grid-cols-2 gap-6">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="card">
           <h3 class="font-semibold text-emerald-400 mb-3">WhatsApp 触达记录 (1.5.5)</h3>
           <div id="outreach-stats" class="text-sm text-slate-400 mb-3"></div>
           <div id="outreach-list" class="space-y-2 text-xs max-h-64 overflow-y-auto"></div>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold text-emerald-400 mb-3">知识库检索 (1.5.7)</h3>
+          <div class="flex gap-2 mb-3">
+            <input id="kb-search-q" class="input flex-1 text-sm" placeholder="哥伦比亚 烘焙模具 分销商" value="bakeware MX" />
+            <button id="btn-kb-search" class="btn-secondary text-sm shrink-0">搜索</button>
+          </div>
+          <div id="kb-search-results" class="space-y-2 text-xs max-h-64 overflow-y-auto text-slate-400">
+            输入查询后点击搜索
+          </div>
         </div>
         <div class="card">
           <h3 class="font-semibold text-emerald-400 mb-3">试点里程碑</h3>
