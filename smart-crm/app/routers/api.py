@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -983,21 +983,82 @@ async def co_pilot_runs():
 @router.get("/pilot/report")
 async def pilot_report(db: AsyncSession = Depends(get_db)):
     """Phase 1.5 试点进度汇总（MX + CO）。"""
+    return await _pilot_report_data(db)
+
+
+def _pilot_report_markdown(report: dict[str, Any]) -> str:
+    m = report.get("milestones", {})
+    c = report.get("acceptance_counts", {})
+    labels = {
+        "1_5_4_feishu_30": "1.5.4 飞书累计≥30",
+        "1_5_5_whatsapp_5": "1.5.5 WhatsApp≥5",
+        "1_5_6_track_c": "1.5.6 Track C 50条匹配>60%",
+        "1_5_7_kb_recall": "1.5.7 KB语义召回",
+        "mx_track_b": "MX Track B 情报",
+        "mx_brainstorm": "MX Brainstorm",
+        "mx_queued": "MX Track A 入队",
+        "co_started": "CO 试点已启动",
+    }
+    lines = [
+        "# SMART CRM Phase 1.5 验收报告",
+        "",
+        f"- 生成时间: {report.get('generated_at', '')}",
+        f"- 阶段: {report.get('phase', '1.5')}",
+        "",
+        "## 里程碑",
+        "",
+    ]
+    for key, label in labels.items():
+        mark = "✓" if m.get(key) else "○"
+        lines.append(f"- {mark} {label}")
+    lines.extend(
+        [
+            "",
+            "## 计数",
+            "",
+            f"- 飞书同步: {c.get('feishu_synced', 0)}",
+            f"- WhatsApp 记录: {c.get('whatsapp_sent', 0)}",
+            f"- Track C 导入: {c.get('track_c_imported', 0)}",
+            f"- Track C 匹配率: {int((c.get('track_c_match_rate') or 0) * 100)}%",
+            f"- KB 召回: {c.get('kb_results', 0)} 条",
+            "",
+            "## MX / CO",
+            "",
+        ]
+    )
+    for iso in ("MX", "CO"):
+        block = report.get("countries", {}).get(iso, {})
+        totals = block.get("totals", {})
+        lines.append(
+            f"### {iso}: 情报 {totals.get('intel_reports', 0)} · "
+            f"策略 {totals.get('brainstorm_sessions', 0)} · "
+            f"任务 {totals.get('active_schedules', 0)}"
+        )
+    lines.append("")
+    lines.append("---")
+    lines.append("*由 GET /api/pilot/export 自动生成*")
+    return "\n".join(lines)
+
+
+@router.get("/pilot/export")
+async def pilot_export(format: str = "json", db: AsyncSession = Depends(get_db)):
+    """导出 Phase 1.5 验收报告（JSON 或 Markdown）。"""
+    data = await _pilot_report_data(db)
+    if format.lower() in ("md", "markdown"):
+        return PlainTextResponse(
+            _pilot_report_markdown(data),
+            media_type="text/markdown; charset=utf-8",
+            headers={"Content-Disposition": "attachment; filename=pilot_report.md"},
+        )
+    return data
+
+
+async def _pilot_report_data(db: AsyncSession) -> dict[str, Any]:
     mx = await pilot_svc.status(db, "MX")
     co = await pilot_svc.status(db, "CO")
     runs = pilot_svc.list_runs()
-    leads = await db.execute(select(Lead))
-    lead_list = leads.scalars().all()
-    feishu_synced = sum(1 for l in lead_list if l.feishu_record_id)
-    outreach = await db.execute(select(OutreachLog))
-    logs = outreach.scalars().all()
-    wa_sent = sum(1 for o in logs if o.channel == "whatsapp")
-    imports = await db.execute(select(ImportLead))
-    import_list = imports.scalars().all()
-    matched = sum(1 for i in import_list if i.domain)
-    import_count = len(import_list)
-    match_rate = round(matched / import_count, 2) if import_count else 0
-    kb_sample = await kb_svc.search(db, "bakeware distributor Colombia", limit=3)
+    snap = await _phase15_milestones(db)
+    m = snap["milestones"]
     return {
         "phase": "1.5",
         "generated_at": datetime.utcnow().isoformat(),
@@ -1019,17 +1080,17 @@ async def pilot_report(db: AsyncSession = Depends(get_db)):
             "mx_brainstorm": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("brainstorm_cards")),
             "mx_queued": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("track_a_queued")),
             "co_started": co.get("latest_run") is not None,
-            "1_5_4_feishu_30": feishu_synced >= 30,
-            "1_5_5_whatsapp_5": wa_sent >= 5,
-            "1_5_6_track_c": import_count >= 50 and match_rate > 0.6,
-            "1_5_7_kb_recall": len(kb_sample) > 0,
+            "1_5_4_feishu_30": m.get("1_5_4_feishu_30", False),
+            "1_5_5_whatsapp_5": m.get("1_5_5_whatsapp_5", False),
+            "1_5_6_track_c": m.get("1_5_6_track_c", False),
+            "1_5_7_kb_recall": m.get("1_5_7_kb_recall", False),
         },
         "acceptance_counts": {
-            "feishu_synced": feishu_synced,
-            "whatsapp_sent": wa_sent,
-            "track_c_imported": import_count,
-            "track_c_match_rate": match_rate,
-            "kb_results": len(kb_sample),
+            "feishu_synced": m.get("feishu_synced", 0),
+            "whatsapp_sent": m.get("whatsapp_sent", 0),
+            "track_c_imported": m.get("track_c_imported", 0),
+            "track_c_match_rate": m.get("track_c_match_rate", 0),
+            "kb_results": m.get("kb_results", 0),
         },
     }
 

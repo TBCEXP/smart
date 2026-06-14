@@ -43,7 +43,7 @@ class ExaClient:
         api_key = self.config.get("exa_api_key")
         semantic_query = build_semantic_exa_query(query, search_type, country_iso, city)
         if not api_key:
-            return self._mock_results(semantic_query, num_results)
+            return self._mock_results(semantic_query, num_results, country_iso)
         payload: dict[str, Any] = {
             "query": semantic_query,
             "numResults": min(num_results + 3, 25),
@@ -84,16 +84,39 @@ class ExaClient:
                 raise
         return []
 
-    def _mock_results(self, query: str, num_results: int) -> list[dict[str, Any]]:
+    def _mock_results(
+        self, query: str, num_results: int, country_iso: str = ""
+    ) -> list[dict[str, Any]]:
         import uuid
 
-        slug = re.sub(r"[^a-z0-9]+", "-", query.lower())[:30].strip("-") or "lead"
+        iso = (country_iso or "MX").upper()
+        names = {
+            "MX": [
+                "Distribuidora Vasconia Mayorista",
+                "Comercializadora Hostelería CDMX",
+                "Importadora Moldes Repostería",
+                "Mayorista Utensilios Cocina",
+                "Proveedor Equipos Restaurante",
+            ],
+            "CO": [
+                "Distribuidora Bakeware Bogotá",
+                "Comercializadora Hotelera Colombia",
+                "Importadora Moldes Panadería",
+                "Mayorista Cocina Profesional",
+                "Proveedor Hostelería Medellín",
+            ],
+        }
+        pool = names.get(iso, names["MX"])
+        slug = re.sub(r"[^a-z0-9]+", "-", query.lower())[:24].strip("-") or "lead"
         run_id = uuid.uuid4().hex[:8]
         return [
             {
-                "title": f"Mock Company {i+1} - {query[:30]}",
+                "title": f"{pool[i % len(pool)]} — {query[:40]}",
                 "url": f"https://{slug}-{run_id}-{i+1}.example.com",
-                "text": f"Mock Exa result for query: {query}",
+                "text": (
+                    f"Distribuidor B2B de utensilios hostelería en {iso}. "
+                    f"Query: {query}. Catálogo mayorista, NSF, exportación."
+                ),
                 "domain": f"{slug}-{run_id}-{i+1}.example.com",
             }
             for i in range(min(num_results, 5))
@@ -216,13 +239,22 @@ class LLMClient:
                 )
             return json.dumps(
                 {
-                    "email_body": f"Mock Spanish outreach for: {user[:120]}",
+                    "email_body": (
+                        "Estimado equipo,\n\n"
+                        "Somos fabricante OEM de moldes y utensilios para hostelería con certificación NSF. "
+                        "Ofrecemos MOQ flexible y envío a Latinoamérica.\n\n"
+                        "¿Le interesaría recibir nuestro catálogo mayorista?\n\n"
+                        "Saludos cordiales"
+                    ),
                     "subject_lines": [
-                        "Oportunidad OEM utensilios hostelería",
-                        "Proveedor certificado NSF - catálogo mayorista",
+                        "Oportunidad OEM utensilios hostelería — catálogo mayorista",
+                        "Proveedor NSF moldes repostería — exportación LATAM",
                     ],
                     "lead_score": "B",
-                    "whatsapp_intro": "Hola, somos fabricante OEM de utensilios hostelería. ¿Le interesa catálogo?",
+                    "whatsapp_intro": (
+                        "Hola, somos fabricante OEM de moldes y utensilios para hostelería (NSF). "
+                        "¿Le interesa recibir catálogo y precios mayoristas?"
+                    ),
                 },
                 ensure_ascii=False,
             )

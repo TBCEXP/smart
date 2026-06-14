@@ -812,6 +812,11 @@ document.getElementById('kb-search-q')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') searchKb(e.target.value);
 });
 
+document.getElementById('btn-export-report')?.addEventListener('click', () => {
+  window.open(`${API}/pilot/export?format=md`);
+});
+document.getElementById('btn-refresh-dashboard')?.addEventListener('click', loadDashboard);
+
 window.logWhatsApp = async (leadId) => {
   const preview = prompt('WhatsApp 消息摘要（可选，留空使用系统话术）') || '';
   try {

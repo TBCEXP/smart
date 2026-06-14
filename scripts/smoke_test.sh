@@ -195,6 +195,11 @@ if curl -sf "$BASE/api/pilot/report" | grep -q 'milestones'; then
 else
   fail "GET /api/pilot/report"
 fi
+if curl -sf "$BASE/api/pilot/export?format=md" | grep -q 'Phase 1.5'; then
+  ok "GET /api/pilot/export (markdown)"
+else
+  fail "GET /api/pilot/export (markdown)"
+fi
 
 # 16. Stats overview + outreach (Tab9 / 1.5.5)
 if curl -sf "$BASE/api/stats/overview" | grep -q '1_5_5_whatsapp_5'; then

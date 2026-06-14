@@ -72,6 +72,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 复制提示词给 Cursor | [docs/CURSOR_PROMPTS.md](docs/CURSOR_PROMPTS.md) |
 | 改完自动验收 | `bash scripts/smoke_test.sh` 或 `bash scripts/run_all_tests.sh` |
 | 飞书字段对照 | [docs/FEISHU_FIELDS.md](docs/FEISHU_FIELDS.md) |
+| 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | Phase 1.5 全量验收 | `bash scripts/phase15_verify.sh [URL]` |
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |
 | VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
