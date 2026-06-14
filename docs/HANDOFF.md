@@ -1,6 +1,6 @@
 # SMART CRM — 项目交接（Agent → 团队）
 
-> 版本 **v2.1.0** · `main` @ `1037f20` · 代码侧 **100% 完成**
+> 版本 **v2.1.0** · `main` @ `f03f7aa` · 代码侧 **100% 完成**
 
 ## 交付范围
 
@@ -8,7 +8,7 @@
 |------|------|
 | Phase 0–5 路线图 | ✅ 全部合并 `main` |
 | 增量：OCR / ZBar / Tus / ERP 映射 | ✅ |
-| 验收脚本体系 | ✅ 39 pytest · 47 smoke · 10 pre_merge |
+| 验收脚本体系 | ✅ 40 pytest · 47 smoke · `ready` / `go_live` |
 | CI/CD + Docker | ✅ |
 | 文档 + Postman | ✅ |
 
@@ -16,6 +16,7 @@
 
 ```bash
 cd smart-crm && USE_SQLITE=1 DATA_DIR=./data uvicorn main:app --port 8000 &
+bash scripts/ready.sh http://127.0.0.1:8000
 bash scripts/go_live.sh http://127.0.0.1:8000
 ```
 
@@ -26,6 +27,7 @@ bash scripts/go_live.sh http://127.0.0.1:8000
 ```bash
 sudo bash scripts/bootstrap_vps.sh
 bash scripts/upgrade.sh
+bash scripts/ready.sh https://crm.yourdomain.com
 bash scripts/prod_onboard.sh https://crm.yourdomain.com --full
 bash scripts/acceptance_report.sh https://crm.yourdomain.com
 ```
@@ -54,7 +56,8 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 | `release_check.sh` | v2.1.0 发布完整性 |
 | `prod_readiness_check.sh` | 生产阻塞诊断 |
 | `final_acceptance.sh` | 路线图终验收 |
-| `acceptance_report.sh` | 导出试点+交接 JSON |
+| `acceptance_report.sh` | 导出试点+交接+阻塞 JSON |
+| `export_blockers.sh` | 单独导出 `production_blockers` |
 
 ## 仓库
 

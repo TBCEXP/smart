@@ -47,5 +47,13 @@ print(' | '.join(flags))
 " 2>/dev/null || echo "milestones: N/A")
 echo "Milestones: $MILE"
 
+BLOCKERS=$(curl -sf "$BASE/api/system/readiness" 2>/dev/null || echo '{}')
+echo "Blockers: $(echo "$BLOCKERS" | python3 -c "
+import sys, json
+b = json.load(sys.stdin).get('production_blockers', {})
+print(f\"count={b.get('blocking_count', '?')} live_ready={b.get('live_ready', False)}\")
+" 2>/dev/null || echo N/A)"
+
 echo ""
+echo "阻塞详情: bash scripts/export_blockers.sh $BASE"
 echo "详细: curl -s $BASE/api/stats/overview | python3 -m json.tool"

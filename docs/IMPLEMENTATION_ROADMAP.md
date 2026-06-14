@@ -179,8 +179,9 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 **代码终检：**
 
 ```bash
+bash scripts/ready.sh http://127.0.0.1:8000
 bash scripts/go_live.sh http://127.0.0.1:8000
-bash scripts/release_check.sh http://127.0.0.1:8000
+bash scripts/export_blockers.sh http://127.0.0.1:8000
 ```
 
 **生产阻塞（需团队）：** 见 [HANDOFF.md](HANDOFF.md)、[VPS_ONBOARDING.md](VPS_ONBOARDING.md)

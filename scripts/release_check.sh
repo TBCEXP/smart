@@ -33,7 +33,7 @@ for f in docs/CHANGELOG.md docs/VPS_ONBOARDING.md docs/PRODUCTION_READY.md docs/
   if [ -f "$f" ]; then ok "$f"; else fail "missing $f"; fi
 done
 
-for s in erp_verify.sh prod_readiness_check.sh release_check.sh deploy_verify.sh deploy_preflight.sh onboard_checklist.sh ready.sh go_live.sh; do
+for s in erp_verify.sh prod_readiness_check.sh release_check.sh deploy_verify.sh deploy_preflight.sh onboard_checklist.sh ready.sh go_live.sh export_blockers.sh; do
   if [ -x "scripts/$s" ]; then ok "scripts/$s"; else fail "scripts/$s"; fi
 done
 
@@ -42,7 +42,7 @@ if [ "$SKIP_PYTEST" -eq 0 ]; then
   PY_SUMMARY=$(PYTHONPATH=. python3 -m pytest tests/ -q --tb=no 2>/dev/null | tail -1)
   PY_EXIT=$?
   PY_CNT=$(echo "$PY_SUMMARY" | grep -oE '^[0-9]+ passed' | head -1 || true)
-  EXPECTED=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -q 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo "39")
+  EXPECTED=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -q 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo "40")
   if [ "$PY_EXIT" -eq 0 ] && [ -n "$PY_CNT" ] && [ "$(echo "$PY_CNT" | grep -oE '^[0-9]+')" = "$EXPECTED" ]; then
     ok "pytest ($PY_CNT)"
   else

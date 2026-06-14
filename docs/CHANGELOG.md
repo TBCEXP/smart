@@ -38,6 +38,13 @@
 - `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
 - `prod_onboard.sh` 首步跑 `deploy_preflight`
 
+### Added (blockers export)
+
+- `export_blockers.sh` — 单独导出 `production_blockers` JSON
+- `acceptance_report.sh` — 增加 blockers JSON 附件
+- `status.sh` — 显示阻塞计数
+- Postman System Readiness 增加 `production_blockers` 测试
+
 ### Added (production blockers API)
 
 - `GET /api/system/readiness` 增加 `production_blockers`（自动检测 + 人工待办）
@@ -58,7 +65,7 @@
 
 ### Tests
 
-- pytest **39/39**
+- pytest **40/40**
 - pre_merge_verify **10/10**
 
 ---

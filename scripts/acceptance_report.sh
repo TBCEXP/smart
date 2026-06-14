@@ -3,6 +3,7 @@
 # 用法: bash scripts/acceptance_report.sh [BASE_URL] [OUTPUT_PREFIX]
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE="${1:-http://127.0.0.1:8000}"
 PREFIX="${2:-acceptance-$(date +%Y%m%d-%H%M)}"
 PILOT="${PREFIX}-pilot.md"
@@ -22,6 +23,10 @@ echo "✓ 交接报告: $HANDOFF"
 
 curl -sf "$BASE/api/system/readiness" -o "$READY"
 echo "✓ 就绪检查: $READY"
+
+BLOCKERS="${PREFIX}-blockers.json"
+bash "$SCRIPT_DIR/export_blockers.sh" "$BASE" "$BLOCKERS" >/dev/null
+echo "✓ 阻塞导出: $BLOCKERS"
 
 echo ""
 python3 -c "
@@ -46,6 +51,7 @@ echo "文件列表:"
 echo "  $PILOT"
 echo "  $HANDOFF"
 echo "  $READY"
+echo "  $BLOCKERS"
 echo ""
 head -12 "$HANDOFF"
 echo "..."

@@ -46,6 +46,22 @@
         },
         {
           "name": "System Readiness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('has production_blockers', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.production_blockers).to.be.an('object');",
+                  "  pm.expect(j.production_blockers.code_complete).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/system/readiness"

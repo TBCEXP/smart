@@ -58,7 +58,7 @@ sudo bash scripts/setup_backup_cron.sh
 | 端点 | 说明 |
 |------|------|
 | `GET /api/health` | 版本 `2.1.0`、build SHA、数据库模式 |
-| `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2/3 checklist |
+| `GET /api/system/readiness` | Phase checklist + **`production_blockers`** |
 | `GET /api/system/handoff-report` | Phase 0–5 交接 Markdown |
 | `PATCH /api/orders/{id}` | 确认/取消订单（需登录） |
 | `GET /api/pilot/report` | MX/CO 试点 + 里程碑 |

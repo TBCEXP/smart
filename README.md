@@ -153,6 +153,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 部署验收 | `bash scripts/deploy_verify.sh [URL]` |
 | 部署前检查 | `bash scripts/deploy_preflight.sh` |
 | 一站式就绪 | `bash scripts/ready.sh [URL]` |
+| 阻塞导出 | `bash scripts/export_blockers.sh [URL]` |
 | 上线待办 | `bash scripts/onboard_checklist.sh [URL]` |
 | 代码终检 | `bash scripts/go_live.sh [URL]` |
 | 发布完整性 | `bash scripts/release_check.sh [URL]` |
