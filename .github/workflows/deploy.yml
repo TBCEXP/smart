@@ -1,0 +1,37 @@
+name: Deploy to RackNerd VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 允许在 GitHub 网页手动点「Run workflow」
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout（仅用于显示版本信息）
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/smart-crm
+            export DEPLOY_BRANCH=main
+            export VERSION=${{ github.sha }}
+            bash scripts/upgrade.sh
+
+      - name: Verify health
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            curl -sf http://127.0.0.1:8000/api/health
+            echo " Deploy OK: ${{ github.sha }}"

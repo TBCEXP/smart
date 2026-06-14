@@ -11,7 +11,9 @@ echo "数据目录: $DATA_DIR"
 sudo mkdir -p "$OPT_DIR" "$DATA_DIR/smart-crm-data" "$DATA_DIR/postgres" "$DATA_DIR/backups"
 
 if [ ! -f "$OPT_DIR/docker-compose.yml" ]; then
-  echo "请将 docker-compose.yml 复制到 $OPT_DIR"
+  echo "未找到 $OPT_DIR/docker-compose.yml"
+  echo "首次安装请先克隆仓库:"
+  echo "  sudo git clone https://github.com/TBCEXP/smart.git $OPT_DIR"
   exit 1
 fi
 

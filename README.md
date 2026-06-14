@@ -33,6 +33,21 @@ sudo bash scripts/install.sh
 
 详见 `docker-compose.yml` 与 `nginx/crm.conf`。
 
+## 更新发布（改代码后如何上传网页）
+
+**推荐：GitHub 自动部署** — 完整说明见 **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+
+```bash
+# 日常：Cursor 改完代码
+git add . && git commit -m "更新说明" && git push origin main
+# → GitHub Actions 自动 SSH 到 VPS 执行 upgrade.sh（约 1–3 分钟）
+
+# 手动备用：SSH 登录 VPS 后
+cd /opt/smart-crm && sudo bash scripts/upgrade.sh
+```
+
+一次性在 GitHub 配置 Secrets：`VPS_HOST`、`VPS_USER`、`VPS_SSH_KEY`。
+
 ## 默认测试账号
 
 | 邮箱 | 门户 |
