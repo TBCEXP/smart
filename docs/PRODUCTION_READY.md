@@ -8,13 +8,15 @@
 ```bash
 cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
 bash scripts/final_acceptance.sh http://127.0.0.1:8000
+bash scripts/erp_verify.sh http://127.0.0.1:8000
+bash scripts/prod_readiness_check.sh http://127.0.0.1:8000
 ```
 
 期望：
 
 | 项 | 标准 |
 |----|------|
-| pytest | 36/36 |
+| pytest | 39/39 |
 | smoke | 43+ |
 | phase1–5 verify | 全部通过 |
 | pre_merge_verify | 9/9 |

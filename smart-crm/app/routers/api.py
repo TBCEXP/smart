@@ -125,6 +125,7 @@ from app.services.production_inspect import (
 from app.services.barcode_engine import generate_barcode_svg, validate_barcode
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
+from app.services.tbcexp_mapping import field_map_documentation, sync_erp_orders
 from app.services.feishu_client import FeishuClient
 
 router = APIRouter()
@@ -271,6 +272,7 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             "orders": orders,
             "leads": leads,
             "erp_configured": bool(cfg.get("tbcexp_api_url") and cfg.get("tbcexp_api_token")),
+            "erp_field_map": True,
         },
         "phase2": {
             "catalog_documents": catalogs,
@@ -323,6 +325,7 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "ready_for_live_pilot": integ.get("production_ready", False),
             "phase1_factories_seeded": biz["phase1"]["factories"] >= 1,
             "phase1_orders_api": True,
+            "phase1_erp_field_map": biz["phase1"].get("erp_field_map", False),
             "phase2_catalog_seeded": biz["phase2"]["catalog_documents"] >= 1,
             "phase2_portal_ready": biz["phase2"]["portal_demo_orders"] >= 1,
             "phase2_r2_optional": biz["phase2"]["r2_configured"],
@@ -1136,6 +1139,12 @@ async def tbcexp_sync_status(lead_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 
+@router.get("/bridge/tbcexp/field-map")
+async def tbcexp_field_map():
+    """TBCEXP ↔ CRM 字段映射文档（OpenAPI 对齐前参考）。"""
+    return field_map_documentation()
+
+
 @router.get("/bridge/tbcexp/orders")
 async def tbcexp_list_orders(request: Request, limit: int = 20):
     """TBCEXP ERP 订单只读拉取（需员工登录）。"""
@@ -1145,6 +1154,20 @@ async def tbcexp_list_orders(request: Request, limit: int = 20):
             raise HTTPException(401, "Admin session required")
     safe_limit = max(1, min(limit, 100))
     return await tbcexp_svc.list_orders(safe_limit)
+
+
+@router.post("/bridge/tbcexp/orders/sync")
+async def tbcexp_sync_orders(
+    request: Request,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+):
+    """从 TBCEXP 拉取订单并 upsert 至 SalesOrder（需 admin）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    safe_limit = max(1, min(limit, 100))
+    return await sync_erp_orders(db, tbcexp_svc, safe_limit)
 
 
 @router.get("/catalog/tree")

@@ -6,6 +6,7 @@ import httpx
 
 from app.models.entities import Lead
 from app.services.config_store import ConfigStore
+from app.services.tbcexp_mapping import lead_to_erp_payload
 
 
 class TbcexpClient:
@@ -21,25 +22,7 @@ class TbcexpClient:
         )
 
     def lead_payload(self, lead: Lead) -> dict[str, Any]:
-        return {
-            "source": "smart_crm",
-            "sourceType": "smart_crm",
-            "external_id": lead.id,
-            "company_name": lead.company_name,
-            "website_url": lead.website_url,
-            "domain": lead.domain,
-            "country_iso": lead.country_iso,
-            "city": lead.city,
-            "category_l3": lead.category_l3,
-            "lead_score": lead.lead_score,
-            "status": lead.status,
-            "assigned_to": lead.assigned_to,
-            "feishu_record_id": lead.feishu_record_id,
-            "preferred_channel": lead.preferred_channel,
-            "language": lead.language,
-            "keyword": lead.keyword,
-            "notes": (lead.firecrawl_summary or "")[:500],
-        }
+        return lead_to_erp_payload(lead)
 
     async def push_lead(self, lead: Lead) -> dict[str, Any]:
         payload = self.lead_payload(lead)

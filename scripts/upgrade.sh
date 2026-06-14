@@ -82,6 +82,11 @@ if curl -sf http://127.0.0.1:8000/api/health; then
   else
     echo "⚠ phase5_verify 有失败项"
   fi
+  if bash scripts/erp_verify.sh http://127.0.0.1:8000 2>/dev/null; then
+    echo "✓ erp_verify 通过"
+  else
+    echo "⚠ erp_verify 有失败项"
+  fi
   echo ""
   echo "完整终验收: bash scripts/final_acceptance.sh http://127.0.0.1:8000"
 else

@@ -16,7 +16,7 @@
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
 | 验收脚本 | ✅ | smoke 43+、phase15、phase1–**phase5**、`final_acceptance` |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
-| TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
+| TBCEXP 桥接 | ✅ | 字段映射 + 线索推送 + 订单 sync |
 | 文档 | ✅ | 部署、上线引导、**PRODUCTION_READY**、Phase 3–5 专篇 |
 
 ## 本地 / Mock 验收
@@ -68,6 +68,8 @@ sudo bash scripts/setup_backup_cron.sh
 | `GET /admin/dashboard` | 员工后台（线索/工厂/订单/品类） |
 | `GET /api/catalog/tree` | L1/L2/L3 品类树 |
 | `GET /api/factories` | 工厂主数据 |
+| `GET /api/bridge/tbcexp/field-map` | CRM ↔ ERP 字段映射 |
+| `POST /api/bridge/tbcexp/orders/sync` | 拉取 ERP 订单 upsert |
 | `POST /api/bridge/tbcexp/{lead_id}` | 推送线索至 ERP（需登录） |
 | `GET /api/feishu/records/{id}` | 飞书记录只读查询 |
 | `GET /api/admin/summary` | 员工后台汇总（按角色） |

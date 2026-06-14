@@ -9,6 +9,22 @@
 | `tbcexp_api_url` | ERP 根 URL，如 `https://erp.example.com` |
 | `tbcexp_api_token` | Bearer Token |
 
+## 字段映射 API
+
+```
+GET /api/bridge/tbcexp/field-map
+```
+
+返回 CRM ↔ ERP 字段对照（`version: 1.0`），含线索推送 20+ 字段与订单拉取映射。
+
+## 订单同步
+
+```
+POST /api/bridge/tbcexp/orders/sync?limit=20
+```
+
+需 admin 登录。从 TBCEXP 拉取订单并按 `order_no` upsert 至 `SalesOrder`（Mock 模式同步演示订单）。
+
 ## 推送端点
 
 SMART CRM 调用：
