@@ -65,6 +65,7 @@ echo ""
 echo "VPS 就绪后:"
 echo "  sudo bash scripts/bootstrap_vps.sh"
 echo "  bash scripts/upgrade.sh"
+echo "  bash scripts/onboard_checklist.sh $BASE"
 echo "  bash scripts/prod_onboard.sh https://crm.yourdomain.com --full"
 echo ""
 if [ "$BLOCK" -gt 2 ]; then

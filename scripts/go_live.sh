@@ -12,6 +12,12 @@ echo "╚═══════════════════════�
 echo "Base: $BASE"
 echo ""
 
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " deploy_preflight (静态检查)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+bash "$SCRIPT_DIR/deploy_preflight.sh"
+echo ""
+
 steps=(
   "release_check:$SCRIPT_DIR/release_check.sh"
   "erp_verify:$SCRIPT_DIR/erp_verify.sh"
@@ -40,4 +46,5 @@ echo "  [ ] Tab2 API Keys ≥4 → production_ready"
 echo "  [ ] R2 凭据（目录 + 大文件）"
 echo ""
 echo "VPS 首次: sudo bash scripts/bootstrap_vps.sh"
+echo "待办清单: bash scripts/onboard_checklist.sh $BASE"
 echo "详见: docs/VPS_ONBOARDING.md"

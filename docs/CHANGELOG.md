@@ -30,6 +30,13 @@
 
 ### Added (deploy pipeline)
 
+- `deploy_preflight.sh` — 部署前静态检查（仓库结构 / compose / 版本）
+- `onboard_checklist.sh` — 生产阻塞待办清单 + 可复制命令
+- `vps_verify.sh` 精简为 deploy_verify + phase1/2
+- `go_live.sh` 首步跑 deploy_preflight
+
+### Added (deploy pipeline, prior)
+
 - `deploy_verify.sh` — VPS/CI 部署后快速验收（phase15 quick + phase3–5 + erp）
 - `upgrade.sh` / GitHub Actions 部署后自动跑 `deploy_verify`
 - `release_check.sh --skip-pytest` — CI 复用发布检查

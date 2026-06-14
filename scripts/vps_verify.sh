@@ -79,23 +79,15 @@ else
 fi
 
 echo ""
-echo "[6] Smoke 测试"
-if bash "$(dirname "$0")/smoke_test.sh" "$BASE"; then
-  ok "smoke_test.sh 全部通过"
+echo "[6] 部署验收"
+if bash "$(dirname "$0")/deploy_verify.sh" "$BASE"; then
+  ok "deploy_verify.sh"
 else
-  fail "smoke_test.sh 有失败项"
+  fail "deploy_verify.sh 有失败项"
 fi
 
 echo ""
-echo "[7] Phase 1.5 验收（Mock 模式可跑）"
-if bash "$(dirname "$0")/phase15_verify.sh" "$BASE" --quick; then
-  ok "phase15_verify.sh --quick"
-else
-  warn "phase15_verify.sh 有未达标项（生产需真实 API Key）"
-fi
-
-echo ""
-echo "[8] Phase 1 + 2 业务验收"
+echo "[7] Phase 1 + 2 业务验收"
 if bash "$(dirname "$0")/phase1_verify.sh" "$BASE"; then
   ok "phase1_verify.sh"
 else
@@ -105,21 +97,6 @@ if bash "$(dirname "$0")/phase2_verify.sh" "$BASE"; then
   ok "phase2_verify.sh"
 else
   warn "phase2_verify.sh 有失败项"
-fi
-if bash "$(dirname "$0")/phase3_verify.sh" "$BASE"; then
-  ok "phase3_verify.sh"
-else
-  warn "phase3_verify.sh 有失败项"
-fi
-if bash "$(dirname "$0")/phase4_verify.sh" "$BASE"; then
-  ok "phase4_verify.sh"
-else
-  warn "phase4_verify.sh 有失败项"
-fi
-if bash "$(dirname "$0")/phase5_verify.sh" "$BASE"; then
-  ok "phase5_verify.sh"
-else
-  warn "phase5_verify.sh 有失败项"
 fi
 
 echo ""

@@ -57,6 +57,8 @@ sudo bash scripts/setup_backup_cron.sh
 ## 诊断命令
 
 ```bash
+bash scripts/deploy_preflight.sh
+bash scripts/onboard_checklist.sh https://crm.yourdomain.com
 bash scripts/prod_readiness_check.sh https://crm.yourdomain.com
 bash scripts/status.sh https://crm.yourdomain.com
 curl -s https://crm.yourdomain.com/api/system/readiness | python3 -m json.tool

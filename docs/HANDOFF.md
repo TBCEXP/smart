@@ -48,6 +48,8 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 |------|------|
 | `go_live.sh` | 代码侧终检三连 |
 | `deploy_verify.sh` | VPS/CI 部署后快速验收 |
+| `deploy_preflight.sh` | 部署前静态检查（无需启动服务） |
+| `onboard_checklist.sh` | 生产阻塞待办 + 可复制命令 |
 | `release_check.sh` | v2.1.0 发布完整性 |
 | `prod_readiness_check.sh` | 生产阻塞诊断 |
 | `final_acceptance.sh` | 路线图终验收 |
