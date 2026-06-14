@@ -43,6 +43,12 @@ async def init_db() -> None:
         if "postgresql" in ASYNC_DB_URL:
             try:
                 await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                await conn.execute(
+                    text(
+                        "ALTER TABLE leads "
+                        "ADD COLUMN IF NOT EXISTS embedding_vec vector(1536)"
+                    )
+                )
             except Exception:
                 pass
         # Lightweight schema patch for existing deployments

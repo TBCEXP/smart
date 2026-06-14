@@ -4,8 +4,20 @@ import json
 from typing import Any
 
 import httpx
+from sqlalchemy import text
 
+from app.database import ASYNC_DB_URL
 from app.services.config_store import ConfigStore
+
+EMBED_DIM = 1536
+
+
+def _pg_mode() -> bool:
+    return "postgresql" in ASYNC_DB_URL
+
+
+def _vec_literal(vec: list[float]) -> str:
+    return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
 
 
 class KnowledgeBaseService:
@@ -38,20 +50,71 @@ class KnowledgeBaseService:
 
         vec = await self.embed_text(text)
         lead = await db.get(Lead, lead_id)
-        if lead and vec:
-            lead.embedding = json.dumps(vec)
-            await db.commit()
+        if not lead or not vec:
+            return
+        emb_json = json.dumps(vec)
+        lead.embedding = emb_json
+        if _pg_mode():
+            await db.execute(
+                text(
+                    "UPDATE leads SET embedding = :emb, "
+                    "embedding_vec = CAST(:vec AS vector) WHERE id = :id"
+                ),
+                {"emb": emb_json, "vec": _vec_literal(vec), "id": lead_id},
+            )
+        await db.commit()
 
     async def search(self, db, query: str, limit: int = 10) -> list[dict[str, Any]]:
+        query_vec = await self.embed_text(query)
+        if not query_vec:
+            return await self._text_search(db, query, limit)
+        if _pg_mode():
+            pg_results = await self._pgvector_search(db, query_vec, limit)
+            if pg_results:
+                return pg_results
+        return await self._cosine_json_search(db, query_vec, limit)
+
+    async def _pgvector_search(
+        self, db, query_vec: list[float], limit: int
+    ) -> list[dict[str, Any]]:
+        result = await db.execute(
+            text(
+                """
+                SELECT id, company_name, website_url, country_iso, city,
+                       category_l3, keyword, status,
+                       1 - (embedding_vec <=> CAST(:q AS vector)) AS score
+                FROM leads
+                WHERE embedding_vec IS NOT NULL
+                ORDER BY embedding_vec <=> CAST(:q AS vector)
+                LIMIT :lim
+                """
+            ),
+            {"q": _vec_literal(query_vec), "lim": limit},
+        )
+        rows = result.mappings().all()
+        return [
+            {
+                "id": r["id"],
+                "company_name": r["company_name"],
+                "website_url": r["website_url"],
+                "country_iso": r["country_iso"],
+                "city": r["city"],
+                "category_l3": r["category_l3"],
+                "keyword": r["keyword"],
+                "status": r["status"],
+                "score": round(float(r["score"]), 4),
+                "search_mode": "pgvector",
+            }
+            for r in rows
+        ]
+
+    async def _cosine_json_search(
+        self, db, query_vec: list[float], limit: int
+    ) -> list[dict[str, Any]]:
         from sqlalchemy import select
 
         from app.models.entities import Lead
 
-        query_vec = await self.embed_text(query)
-        if not query_vec:
-            return await self._text_search(db, query, limit)
-
-        # 余弦相似度（存储为 JSON，兼容 SQLite 开发环境）
         result = await db.execute(select(Lead).where(Lead.embedding.isnot(None)))
         scored: list[tuple[float, Any]] = []
         for lead in result.scalars().all():
@@ -65,7 +128,7 @@ class KnowledgeBaseService:
                 continue
         scored.sort(key=lambda x: x[0], reverse=True)
         return [
-            {**self._lead_brief(lead), "score": round(sim, 4)}
+            {**self._lead_brief(lead), "score": round(sim, 4), "search_mode": "cosine_json"}
             for sim, lead in scored[:limit]
         ]
 
@@ -92,7 +155,10 @@ class KnowledgeBaseService:
                 ]
             )
         result = await db.execute(select(Lead).where(or_(*clauses)).limit(limit))
-        return [self._lead_brief(l) for l in result.scalars().all()]
+        return [
+            {**self._lead_brief(l), "search_mode": "text_fallback"}
+            for l in result.scalars().all()
+        ]
 
     def _lead_brief(self, lead) -> dict[str, Any]:
         return {

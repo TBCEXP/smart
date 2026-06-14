@@ -674,6 +674,22 @@ async function loadDashboard() {
       api('/outreach/logs'),
       api('/pilot/report'),
     ]);
+    const m = overview.milestones || {};
+    const milestoneItems = [
+      ['1_5_4_feishu_30', '1.5.4 飞书≥30'],
+      ['1_5_5_whatsapp_5', '1.5.5 WhatsApp≥5'],
+      ['1_5_6_track_c', '1.5.6 Track C'],
+      ['1_5_7_kb_recall', '1.5.7 KB召回'],
+    ];
+    document.getElementById('dash-milestone-bar').innerHTML = milestoneItems
+      .map(([key, label]) => {
+        const done = m[key];
+        return `<span class="px-3 py-1 rounded text-xs ${
+          done ? 'bg-emerald-900 text-emerald-300' : 'bg-slate-800 text-slate-400'
+        }">${done ? '✓' : '○'} ${label}</span>`;
+      })
+      .join('');
+
     const cards = [
       {
         title: '线索总数',
@@ -780,7 +796,7 @@ function renderKbResults(query, results) {
         `<div class="p-2 bg-slate-800 rounded">
           <div class="font-medium text-emerald-400">${r.company_name}</div>
           <div class="text-slate-500">${r.country_iso} · ${r.city || '—'} · ${r.category_l3}</div>
-          ${r.score != null ? `<div class="text-amber-400">score ${r.score}</div>` : ''}
+          ${r.score != null ? `<div class="text-amber-400">score ${r.score}${r.search_mode ? ` · ${r.search_mode}` : ''}</div>` : ''}
         </div>`
     )
     .join('');

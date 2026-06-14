@@ -26,15 +26,19 @@ echo " 第零期 — 基础设施"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-echo ">>> [0.1] 系统 preflight"
+echo ">>> [0.1] 环境检查"
+bash "$SCRIPT_DIR/check_env.sh" "${OPT_DIR:-/opt/smart-crm}" 2>/dev/null || bash "$SCRIPT_DIR/check_env.sh" "$(cd "$SCRIPT_DIR/.." && pwd)" 2>/dev/null || true
+echo ""
+
+echo ">>> [0.2] 系统 preflight"
 bash "$SCRIPT_DIR/preflight.sh" || true
 echo ""
 
-echo ">>> [0.2] VPS 服务验收"
+echo ">>> [0.3] VPS 服务验收"
 bash "$SCRIPT_DIR/vps_verify.sh" "$BASE"
 echo ""
 
-echo ">>> [0.3] 当前状态"
+echo ">>> [0.4] 当前状态"
 bash "$SCRIPT_DIR/status.sh" "$BASE"
 echo ""
 
@@ -75,7 +79,7 @@ else
   echo "│  5. 重新运行:                                   │"
   echo "│     bash scripts/prod_onboard.sh $BASE --full  │"
   echo "│  6. HTTPS: sudo bash scripts/setup_https.sh     │"
-  echo "│  7. 备份 cron: scripts/backup_daily.sh          │"
+  echo "│  7. 备份 cron: sudo bash scripts/setup_backup_cron.sh │"
   echo "└─────────────────────────────────────────────────┘"
 fi
 

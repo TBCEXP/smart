@@ -74,7 +74,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | Phase 1.5 全量验收 | `bash scripts/phase15_verify.sh [URL]` |
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |
 | VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
-| 每日数据备份 | `sudo bash scripts/backup_daily.sh` |
+| 环境安全检查 | `bash scripts/check_env.sh` |
+| 备份 cron 安装 | `sudo bash scripts/setup_backup_cron.sh` |
 | HTTPS 配置 | `sudo bash scripts/setup_https.sh crm.domain.com` |
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |

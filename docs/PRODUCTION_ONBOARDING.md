@@ -96,7 +96,8 @@ cd /opt/smart-crm && docker compose up -d smart-crm
 
 ```bash
 # 每日备份（cron 03:00）
-sudo bash scripts/backup_daily.sh
+sudo bash scripts/setup_backup_cron.sh   # 安装 cron
+sudo bash scripts/backup_daily.sh        # 手动测试
 
 # 手动升级
 cd /opt/smart-crm && sudo bash scripts/upgrade.sh
