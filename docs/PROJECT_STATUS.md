@@ -1,6 +1,6 @@
 # SMART CRM — 项目状态（交接）
 
-> 最后更新：**Phase 3 已合并 main**（大文件中转 + 分享邮件通知），待 VPS + API Key 生产验收。
+> 最后更新：**Phase 4 已合并 main**（印刷前稿 AI 规则引擎），待 VPS + API Key 生产验收。
 
 ## 已完成
 
