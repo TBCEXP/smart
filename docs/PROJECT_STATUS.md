@@ -1,6 +1,6 @@
 # SMART CRM — 项目状态（交接）
 
-> 最后更新：Phase 1.5 西语试点（MX/CO）代码与验收脚本已就绪，待 VPS + API Key 生产验收。
+> 最后更新：**已合并 main**（Phase 1.5 + Phase 1/2），待 VPS + API Key 生产验收。
 
 ## 已完成
 
@@ -95,4 +95,5 @@ sudo bash scripts/setup_backup_cron.sh
 ## 仓库
 
 - GitHub: `https://github.com/TBCEXP/smart`
-- 主分支: `main`
+- 主分支: `main`（已含 Phase 1.5 + Phase 1 + Phase 2）
+- 原功能分支: `cursor/exa-query-latam-pilot-c2f3`（已 fast-forward 合并）
