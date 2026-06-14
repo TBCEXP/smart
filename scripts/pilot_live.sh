@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# 真实 API Key 环境下跑 Phase 1.5 墨西哥试点（第零期通过后执行）
-# 用法: bash scripts/pilot_live.sh [BASE_URL]
+# 真实 API 环境下跑 Phase 1.5 试点（MX 默认，CO 加 --co）
+# 用法: bash scripts/pilot_live.sh [BASE_URL] [--co]
 set -euo pipefail
 
-BASE="${1:-http://127.0.0.1:8000}"
+BASE="http://127.0.0.1:8000"
+COUNTRY="MX"
+PILOT_PATH="mx"
 
-echo "=== SMART CRM Live Pilot (MX) ==="
+for arg in "$@"; do
+  case "$arg" in
+    --co) COUNTRY="CO"; PILOT_PATH="co" ;;
+    http*) BASE="$arg" ;;
+  esac
+done
+
+echo "=== SMART CRM Live Pilot ($COUNTRY) ==="
 echo "Base: $BASE"
 echo ""
 
@@ -18,21 +27,14 @@ if [ "$LIVE" -lt 4 ]; then
   echo ""
   echo "⚠ 仅 $LIVE/4 项 live API 通过。可在 Mock 模式继续试跑，但产出质量仅供演示。"
   echo "  请在 Tab2 配置: Exa + Firecrawl + OpenAI + 飞书 后重试。"
-  read -r -t 5 -p "5 秒后继续在 Mock/部分 live 模式试跑… " _ || true
-  echo ""
+  sleep 3
 fi
 
 echo ""
-echo "[2] 启动 MX 试点 (Track B → Brainstorm → 入队)"
-PILOT=$(curl -sf -X POST "$BASE/api/pilot/mx/start" \
+echo "[2] 启动 $COUNTRY 试点 (Track B → Brainstorm → 入队)"
+PILOT=$(curl -sf -X POST "$BASE/api/pilot/$PILOT_PATH/start" \
   -H "Content-Type: application/json" \
-  -d '{
-    "country_iso": "MX",
-    "category_l3": "bakeware",
-    "anchor_limit": 2,
-    "leads_per_task": 5,
-    "enqueue_track_a": true
-  }')
+  -d "{\"country_iso\":\"$COUNTRY\",\"category_l3\":\"bakeware\",\"anchor_limit\":2,\"leads_per_task\":5,\"enqueue_track_a\":true}")
 echo "$PILOT" | python3 -m json.tool 2>/dev/null || echo "$PILOT"
 SESSION_ID=$(echo "$PILOT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id',''))" 2>/dev/null || echo "")
 
@@ -57,15 +59,10 @@ if [ -n "$BATCH_ID" ]; then
     echo "$CONF" | python3 -m json.tool 2>/dev/null || echo "$CONF"
   fi
 else
-  echo "  无到期任务可执行（试点可能已创建 schedule，请 Tab4 查看）"
+  echo "  无到期任务（请 Tab4 查看定时任务）"
 fi
 
 echo ""
-echo "=== Live Pilot 完成 ==="
+echo "=== Live Pilot ($COUNTRY) 完成 ==="
 echo "  session_id: $SESSION_ID"
 echo "  batch_id:   $BATCH_ID"
-echo ""
-echo "人工验收:"
-echo "  - Tab3 检查西语开发信质量"
-echo "  - 飞书表是否出现新记录（feishu_record_id 非空）"
-echo "  - Tab8 为热点产品批量生成 es/en/pt SEO"

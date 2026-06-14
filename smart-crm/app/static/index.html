@@ -32,6 +32,15 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="onboard-banner" class="hidden mb-4 card border border-amber-700/50 bg-amber-950/30">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <p class="font-medium text-amber-300">首次部署 — 请先完成 API 配置</p>
+          <p class="text-sm text-slate-400 mt-1">配置 Exa + Firecrawl + OpenAI + 飞书 后可跑真实 MX/CO 试点</p>
+        </div>
+        <button id="btn-goto-config" class="btn-primary text-sm">前往 Tab2 配置</button>
+      </div>
+    </div>
     <!-- Tab1 Search -->
     <section id="tab-search" class="tab-panel">
       <div class="grid md:grid-cols-2 gap-6">
@@ -73,6 +82,7 @@
         <div class="flex flex-wrap gap-2 mt-4">
           <button id="btn-save-config" class="btn-primary">保存配置</button>
           <button id="btn-probe-apis" class="btn-secondary">检测 API 连通性</button>
+          <button id="btn-feishu-test" class="btn-secondary">飞书写入测试</button>
         </div>
         <pre id="config-probe-result" class="mt-3 text-xs bg-slate-900 rounded p-3 overflow-auto max-h-48 hidden"></pre>
       </div>

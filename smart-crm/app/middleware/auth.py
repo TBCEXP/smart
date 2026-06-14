@@ -27,6 +27,7 @@ PROTECTED_POST_PATHS = (
     "/api/regenerate/",
     "/api/bridge/",
     "/api/send-email",
+    "/api/integrations/feishu/test-write",
 )
 
 

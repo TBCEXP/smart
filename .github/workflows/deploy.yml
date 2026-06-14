@@ -34,4 +34,17 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             curl -sf http://127.0.0.1:8000/api/health
+            curl -sf http://127.0.0.1:8000/api/system/readiness | head -c 500
+            echo ""
             echo " Deploy OK: ${{ github.sha }}"
+
+      - name: Post-deploy smoke (optional)
+        uses: appleboy/ssh-action@v1.2.0
+        continue-on-error: true
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/smart-crm
+            bash scripts/smoke_test.sh http://127.0.0.1:8000

@@ -1,0 +1,47 @@
+name: CI — Smoke & Build
+
+on:
+  push:
+    branches: [main, cursor/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: smart-crm/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r smart-crm/requirements.txt
+
+      - name: Start app (SQLite)
+        run: |
+          cd smart-crm
+          mkdir -p data
+          USE_SQLITE=1 uvicorn main:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8000/api/health && break
+            sleep 1
+          done
+
+      - name: Smoke test
+        run: bash scripts/smoke_test.sh http://127.0.0.1:8000
+
+      - name: Integrations probe
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/api/integrations/probe | grep -q probes
+          curl -sf http://127.0.0.1:8000/api/system/readiness | grep -q checklist
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build smart-crm image
+        run: docker build -t smart-crm:ci smart-crm

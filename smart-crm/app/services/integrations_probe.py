@@ -130,6 +130,40 @@ class IntegrationsProbeService:
                 "detail": str(exc)[:200],
             }
 
+    async def test_feishu_write(self) -> dict[str, Any]:
+        """写入一条测试记录验证表格字段映射。"""
+        if not self.feishu._configured():
+            return {"status": "mock", "detail": "飞书未配置"}
+        from app.models.entities import Lead
+
+        lead = Lead(
+            company_name="SMART CRM 连通性测试",
+            website_url="https://example.com/test",
+            domain="smart-crm-test.example.com",
+            industry="跨境电商",
+            keyword="api connectivity test",
+            exa_summary="自动测试记录，可删除",
+            firecrawl_summary="Feishu write probe",
+            outreach_email="Test outreach — 可删除此记录",
+            lead_score="B",
+            status="待联系",
+            preferred_channel="email",
+            language="es",
+            country_iso="MX",
+            city="CDMX",
+            category_l3="bakeware",
+            track="track_a",
+        )
+        try:
+            record_id = await self.feishu.create_record(lead, batch_id="probe-test")
+            return {
+                "status": "ok",
+                "record_id": record_id,
+                "detail": "测试记录已写入飞书，请在多维表格中删除「SMART CRM 连通性测试」",
+            }
+        except Exception as exc:
+            return {"status": "error", "detail": str(exc)[:300]}
+
     async def probe_resend(self) -> dict[str, Any]:
         key = self.config.get("resend_api_key")
         if not key:

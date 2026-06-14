@@ -119,6 +119,12 @@ async def integrations_probe():
     return await probe_svc.probe_all()
 
 
+@router.post("/integrations/feishu/test-write")
+async def feishu_test_write():
+    """写入一条测试记录，验证飞书表格字段映射（需登录）。"""
+    return await probe_svc.test_feishu_write()
+
+
 @router.get("/system/readiness")
 async def system_readiness(db: AsyncSession = Depends(get_db)):
     """第零期 + 1.5 期合并就绪检查（部署后一键验收）。"""

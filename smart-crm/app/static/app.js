@@ -254,6 +254,7 @@ async function loadIntegrationStatus() {
       已配置 ${st.configured_count}/${st.total}
       ${st.production_ready ? ' — 可跑真实试点' : ' — 请补齐 Exa/Firecrawl/OpenAI/飞书'}
     </span><br/><span class="text-xs">${rows}</span>`;
+    updateOnboardBanner(st.production_ready);
   } catch {
     el.textContent = '集成状态加载失败';
   }
@@ -267,10 +268,39 @@ document.getElementById('btn-probe-apis')?.addEventListener('click', async () =>
     const res = await api('/integrations/probe', { method: 'POST' });
     out.textContent = JSON.stringify(res, null, 2);
     loadIntegrationStatus();
+    updateOnboardBanner(res.production_ready);
   } catch (e) {
     out.textContent = String(e);
   }
 });
+
+document.getElementById('btn-feishu-test')?.addEventListener('click', async () => {
+  const token = localStorage.getItem('session_token');
+  if (!token) {
+    alert('请先登录 /admin（飞书写入测试需鉴权）');
+    window.location.href = '/admin';
+    return;
+  }
+  const out = document.getElementById('config-probe-result');
+  out.classList.remove('hidden');
+  out.textContent = '飞书写入测试中…';
+  try {
+    const res = await api('/integrations/feishu/test-write', { method: 'POST' });
+    out.textContent = JSON.stringify(res, null, 2);
+  } catch (e) {
+    out.textContent = String(e);
+  }
+});
+
+document.getElementById('btn-goto-config')?.addEventListener('click', () => {
+  document.querySelector('[data-tab="config"]')?.click();
+});
+
+function updateOnboardBanner(productionReady) {
+  const banner = document.getElementById('onboard-banner');
+  if (!banner) return;
+  banner.classList.toggle('hidden', !!productionReady);
+}
 
 async function loadConfig() {
   const cfg = await api('/config');
