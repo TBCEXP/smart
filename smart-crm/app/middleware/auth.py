@@ -44,6 +44,11 @@ PROTECTED_POST_PATHS = (
     "/api/catalog/documents/",
 )
 
+PROTECTED_PATCH_PREFIXES = (
+    "/api/orders/",
+    "/api/catalog/documents/",
+)
+
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
@@ -64,6 +69,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         needs_auth = any(path.startswith(p) for p in PROTECTED_POST_PATHS)
+        if request.method == "PATCH":
+            needs_auth = needs_auth or any(path.startswith(p) for p in PROTECTED_PATCH_PREFIXES)
         if not needs_auth:
             return await call_next(request)
 

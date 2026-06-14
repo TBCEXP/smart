@@ -61,6 +61,11 @@ echo "$SHARE" | python3 -m json.tool
 SHARE_URL=$(echo "$SHARE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('url',''))")
 echo ""
 
+echo ">>> [5b] 确认订单"
+curl -sf -X PATCH "${HDR[@]}" "$BASE/api/orders/$OID" \
+  -d '{"status":"confirmed"}' | python3 -c "import sys,json; d=json.load(sys.stdin); print('status:', d.get('status'))"
+echo ""
+
 if [ -n "$SHARE_URL" ]; then
   echo ">>> [6] 公开访问分享"
   curl -sf "$SHARE_URL" | head -3

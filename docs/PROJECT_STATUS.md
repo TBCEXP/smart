@@ -57,7 +57,9 @@ sudo bash scripts/setup_backup_cron.sh
 | 端点 | 说明 |
 |------|------|
 | `GET /api/health` | 版本、数据库模式 |
-| `GET /api/system/readiness` | 上线检查清单 |
+| `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2 checklist |
+| `GET /api/system/handoff-report` | Phase 0–2 交接 Markdown |
+| `PATCH /api/orders/{id}` | 确认/取消订单（需登录） |
 | `GET /api/pilot/report` | MX/CO 试点 + 里程碑 |
 | `GET /api/pilot/export?format=md` | 验收报告 Markdown |
 | `GET /docs/feishu-fields` | 飞书列名对照（Tab2） |

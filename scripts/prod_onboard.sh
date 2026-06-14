@@ -88,3 +88,17 @@ fi
 
 echo ""
 echo "=== 上线引导完成 ==="
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " Phase 1 + 2 — 员工业务 / 目录门户"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+bash "$SCRIPT_DIR/phase1_verify.sh" "$BASE"
+echo ""
+bash "$SCRIPT_DIR/phase2_verify.sh" "$BASE"
+if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
+  echo ""
+  bash "$SCRIPT_DIR/phase2_live.sh" "$BASE" || true
+fi
+echo ""
+echo "交接报告: curl -s $BASE/api/system/handoff-report -o handoff.md"

@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import (
@@ -29,6 +29,8 @@ from app.config import (
     FeishuWebhookRequest,
     OrderCreateRequest,
     OrderLineRequest,
+    OrderUpdateRequest,
+    CatalogDocumentUpdateRequest,
     OutreachLogRequest,
     OutreachReplyRequest,
     PilotRequest,
@@ -52,6 +54,7 @@ from app.models.entities import (
     Schedule,
     SalesOrder,
     SalesOrderLine,
+    ShareLink,
     StrategyAction,
     StrategySession,
     TradeShow,
@@ -176,13 +179,61 @@ async def feishu_test_write():
     return await probe_svc.test_feishu_write()
 
 
+async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
+    """Phase 1/2 业务数据统计。"""
+    cfg = config_store.load()
+    factories = (
+        await db.execute(
+            select(func.count()).select_from(Factory).where(Factory.active.is_(True))
+        )
+    ).scalar_one()
+    orders = (
+        await db.execute(select(func.count()).select_from(SalesOrder))
+    ).scalar_one()
+    leads = (await db.execute(select(func.count()).select_from(Lead))).scalar_one()
+    catalogs = (
+        await db.execute(
+            select(func.count())
+            .select_from(CatalogDocument)
+            .where(CatalogDocument.active.is_(True))
+        )
+    ).scalar_one()
+    shares = (
+        await db.execute(
+            select(func.count()).select_from(ShareLink).where(ShareLink.active.is_(True))
+        )
+    ).scalar_one()
+    portal_orders = (
+        await db.execute(
+            select(func.count()).select_from(SalesOrder).where(
+                SalesOrder.customer_email == "customer@example.com"
+            )
+        )
+    ).scalar_one()
+    return {
+        "phase1": {
+            "factories": factories,
+            "orders": orders,
+            "leads": leads,
+            "erp_configured": bool(cfg.get("tbcexp_api_url") and cfg.get("tbcexp_api_token")),
+        },
+        "phase2": {
+            "catalog_documents": catalogs,
+            "share_links": shares,
+            "r2_configured": bool(cfg.get("r2_account_id") and cfg.get("r2_access_key_id")),
+            "portal_demo_orders": portal_orders,
+        },
+    }
+
+
 @router.get("/system/readiness")
 async def system_readiness(db: AsyncSession = Depends(get_db)):
-    """第零期 + 1.5 期合并就绪检查（部署后一键验收）。"""
+    """第零期 + 1.5 期 + Phase 1/2 合并就绪检查（部署后一键验收）。"""
     cfg = config_store.load()
     integ = await integrations_status()
     mx = await pilot_svc.status(db, "MX")
     due = await geo_scheduler.get_due_schedules(db)
+    biz = await _phase_business_stats(db)
     return {
         "health": "ok",
         "integrations": integ,
@@ -200,13 +251,70 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "pilot_has_run": mx.get("latest_run") is not None,
             "schedules_queued": mx["totals"]["active_schedules"] > 0,
             "ready_for_live_pilot": integ.get("production_ready", False),
+            "phase1_factories_seeded": biz["phase1"]["factories"] >= 1,
+            "phase1_orders_api": True,
+            "phase2_catalog_seeded": biz["phase2"]["catalog_documents"] >= 1,
+            "phase2_portal_ready": biz["phase2"]["portal_demo_orders"] >= 1,
+            "phase2_r2_optional": biz["phase2"]["r2_configured"],
         },
+        "business": biz,
         "milestones": (await _phase15_milestones(db))["milestones"],
         "kb": {
             "db_mode": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
             "search_engine": "pgvector" if "postgresql" in ASYNC_DB_URL else "cosine_json",
         },
     }
+
+
+@router.get("/system/handoff-report")
+async def handoff_report(db: AsyncSession = Depends(get_db)):
+    """导出 Phase 0–2 交接 Markdown 报告。"""
+    ready = await system_readiness(db)
+    ms = ready.get("milestones", {})
+    biz = ready.get("business", {})
+    integ = ready.get("integrations", {})
+    lines = [
+        "# SMART CRM 交接报告",
+        "",
+        f"- 生成时间: {datetime.utcnow().isoformat()}Z",
+        f"- production_ready: {ready.get('production_ready')}",
+        f"- API Keys: {integ.get('configured_count', 0)}/{integ.get('total', 0)}",
+        "",
+        "## 里程碑 (Phase 1.5)",
+        "",
+        f"- 1.5.4 飞书≥30: {'✓' if ms.get('1_5_4_feishu_30') else '○'}",
+        f"- 1.5.5 WhatsApp≥5: {'✓' if ms.get('1_5_5_whatsapp_5') else '○'}",
+        f"- 1.5.6 Track C: {'✓' if ms.get('1_5_6_track_c') else '○'}",
+        f"- 1.5.7 KB召回: {'✓' if ms.get('1_5_7_kb_recall') else '○'}",
+        "",
+        "## Phase 1 员工业务",
+        "",
+        f"- 工厂: {biz.get('phase1', {}).get('factories', 0)}",
+        f"- 订单: {biz.get('phase1', {}).get('orders', 0)}",
+        f"- 线索: {biz.get('phase1', {}).get('leads', 0)}",
+        f"- ERP 已配置: {biz.get('phase1', {}).get('erp_configured')}",
+        "",
+        "## Phase 2 目录/门户",
+        "",
+        f"- 目录元数据: {biz.get('phase2', {}).get('catalog_documents', 0)}",
+        f"- 分享链接: {biz.get('phase2', {}).get('share_links', 0)}",
+        f"- R2 已配置: {biz.get('phase2', {}).get('r2_configured')}",
+        f"- 门户演示订单: {biz.get('phase2', {}).get('portal_demo_orders', 0)}",
+        "",
+        "## 验收命令",
+        "",
+        "```bash",
+        "bash scripts/run_all_tests.sh http://YOUR_HOST:8000",
+        "bash scripts/phase2_live.sh http://YOUR_HOST:8000",
+        "bash scripts/prod_onboard.sh http://YOUR_HOST:8000 --full",
+        "```",
+    ]
+    body = "\n".join(lines)
+    return PlainTextResponse(
+        body,
+        media_type="text/markdown",
+        headers={"Content-Disposition": "attachment; filename=smart-crm-handoff.md"},
+    )
 
 
 @router.get("/config")
@@ -441,6 +549,42 @@ async def catalog_upload_url(
     return {"document_id": doc.id, **result}
 
 
+@router.patch("/catalog/documents/{doc_id}")
+async def update_catalog_document(
+    doc_id: str,
+    req: CatalogDocumentUpdateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """更新目录元数据（授权邮箱、标题等）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    doc = await db.get(CatalogDocument, doc_id)
+    if not doc:
+        raise HTTPException(404, "Catalog not found")
+    if req.title:
+        doc.title = req.title
+    if req.title_en:
+        doc.title_en = req.title_en
+    if req.category_l3:
+        doc.category_l3 = req.category_l3
+    if req.authorized_emails is not None:
+        doc.authorized_emails = req.authorized_emails
+    if req.pages is not None:
+        doc.pages = req.pages
+    if req.file_size_mb is not None:
+        doc.file_size_mb = req.file_size_mb
+    if req.notes:
+        doc.notes = req.notes
+    if req.active is not None:
+        doc.active = req.active
+    await db.commit()
+    await db.refresh(doc)
+    factory = await db.get(Factory, doc.factory_id)
+    return catalog_dict(doc, factory, r2_svc)
+
+
 @router.post("/leads/{lead_id}/enrich-contact")
 async def enrich_lead_contact(lead_id: str, db: AsyncSession = Depends(get_db)):
     """Apollo 联系人补充（L4），写入 lead.contact_* 字段。"""
@@ -607,6 +751,39 @@ async def get_order(order_id: str, db: AsyncSession = Depends(get_db)):
     order = await db.get(SalesOrder, order_id)
     if not order:
         raise HTTPException(404, "Order not found")
+    lines = await db.execute(select(SalesOrderLine).where(SalesOrderLine.order_id == order_id))
+    return order_dict(order, list(lines.scalars().all()))
+
+
+@router.patch("/orders/{order_id}")
+async def update_order(
+    order_id: str,
+    req: OrderUpdateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """更新订单状态/客户信息（员工后台）。"""
+    order = await db.get(SalesOrder, order_id)
+    if not order:
+        raise HTTPException(404, "Order not found")
+    session = await session_from_request(request, db)
+    if is_sales_scoped(session) and order.assigned_to != session.email:
+        raise HTTPException(403, "Not your order")
+    if req.status:
+        allowed = {"draft", "confirmed", "cancelled", "shipped"}
+        if req.status not in allowed:
+            raise HTTPException(400, f"Invalid status, allowed: {allowed}")
+        order.status = req.status
+    if req.customer_name:
+        order.customer_name = req.customer_name
+    if req.customer_email:
+        order.customer_email = req.customer_email
+    if req.notes:
+        order.notes = req.notes
+    if req.assigned_to and (not session or session.role == "admin"):
+        order.assigned_to = req.assigned_to
+    await db.commit()
+    await db.refresh(order)
     lines = await db.execute(select(SalesOrderLine).where(SalesOrderLine.order_id == order_id))
     return order_dict(order, list(lines.scalars().all()))
 

@@ -265,3 +265,22 @@ class OrderLineRequest(BaseModel):
     unit_price: float = 0.0
     factory_id: str = ""
     notes: str = ""
+
+
+class OrderUpdateRequest(BaseModel):
+    status: str = ""
+    customer_name: str = ""
+    customer_email: str = ""
+    notes: str = ""
+    assigned_to: str = ""
+
+
+class CatalogDocumentUpdateRequest(BaseModel):
+    title: str = ""
+    title_en: str = ""
+    category_l3: str = ""
+    authorized_emails: list[str] | None = None
+    pages: int | None = None
+    file_size_mb: float | None = None
+    notes: str = ""
+    active: bool | None = None
