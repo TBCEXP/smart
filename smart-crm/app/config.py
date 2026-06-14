@@ -158,6 +158,16 @@ class ContentBatchGenerateRequest(BaseModel):
     target_audience: str = "hospitality_wholesaler"
 
 
+class MxPilotRequest(BaseModel):
+    city: str = "CDMX"
+    category_l3: str = "bakeware"
+    cities: list[str] = Field(default_factory=lambda: ["CDMX", "Monterrey"])
+    l3_codes: list[str] = Field(default_factory=lambda: ["bakeware", "cookware-commercial", "flatware"])
+    anchor_limit: int = 2
+    leads_per_task: int = 5
+    enqueue_track_a: bool = True
+
+
 class ContentUpdateRequest(BaseModel):
     title: str = ""
     slug: str = ""

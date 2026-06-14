@@ -4,6 +4,7 @@ import asyncio
 import csv
 import io
 import json
+import zipfile
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -22,7 +23,7 @@ from app.config import (
     ContentGenerateRequest,
     ContentUpdateRequest,
     FeishuWebhookRequest,
-    ImportCsvRequest,
+    MxPilotRequest,
     RunRequest,
     ScheduleRequest,
     SendEmailRequest,
@@ -48,6 +49,7 @@ from app.services.content_studio import CONTENT_TYPES, ContentStudioService
 from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
+from app.services.mx_pilot import MxPilotService
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 
 router = APIRouter()
@@ -61,6 +63,7 @@ tradeshow_svc = TradeShowService()
 auth_svc = AuthService()
 kb_svc = KnowledgeBaseService()
 content_svc = ContentStudioService()
+mx_pilot_svc = MxPilotService()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -614,6 +617,32 @@ async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     return {"status": "indexed", "lead_id": lead_id}
 
 
+# --- Phase 1.5 MX Pilot ---
+
+@router.get("/pilot/mx/status")
+async def mx_pilot_status(db: AsyncSession = Depends(get_db)):
+    return await mx_pilot_svc.status(db)
+
+
+@router.post("/pilot/mx/start")
+async def mx_pilot_start(req: MxPilotRequest, db: AsyncSession = Depends(get_db)):
+    return await mx_pilot_svc.run(
+        db,
+        city=req.city,
+        category_l3=req.category_l3,
+        cities=req.cities,
+        l3_codes=req.l3_codes,
+        anchor_limit=req.anchor_limit,
+        leads_per_task=req.leads_per_task,
+        enqueue_track_a=req.enqueue_track_a,
+    )
+
+
+@router.get("/pilot/mx/runs")
+async def mx_pilot_runs():
+    return mx_pilot_svc.list_runs()
+
+
 # --- Tab8 Content Studio (AI 内容工坊) ---
 
 @router.get("/content/types")
@@ -677,6 +706,49 @@ async def get_content_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
         "content_type": drafts[0].content_type,
         "drafts": [content_svc.to_dict(d) for d in drafts],
     }
+
+
+def _draft_to_markdown(draft: ContentDraft) -> str:
+    return f"""---
+title: {draft.title}
+slug: {draft.slug}
+meta_title: {draft.meta_title}
+meta_description: {draft.meta_description}
+keywords: {', '.join(draft.meta_keywords or [])}
+language: {draft.language}
+---
+
+# {draft.h1 or draft.title}
+
+{draft.body_markdown}
+"""
+
+
+@router.get("/content/batches/{batch_id}/export.zip")
+async def export_content_batch_zip(batch_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(ContentDraft)
+        .where(ContentDraft.batch_id == batch_id)
+        .order_by(ContentDraft.language)
+    )
+    drafts = result.scalars().all()
+    if not drafts:
+        raise HTTPException(404, "Batch not found")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for draft in drafts:
+            filename = f"{draft.language}-{draft.slug or draft.id}.md"
+            zf.writestr(filename, _draft_to_markdown(draft))
+    buf.seek(0)
+    product_slug = (drafts[0].slug or drafts[0].product_name or batch_id)[:40]
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{product_slug}-multilang.zip"'
+        },
+    )
 
 
 @router.get("/content/drafts")
@@ -750,19 +822,7 @@ async def export_content_md(draft_id: str, db: AsyncSession = Depends(get_db)):
     draft = await db.get(ContentDraft, draft_id)
     if not draft:
         raise HTTPException(404, "Draft not found")
-    md = f"""---
-title: {draft.title}
-slug: {draft.slug}
-meta_title: {draft.meta_title}
-meta_description: {draft.meta_description}
-keywords: {', '.join(draft.meta_keywords or [])}
-language: {draft.language}
----
-
-# {draft.h1 or draft.title}
-
-{draft.body_markdown}
-"""
+    md = _draft_to_markdown(draft)
     return StreamingResponse(
         iter([md]),
         media_type="text/markdown",

@@ -162,11 +162,12 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 当前分支 `cursor/brainstorm-lab-c2f3` 下一步 **只做** 以下项（不新增 Tab）：
 
 1. ✅ 本路线图文档
-2. 🔲 `feishu_client.py` — 真实写入 10+ 扩展字段（含首选渠道、L3、国家）
-3. 🔲 Pipeline `confirm` / `auto` 模式对接飞书
-4. 🔲 Auth 中间件保护 `/api/config`、`/api/run` 等管理接口
-5. 🔲 `scripts/preflight.sh` — 部署前检查清单
-6. 🔲 embedding 写入 + `GET /api/kb/search` 语义检索（1.5.7 提前打底）
+2. ✅ `feishu_client.py` — 真实写入 10+ 扩展字段（含首选渠道、L3、国家）
+3. ✅ Pipeline `confirm` / `auto` 模式对接飞书
+4. ✅ Auth 中间件保护 `/api/config`、`/api/confirm` 等管理接口
+5. ✅ `scripts/preflight.sh` — 部署前检查清单
+6. ✅ embedding 写入 + `GET /api/kb/search` 语义检索（1.5.7 提前打底）
+7. ✅ Phase 1.5 MX 试点向导 — `POST /api/pilot/mx/start` + Tab5 UI + `scripts/mx_pilot.sh`
 
 **用户需配合（阻塞项）：**
 - [ ] RackNerd `df -h` / `free -h` 输出

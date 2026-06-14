@@ -59,10 +59,11 @@ if [ -n "$SID" ]; then
   fi
 fi
 
-# 6. Run batch (mock mode OK)
+# 6. Run batch (mock mode OK) — unique keyword avoids duplicate-domain skip
+UNIQ_KW="mayorista moldes repostería CDMX smoke-$(date +%s)"
 RUN=$(curl -sf -X POST "$BASE/api/run" \
   -H "Content-Type: application/json" \
-  -d '{"keyword":"mayorista moldes repostería CDMX","industry":"跨境电商","count":2,"country_iso":"MX","city":"CDMX","category_l3":"bakeware"}')
+  -d "{\"keyword\":\"$UNIQ_KW\",\"industry\":\"跨境电商\",\"count\":2,\"country_iso\":\"MX\",\"city\":\"CDMX\",\"category_l3\":\"bakeware\"}")
 if echo "$RUN" | grep -q 'batch_id'; then
   ok "POST /api/run"
   BID=$(echo "$RUN" | python3 -c "import sys,json; print(json.load(sys.stdin)['batch_id'])" 2>/dev/null || echo "")
@@ -131,6 +132,21 @@ if echo "$CTB" | grep -q 'batch_id' && echo "$CTB" | grep -q '"language":"es"' &
   ok "POST /api/content/generate-batch"
 else
   fail "POST /api/content/generate-batch"
+fi
+
+# 12. MX Pilot (Phase 1.5)
+if curl -sf "$BASE/api/pilot/mx/status" | grep -q 'phase'; then
+  ok "GET /api/pilot/mx/status"
+else
+  fail "GET /api/pilot/mx/status"
+fi
+PILOT=$(curl -sf -X POST "$BASE/api/pilot/mx/start" \
+  -H "Content-Type: application/json" \
+  -d '{"city":"CDMX","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
+if echo "$PILOT" | grep -q 'pilot_id' && echo "$PILOT" | grep -q 'session_id'; then
+  ok "POST /api/pilot/mx/start"
+else
+  fail "POST /api/pilot/mx/start"
 fi
 
 echo ""
