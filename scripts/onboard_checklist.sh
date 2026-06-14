@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 生产阻塞清单 — 打印人工待办与可复制命令
+# 生产阻塞清单 — API 动态检测 + 人工待办命令
 # 用法: bash scripts/onboard_checklist.sh [BASE_URL]
 set -euo pipefail
 
@@ -12,72 +12,59 @@ echo ""
 
 if curl -sf "$BASE/api/health" >/dev/null 2>&1; then
   VER=$(curl -sf "$BASE/api/health" | python3 -c "import sys,json; print(json.load(sys.stdin).get('version','?'))" 2>/dev/null || echo "?")
-  INT=$(curl -sf "$BASE/api/integrations/status" 2>/dev/null || echo '{}')
-  CC=$(echo "$INT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('configured_count',0))" 2>/dev/null || echo 0)
-  PR=$(echo "$INT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('production_ready',False))" 2>/dev/null || echo False)
+  READY=$(curl -sf "$BASE/api/system/readiness" 2>/dev/null || echo '{}')
   echo "服务: $BASE (version $VER)"
-  echo "API Key: $CC/9 configured | production_ready=$PR"
+  echo "$READY" | BASE="$BASE" python3 -c "
+import sys, json, os
+d = json.load(sys.stdin)
+b = d.get('production_blockers', {})
+base = os.environ.get('BASE', 'http://127.0.0.1:8000')
+print('production_ready:', d.get('production_ready'))
+print('live_ready:', b.get('live_ready'))
+print('blocking_count:', b.get('blocking_count'))
+print('')
+print('## 自动检测项')
+for item in b.get('detected', []):
+    mark = '✓' if item.get('done') else ('✗' if item.get('blocking') else '○')
+    print(f\"  {mark} {item.get('label')}: {item.get('hint', '')}\")
+print('')
+print('## 人工待办')
+for item in b.get('manual', []):
+    print(f\"  [ ] {item.get('label')}: {item.get('hint', '')}\")
+if b.get('live_ready'):
+    print('')
+    print(f'✓ 可执行: bash scripts/prod_onboard.sh {base} --full')
+" 2>/dev/null || true
   echo ""
 else
   echo "服务: 未运行 ($BASE)"
+  echo "启动: cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &"
   echo ""
 fi
 
 cat <<'EOF'
-## 1. VPS 基础设施
+## 操作步骤
 
-- [ ] RackNerd VPS（Ubuntu 22.04+，建议 2GB+ RAM）
-- [ ] 记录公网 IP: curl -s ifconfig.me
-
+### 1. VPS
 ```bash
-# VPS 上（root）
 sudo bash scripts/bootstrap_vps.sh
 bash scripts/upgrade.sh
-bash scripts/deploy_verify.sh http://127.0.0.1:8000
+bash scripts/ready.sh http://127.0.0.1:8000
 ```
 
-## 2. GitHub Secrets（自动部署）
+### 2. GitHub Secrets
+`VPS_HOST` · `VPS_USER` · `VPS_SSH_KEY` → 仓库 Settings → Actions
 
-仓库 Settings → Secrets and variables → Actions:
-
-| Secret | 内容 |
-|--------|------|
-| VPS_HOST | VPS 公网 IP 或域名 |
-| VPS_USER | SSH 用户（如 root） |
-| VPS_SSH_KEY | 部署私钥全文 |
-
-```bash
-# VPS 生成密钥
-ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/github_deploy -N ""
-cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
-cat ~/.ssh/github_deploy   # → 复制到 GitHub Secret
-```
-
-## 3. 域名 + HTTPS
-
-- [ ] DNS A 记录: crm.yourdomain.com → VPS IP
-
+### 3. HTTPS
 ```bash
 sudo bash scripts/setup_https.sh crm.yourdomain.com
 sudo bash scripts/setup_backup_cron.sh
 ```
 
-## 4. Tab2 API Key（≥4 → production_ready）
+### 4. Tab2 API Key（≥4）
+/admin → Tab2 → Exa / Firecrawl / OpenAI / 飞书 →「检测连通性」
 
-| Key | 用途 |
-|-----|------|
-| Exa | Track A 获客 |
-| Firecrawl | 网页抓取 |
-| OpenAI | LLM + KB |
-| 飞书 | 线索同步 |
-| R2 | 目录/大文件（推荐） |
-| TBCEXP ERP | 订单同步（可选） |
-| Resend | 分享邮件（可选） |
-
-浏览器: /admin → Tab2 → 配置 →「检测连通性」
-
-## 5. 全量验收
-
+### 5. 全量验收
 ```bash
 bash scripts/go_live.sh https://crm.yourdomain.com
 bash scripts/prod_onboard.sh https://crm.yourdomain.com --full

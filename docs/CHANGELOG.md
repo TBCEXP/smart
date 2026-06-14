@@ -48,6 +48,7 @@
 
 ### Added (final polish)
 
+- `onboard_checklist.sh` — 从 `production_blockers` API 动态显示阻塞项
 - `deploy.yml` — Secrets 未配置时跑 `preflight-only` + 上线提示
 - 文档统一：`ready` → `go_live` → `export_blockers` 为主路径
 - `VERIFICATION_CHECKLIST` / `PRODUCTION_READY` / `VPS_ONBOARDING` 同步
