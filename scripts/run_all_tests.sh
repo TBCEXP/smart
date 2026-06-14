@@ -43,6 +43,9 @@ if [ -f "$ROOT/smart-crm/data/auth_emails.log" ]; then
   echo ""
   echo ">>> Phase 2 Live（OTP）"
   bash "$SCRIPT_DIR/phase2_live.sh" "$BASE" || echo "  (phase2_live 失败 — 检查 auth_emails.log)"
+  echo ""
+  echo ">>> Phase 3 Live（OTP）"
+  bash "$SCRIPT_DIR/phase3_live.sh" "$BASE" || echo "  (phase3_live 失败 — 检查 auth_emails.log)"
 fi
 
 echo ""

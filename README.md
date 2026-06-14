@@ -20,7 +20,7 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 
 | 脚本 / 页面 | 说明 |
 |-------------|------|
-| `/admin/dashboard` | 线索 / 工厂 / 订单 / 品类 / **工厂目录** |
+| `/admin/dashboard` | 线索 / 工厂 / 订单 / 品类 / **工厂目录** / **大文件** |
 | `bash scripts/phase1_verify.sh` | Phase 1 API 验收 |
 | `bash scripts/phase1_live.sh` | OTP 登录后创建订单 + 分享 |
 
@@ -33,7 +33,17 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | `bash scripts/phase2_verify.sh` | 目录元数据 + R2 + Apollo 验收 |
 | `bash scripts/phase2_live.sh` | OTP 门户 + 目录分享验收 |
 | `bash scripts/upload_catalog_r2.sh` | R2 PDF 上传 |
-| `GET /api/system/handoff-report` | Phase 0–2 交接 Markdown |
+| `GET /api/system/handoff-report` | Phase 0–3 交接 Markdown |
+
+## Phase 3 大文件 / 分享通知
+
+| 脚本 / 页面 | 说明 |
+|-------------|------|
+| `/admin/dashboard` → 大文件 | 元数据、R2 上传 URL、分享+邮件通知 |
+| `/s/{token}` | 支持 `resource_type=file` 公开下载 |
+| `bash scripts/phase3_verify.sh` | 大文件 API + 通知 + readiness 验收 |
+| `bash scripts/phase3_live.sh` | OTP 登录后创建/分享/通知全流程 |
+| `docs/PHASE3_FILES.md` | Phase 3 功能说明 |
 
 ## Phase 1.5 西语试点
 

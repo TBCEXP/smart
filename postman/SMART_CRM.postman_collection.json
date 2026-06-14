@@ -503,6 +503,63 @@
           }
         }
       ]
+    },
+    {
+      "name": "10 Phase 3 Files & Notify",
+      "item": [
+        {
+          "name": "List File Transfers",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/files/transfers"
+          }
+        },
+        {
+          "name": "Create File Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Packaging ZIP\",\"customer_email\":\"customer@example.com\",\"file_size_mb\":45,\"content_type\":\"application/zip\"}"
+            },
+            "url": "{{base_url}}/api/files/transfers"
+          }
+        },
+        {
+          "name": "File Upload URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"update_file_url\":true}"
+            },
+            "url": "{{base_url}}/api/files/transfers/REPLACE_FILE_ID/upload-url"
+          }
+        },
+        {
+          "name": "Create Share Link (file + notify)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resource_type\":\"file\",\"resource_id\":\"REPLACE_FILE_ID\",\"customer_email\":\"customer@example.com\",\"notify_email\":true,\"notify_message\":\"您的文件已就绪\",\"ttl_days\":14}"
+            },
+            "url": "{{base_url}}/api/share/links"
+          }
+        }
+      ]
     }
   ]
 }

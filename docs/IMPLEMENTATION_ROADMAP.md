@@ -44,7 +44,7 @@
 | Tab9 试点看板 + WhatsApp 触达 | 1.5.5 | **已实现** API + UI + `outreach_pilot.sh` | 人工发送 WhatsApp |
 | RackNerd 实机部署 | §0C Docker+Nginx | 脚本齐全 + CI，`bootstrap_vps.sh` | **未在 VPS 跑通** |
 | 每日备份 | 0.7 | `scripts/backup_daily.sh` | 需配置 cron |
-| 工厂目录/报价/大文件/包装 AI | 第二期–第五期 | **未开始** | 符合分期，勿提前做 |
+| 工厂目录/报价/大文件 | 第二期–第三期 | **Phase 2/3 已落地**（R2 + 分享通知）；包装 AI 未开始 |
 
 **结论：** 功能骨架与 1.5 验收脚本已齐，**不等于生产验收通过**。  
 科学做法：第零期 VPS 部署 + 真实 API Key → 跑 1.5 验收脚本 → 再进第一期门户。
@@ -104,9 +104,10 @@
 
 ---
 
-### 第三期 — 大文件中转
+### 第三期 — 大文件中转 ✅（已落地）
 
-- 复用分享引擎 + tus + 邮件通知
+- 复用分享引擎 + R2 预签名上传 + 邮件通知（Resend / log 回退）
+- 验收：`bash scripts/phase3_verify.sh`
 
 ---
 
