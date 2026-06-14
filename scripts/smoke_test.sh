@@ -186,6 +186,42 @@ else
   fail "GET /api/pilot/report"
 fi
 
+# 16. Stats overview + outreach (Tab9 / 1.5.5)
+if curl -sf "$BASE/api/stats/overview" | grep -q 'track_c'; then
+  ok "GET /api/stats/overview"
+else
+  fail "GET /api/stats/overview"
+fi
+OUT=$(curl -sf -X POST "$BASE/api/outreach/log" \
+  -H "Content-Type: application/json" \
+  -d '{"company_name":"Smoke Test Co","channel":"whatsapp","country_iso":"MX","message_preview":"Hola smoke test"}')
+if echo "$OUT" | grep -q '"status":"logged"'; then
+  ok "POST /api/outreach/log"
+  LOG_ID=$(echo "$OUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
+else
+  fail "POST /api/outreach/log"
+  LOG_ID=""
+fi
+if curl -sf "$BASE/api/outreach/logs" | grep -q 'Smoke Test Co'; then
+  ok "GET /api/outreach/logs"
+else
+  fail "GET /api/outreach/logs"
+fi
+if [ -n "$LOG_ID" ]; then
+  if curl -sf -X PATCH "$BASE/api/outreach/logs/$LOG_ID" \
+    -H "Content-Type: application/json" \
+    -d '{"replied":true,"reply_notes":"smoke reply"}' | grep -q '"replied":true'; then
+    ok "PATCH /api/outreach/logs/{id}"
+  else
+    fail "PATCH /api/outreach/logs/{id}"
+  fi
+fi
+if curl -sf "$BASE/api/outreach/stats" | grep -q 'whatsapp_sent'; then
+  ok "GET /api/outreach/stats"
+else
+  fail "GET /api/outreach/stats"
+fi
+
 echo ""
 echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="
 [ "$FAIL" -eq 0 ]

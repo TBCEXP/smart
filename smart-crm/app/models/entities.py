@@ -249,3 +249,21 @@ class ContentDraft(Base):
     created_by: Mapped[str] = mapped_column(String(256), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class OutreachLog(Base):
+    """人工触达记录（WhatsApp / 邮件），用于 1.5.5 回复率跟踪。"""
+
+    __tablename__ = "outreach_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    lead_id: Mapped[Optional[str]] = mapped_column(String(36), index=True)
+    company_name: Mapped[str] = mapped_column(String(512), default="")
+    channel: Mapped[str] = mapped_column(String(16), default="whatsapp")
+    country_iso: Mapped[str] = mapped_column(String(8), default="")
+    message_preview: Mapped[str] = mapped_column(String(512), default="")
+    sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    replied: Mapped[bool] = mapped_column(Boolean, default=False)
+    reply_notes: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

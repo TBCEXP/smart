@@ -184,3 +184,19 @@ class ContentUpdateRequest(BaseModel):
     body_html: str = ""
     bullet_features: list[str] = Field(default_factory=list)
     status: str = "draft"
+
+
+class OutreachLogRequest(BaseModel):
+    lead_id: str = ""
+    company_name: str = ""
+    channel: str = "whatsapp"
+    country_iso: str = ""
+    message_preview: str = ""
+    replied: bool = False
+    reply_notes: str = ""
+    created_by: str = ""
+
+
+class OutreachReplyRequest(BaseModel):
+    replied: bool = True
+    reply_notes: str = ""

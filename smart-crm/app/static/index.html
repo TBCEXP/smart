@@ -29,6 +29,7 @@
       <button data-tab="brainstorm" class="tab-btn">Tab6 Brainstorm</button>
       <button data-tab="import" class="tab-btn">Tab7 海关导入</button>
       <button data-tab="content" class="tab-btn">Tab8 内容工坊</button>
+      <button data-tab="dashboard" class="tab-btn">Tab9 试点看板</button>
     </nav>
   </header>
 
@@ -242,6 +243,22 @@
           <div id="ct-result" class="space-y-3 text-sm">
             <p class="text-slate-500">填写左侧表单后点击「AI 生成内容」</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab9 Pilot Dashboard -->
+    <section id="tab-dashboard" class="tab-panel hidden">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="dash-cards"></div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card">
+          <h3 class="font-semibold text-emerald-400 mb-3">WhatsApp 触达记录 (1.5.5)</h3>
+          <div id="outreach-stats" class="text-sm text-slate-400 mb-3"></div>
+          <div id="outreach-list" class="space-y-2 text-xs max-h-64 overflow-y-auto"></div>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold text-emerald-400 mb-3">试点里程碑</h3>
+          <pre id="dash-milestones" class="text-xs bg-slate-900 rounded p-3 overflow-auto max-h-64"></pre>
         </div>
       </div>
     </section>

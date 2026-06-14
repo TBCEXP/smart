@@ -23,6 +23,8 @@ from app.config import (
     ContentGenerateRequest,
     ContentUpdateRequest,
     FeishuWebhookRequest,
+    OutreachLogRequest,
+    OutreachReplyRequest,
     PilotRequest,
     RunRequest,
     ScheduleRequest,
@@ -37,6 +39,7 @@ from app.models.entities import (
     ImportLead,
     Lead,
     MarketProductIntel,
+    OutreachLog,
     Schedule,
     StrategyAction,
     StrategySession,
@@ -711,6 +714,130 @@ async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     text = f"{lead.company_name} {lead.exa_summary} {lead.firecrawl_summary} {lead.keyword}"
     await kb_svc.index_lead(lead_id, text, db)
     return {"status": "indexed", "lead_id": lead_id}
+
+
+@router.get("/stats/overview")
+async def stats_overview(db: AsyncSession = Depends(get_db)):
+    """试点看板汇总：线索、触达、海关、试点进度。"""
+    leads = await db.execute(select(Lead))
+    lead_list = leads.scalars().all()
+    feishu_synced = sum(1 for l in lead_list if l.feishu_record_id)
+    outreach = await db.execute(select(OutreachLog))
+    logs = outreach.scalars().all()
+    wa_sent = sum(1 for o in logs if o.channel == "whatsapp")
+    wa_replied = sum(1 for o in logs if o.channel == "whatsapp" and o.replied)
+    imports = await db.execute(select(ImportLead))
+    import_list = imports.scalars().all()
+    matched = sum(1 for i in import_list if i.domain)
+    mx = await pilot_svc.status(db, "MX")
+    co = await pilot_svc.status(db, "CO")
+    return {
+        "leads": {
+            "total": len(lead_list),
+            "feishu_synced": feishu_synced,
+            "by_country": _count_by(lead_list, "country_iso"),
+        },
+        "outreach": {
+            "total": len(logs),
+            "whatsapp_sent": wa_sent,
+            "whatsapp_replied": wa_replied,
+            "reply_rate": round(wa_replied / wa_sent, 2) if wa_sent else 0,
+            "target_1_5_5": "≥5 家 WhatsApp 手动发送",
+        },
+        "track_c": {
+            "imported": len(import_list),
+            "domain_matched": matched,
+            "match_rate": round(matched / len(import_list), 2) if import_list else 0,
+            "target_1_5_6": "CSV 50 条域名匹配率 >60%",
+        },
+        "pilot": {
+            "MX": mx.get("latest_run", {}).get("acceptance") if mx.get("latest_run") else None,
+            "CO": co.get("latest_run", {}).get("acceptance") if co.get("latest_run") else None,
+        },
+    }
+
+
+def _count_by(items, attr: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        key = getattr(item, attr, "") or "unknown"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+@router.post("/outreach/log")
+async def log_outreach(req: OutreachLogRequest, db: AsyncSession = Depends(get_db)):
+    lead = await db.get(Lead, req.lead_id) if req.lead_id else None
+    record = OutreachLog(
+        lead_id=req.lead_id or None,
+        company_name=req.company_name or (lead.company_name if lead else ""),
+        channel=req.channel,
+        country_iso=req.country_iso or (lead.country_iso if lead else ""),
+        message_preview=(req.message_preview or (lead.whatsapp_intro[:500] if lead else "")),
+        replied=req.replied,
+        reply_notes=req.reply_notes,
+        created_by=req.created_by,
+    )
+    if lead and req.channel == "whatsapp":
+        lead.status = "已联系"
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return {"id": record.id, "status": "logged", "company_name": record.company_name}
+
+
+@router.get("/outreach/logs")
+async def list_outreach_logs(
+    channel: str = "",
+    country_iso: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    q = select(OutreachLog).order_by(OutreachLog.sent_at.desc())
+    if channel:
+        q = q.where(OutreachLog.channel == channel)
+    if country_iso:
+        q = q.where(OutreachLog.country_iso == country_iso.upper())
+    result = await db.execute(q.limit(100))
+    return [
+        {
+            "id": o.id,
+            "lead_id": o.lead_id,
+            "company_name": o.company_name,
+            "channel": o.channel,
+            "country_iso": o.country_iso,
+            "sent_at": o.sent_at.isoformat() if o.sent_at else None,
+            "replied": o.replied,
+            "reply_notes": o.reply_notes,
+        }
+        for o in result.scalars().all()
+    ]
+
+
+@router.patch("/outreach/logs/{log_id}")
+async def update_outreach_reply(
+    log_id: str, req: OutreachReplyRequest, db: AsyncSession = Depends(get_db)
+):
+    record = await db.get(OutreachLog, log_id)
+    if not record:
+        raise HTTPException(404, "Outreach log not found")
+    record.replied = req.replied
+    record.reply_notes = req.reply_notes
+    await db.commit()
+    return {"id": log_id, "replied": record.replied}
+
+
+@router.get("/outreach/stats")
+async def outreach_stats(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(OutreachLog))
+    logs = result.scalars().all()
+    wa = [o for o in logs if o.channel == "whatsapp"]
+    return {
+        "total": len(logs),
+        "whatsapp_sent": len(wa),
+        "whatsapp_replied": sum(1 for o in wa if o.replied),
+        "reply_rate": round(sum(1 for o in wa if o.replied) / len(wa), 2) if wa else 0,
+        "milestone_1_5_5_met": len(wa) >= 5,
+    }
 
 
 # --- Phase 1.5 Latam Pilot (MX / CO) ---

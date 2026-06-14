@@ -56,6 +56,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'history') loadBatches();
     if (btn.dataset.tab === 'brainstorm') loadBrainstormSessions();
     if (btn.dataset.tab === 'content') loadContentHistory();
+    if (btn.dataset.tab === 'dashboard') loadDashboard();
     if (btn.dataset.tab === 'config') { loadConfig(); loadIntegrationStatus(); }
   });
 });
@@ -386,9 +387,10 @@ function renderLeadCard(lead) {
       <pre class="whitespace-pre-wrap mt-2 text-xs">${lead.outreach_email}</pre>
     </details>
     ${lead.whatsapp_intro ? `<details class="text-sm mt-2"><summary class="cursor-pointer text-amber-400">WhatsApp 话术</summary><pre class="whitespace-pre-wrap mt-2 text-xs">${lead.whatsapp_intro}</pre></details>` : ''}
-    <div class="flex gap-2 mt-3">
+    <div class="flex gap-2 mt-3 flex-wrap">
       <button class="btn-secondary text-xs" onclick="confirmLead('${lead.id}')">确认入库</button>
       <button class="btn-secondary text-xs" onclick="regenLead('${lead.id}')">重新生成</button>
+      ${lead.whatsapp_intro ? `<button class="btn-secondary text-xs text-amber-400" onclick="logWhatsApp('${lead.id}')">记录 WhatsApp</button>` : ''}
     </div>`;
   grid.prepend(div);
 }
@@ -661,6 +663,123 @@ document.getElementById('btn-match-domains').onclick = async () => {
   const res = await api('/import/match-domains', { method: 'POST' });
   alert(`匹配 ${res.matched} 个域名`);
   loadImport();
+};
+
+// Tab9 Pilot Dashboard
+async function loadDashboard() {
+  const cardsEl = document.getElementById('dash-cards');
+  try {
+    const [overview, logs, report] = await Promise.all([
+      api('/stats/overview'),
+      api('/outreach/logs'),
+      api('/pilot/report'),
+    ]);
+    const cards = [
+      {
+        title: '线索总数',
+        value: overview.leads?.total ?? 0,
+        sub: `飞书同步 ${overview.leads?.feishu_synced ?? 0}`,
+      },
+      {
+        title: 'WhatsApp 发送',
+        value: overview.outreach?.whatsapp_sent ?? 0,
+        sub: overview.outreach?.target_1_5_5 ?? '',
+      },
+      {
+        title: '回复率',
+        value: `${Math.round((overview.outreach?.reply_rate ?? 0) * 100)}%`,
+        sub: `已回复 ${overview.outreach?.whatsapp_replied ?? 0} 家`,
+      },
+      {
+        title: '海关导入',
+        value: overview.track_c?.imported ?? 0,
+        sub: `域名匹配 ${Math.round((overview.track_c?.match_rate ?? 0) * 100)}%`,
+      },
+      {
+        title: 'MX 试点',
+        value: overview.pilot?.MX ? '已验收' : '待完成',
+        sub: report.milestones?.mx_queued ? 'Track A 已入队' : '未入队',
+      },
+      {
+        title: 'CO 试点',
+        value: report.milestones?.co_started ? '已启动' : '未启动',
+        sub: overview.pilot?.CO ? '已验收' : '待完成',
+      },
+    ];
+    cardsEl.innerHTML = cards
+      .map(
+        (c) =>
+          `<div class="card">
+            <p class="text-xs text-slate-400">${c.title}</p>
+            <p class="text-2xl font-bold text-emerald-400 mt-1">${c.value}</p>
+            ${c.sub ? `<p class="text-xs text-slate-500 mt-1">${c.sub}</p>` : ''}
+          </div>`
+      )
+      .join('');
+
+    const waSent = overview.outreach?.whatsapp_sent ?? 0;
+    const milestone =
+      waSent >= 5 ? '✓ 1.5.5 达标 (≥5)' : `○ 还需 ${5 - waSent} 条 WhatsApp`;
+    document.getElementById('outreach-stats').innerHTML =
+      `已发送 ${waSent} · 已回复 ${overview.outreach?.whatsapp_replied ?? 0} · ${milestone}`;
+
+    document.getElementById('outreach-list').innerHTML = (logs || []).length
+      ? logs
+          .map(
+            (o) =>
+              `<div class="p-2 bg-slate-800 rounded flex justify-between items-center gap-2">
+                <span class="truncate">${o.company_name} · ${o.country_iso || '—'}</span>
+                <span class="shrink-0">
+                  ${
+                    o.replied
+                      ? '<span class="text-emerald-400">已回复</span>'
+                      : `<button class="text-xs text-amber-400" onclick="markReplied('${o.id}')">标记回复</button>`
+                  }
+                </span>
+              </div>`
+          )
+          .join('')
+      : '<p class="text-slate-500">暂无触达记录 — 在 Tab3 线索卡片点击「记录 WhatsApp」</p>';
+
+    document.getElementById('dash-milestones').textContent = JSON.stringify(
+      { milestones: report.milestones, countries: report.countries },
+      null,
+      2
+    );
+  } catch (e) {
+    cardsEl.innerHTML = `<p class="text-red-400 col-span-3">看板加载失败: ${e}</p>`;
+  }
+}
+
+window.logWhatsApp = async (leadId) => {
+  const preview = prompt('WhatsApp 消息摘要（可选，留空使用系统话术）') || '';
+  try {
+    await api('/outreach/log', {
+      method: 'POST',
+      body: {
+        lead_id: leadId,
+        channel: 'whatsapp',
+        message_preview: preview,
+      },
+    });
+    alert('已记录 WhatsApp 发送');
+    loadDashboard();
+  } catch (e) {
+    alert(`记录失败: ${e}`);
+  }
+};
+
+window.markReplied = async (logId) => {
+  const notes = prompt('回复备注（可选）') || '';
+  try {
+    await api(`/outreach/logs/${logId}`, {
+      method: 'PATCH',
+      body: { replied: true, reply_notes: notes },
+    });
+    loadDashboard();
+  } catch (e) {
+    alert(`更新失败: ${e}`);
+  }
 };
 
 async function loadReadinessBadge() {

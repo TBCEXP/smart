@@ -49,11 +49,28 @@ async def scheduler_loop() -> None:
                             language=schedule.language,
                             track=schedule.track,
                         )
-                        async for _ in stream:
-                            pass
-                        schedule.last_run_at = now
-                        schedule.next_run_at = now + timedelta(hours=schedule.interval_hours)
-                        await db.commit()
+
+                        async def _run_schedule(
+                            batch_stream, sid: str, bid: str, run_at: datetime
+                        ) -> None:
+                            try:
+                                async for _ in batch_stream:
+                                    pass
+                                async with get_session() as sdb:
+                                    row = await sdb.get(Schedule, sid)
+                                    if row:
+                                        row.last_run_at = run_at
+                                        row.next_run_at = run_at + timedelta(
+                                            hours=row.interval_hours
+                                        )
+                                        await sdb.commit()
+                            except Exception:
+                                pass
+
+                        sched_id = schedule.id
+                        asyncio.create_task(
+                            _run_schedule(stream, sched_id, batch_id, now)
+                        )
                     except Exception:
                         pass
         await asyncio.sleep(60)
