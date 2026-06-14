@@ -55,6 +55,7 @@ class Lead(Base):
     track: Mapped[str] = mapped_column(String(16), default="track_a")
     source: Mapped[str] = mapped_column(String(64), default="exa")
     hs_code: Mapped[str] = mapped_column(String(16), default="")
+    contact_email: Mapped[str] = mapped_column(String(256), default="")
     feishu_record_id: Mapped[str] = mapped_column(String(64), default="")
     assigned_to: Mapped[str] = mapped_column(String(256), default="", index=True)
     confirmed_by: Mapped[str] = mapped_column(String(256), default="")
@@ -281,6 +282,7 @@ class SalesOrder(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     order_no: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     customer_name: Mapped[str] = mapped_column(String(512), default="")
+    customer_email: Mapped[str] = mapped_column(String(256), default="", index=True)
     country_iso: Mapped[str] = mapped_column(String(8), default="")
     status: Mapped[str] = mapped_column(String(32), default="draft")
     currency: Mapped[str] = mapped_column(String(8), default="USD")
@@ -308,6 +310,23 @@ class SalesOrderLine(Base):
     factory_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("factories.id"))
     notes: Mapped[str] = mapped_column(Text, default="")
     order: Mapped["SalesOrder"] = relationship(back_populates="lines")
+
+
+class ShareLink(Base):
+    """Phase 2 分享链接 — 订单/目录只读外链。"""
+
+    __tablename__ = "share_links"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    resource_type: Mapped[str] = mapped_column(String(32), default="order")
+    resource_id: Mapped[str] = mapped_column(String(36), default="")
+    customer_email: Mapped[str] = mapped_column(String(256), default="")
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    view_count: Mapped[int] = mapped_column(Integer, default=0)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class OutreachLog(Base):

@@ -31,7 +31,8 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A17 | 线索列表 | `GET /api/leads` · `/admin/leads` 员工视图 |
 | A18 | LATAM 联合试点 | `bash scripts/latam_full_pilot.sh` |
 | A19 | Phase 1 工厂/品类 | `GET /api/factories` + `/api/catalog/tree` |
-| A20 | Phase 1 订单 | `POST /api/orders` + `/lines`（需 session） |
+| A21 | 客户门户 | `GET /portal/dashboard` |
+| A22 | 分享链接 | `GET /api/share/{token}` · `POST /api/share/links` |
 
 ## B. 浏览器手动
 

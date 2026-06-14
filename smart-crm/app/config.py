@@ -202,6 +202,13 @@ class OutreachReplyRequest(BaseModel):
     reply_notes: str = ""
 
 
+class ShareLinkRequest(BaseModel):
+    resource_type: str = "order"
+    resource_id: str
+    customer_email: str = ""
+    ttl_days: int = 14
+
+
 class FactoryRequest(BaseModel):
     code: str
     name_zh: str = ""
@@ -217,6 +224,7 @@ class FactoryRequest(BaseModel):
 
 class OrderCreateRequest(BaseModel):
     customer_name: str
+    customer_email: str = ""
     country_iso: str = ""
     currency: str = "USD"
     factory_id: str = ""

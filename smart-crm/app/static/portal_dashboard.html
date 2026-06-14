@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 客户门户</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-900/80">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-emerald-400">客户门户</h1>
+        <p id="user-info" class="text-xs text-slate-400">Phase 2 起步 · 订单只读</p>
+      </div>
+      <div class="flex gap-2 text-sm">
+        <button id="btn-logout" class="px-3 py-1 rounded bg-slate-800">退出</button>
+      </div>
+    </div>
+  </header>
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <div id="summary" class="card mb-4 text-sm text-slate-400"></div>
+    <div id="orders-list" class="space-y-3"></div>
+  </main>
+  <script>
+    const token = localStorage.getItem('session_token');
+    if (!token) location.href = '/portal';
+
+    const headers = () => ({ 'X-Session-Token': token });
+
+    async function load() {
+      const r = await fetch('/api/portal/overview', { headers: headers() });
+      if (r.status === 401) {
+        localStorage.removeItem('session_token');
+        location.href = '/portal';
+        return;
+      }
+      const data = await r.json();
+      document.getElementById('user-info').textContent = data.email + ' · ' + data.orders_count + ' 个订单';
+      document.getElementById('summary').textContent =
+        '仅显示与您的邮箱关联的订单。完整目录分享链接由业务员通过 /s/{token} 发送。';
+      const el = document.getElementById('orders-list');
+      el.innerHTML = (data.orders || []).map((o) => `
+        <div class="card text-sm">
+          <div class="flex justify-between mb-1">
+            <strong class="text-emerald-400">${o.order_no}</strong>
+            <span>${o.status}</span>
+          </div>
+          <div>${o.customer_name} · ${o.currency} ${o.total_amount}</div>
+        </div>`).join('') || '<p class="text-slate-500">暂无订单，请联系业务员。</p>';
+    }
+
+    document.getElementById('btn-logout').onclick = () => {
+      localStorage.removeItem('session_token');
+      location.href = '/portal';
+    };
+    load();
+  </script>
+</body>
+</html>

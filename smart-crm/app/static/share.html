@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 分享查看</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+  <div class="card w-full max-w-2xl">
+    <h1 class="text-lg font-bold text-emerald-400 mb-2">分享内容</h1>
+    <p id="status" class="text-sm text-slate-400 mb-4">加载中…</p>
+    <div id="content" class="text-sm space-y-3"></div>
+    <a href="/" class="text-sm text-emerald-400 mt-6 inline-block">← SMART CRM</a>
+  </div>
+  <script>
+    const token = location.pathname.split('/s/')[1] || '';
+    (async () => {
+      const status = document.getElementById('status');
+      const content = document.getElementById('content');
+      if (!token) {
+        status.textContent = '无效链接';
+        return;
+      }
+      const data = await fetch('/api/share/' + encodeURIComponent(token)).then((r) => r.json());
+      if (!data.valid) {
+        status.textContent = data.detail || '链接无效';
+        return;
+      }
+      status.textContent = `类型: ${data.resource_type} · 有效期至 ${data.expires_at || '-'}`;
+      if (data.order) {
+        const o = data.order;
+        content.innerHTML = `
+          <div><strong>${o.order_no}</strong> · ${o.customer_name} · ${o.status}</div>
+          <div class="text-slate-400">合计 ${o.currency} ${o.total_amount}</div>
+          <table class="w-full mt-3 text-xs">
+            <tr class="text-slate-500"><th class="text-left py-1">SKU</th><th>产品</th><th>数量</th><th>单价</th></tr>
+            ${(o.lines || []).map((l) => `
+              <tr class="border-t border-slate-800">
+                <td class="py-1">${l.sku}</td>
+                <td>${l.product_name}</td>
+                <td>${l.qty}</td>
+                <td>${l.unit_price}</td>
+              </tr>`).join('')}
+          </table>`;
+      } else if (data.factories) {
+        content.innerHTML = data.factories.map((f) =>
+          `<div class="p-2 bg-slate-900/50 rounded"><strong>${f.code}</strong> ${f.name_zh}<br>
+           <span class="text-slate-500">${f.category_focus} · MOQ ${f.moq_default}</span></div>`
+        ).join('');
+      }
+    })();
+  </script>
+</body>
+</html>

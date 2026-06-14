@@ -33,6 +33,7 @@ from app.config import (
     RunRequest,
     ScheduleRequest,
     SendEmailRequest,
+    ShareLinkRequest,
     TradeShowCrawlRequest,
 )
 from app.database import ASYNC_DB_URL, get_session
@@ -78,6 +79,8 @@ from app.services.phase1 import (
     seed_factories,
 )
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
+from app.config import settings
+from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
 from app.services.feishu_client import FeishuClient
 
@@ -283,6 +286,7 @@ def _lead_public_dict(lead: Lead) -> dict[str, Any]:
     data["assigned_to"] = lead.assigned_to
     data["confirmed_by"] = lead.confirmed_by
     data["tbcexp_synced"] = lead.tbcexp_synced
+    data["contact_email"] = lead.contact_email
     return data
 
 
@@ -404,6 +408,7 @@ async def create_order(
     order = SalesOrder(
         order_no=next_order_no(),
         customer_name=req.customer_name,
+        customer_email=req.customer_email,
         country_iso=req.country_iso.upper(),
         currency=req.currency,
         factory_id=req.factory_id or None,
@@ -1595,6 +1600,87 @@ async def export_content_md(draft_id: str, db: AsyncSession = Depends(get_db)):
         media_type="text/markdown",
         headers={"Content-Disposition": f"attachment; filename={draft.slug or draft.id}.md"},
     )
+
+
+# --- Phase 2 Portal & Share ---
+
+@router.get("/portal/overview")
+async def portal_overview(request: Request, db: AsyncSession = Depends(get_db)):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "portal":
+        raise HTTPException(401, "Customer portal session required")
+    orders = await db.execute(
+        select(SalesOrder)
+        .where(SalesOrder.customer_email == session.email)
+        .order_by(SalesOrder.created_at.desc())
+    )
+    rows = orders.scalars().all()
+    return {
+        "email": session.email,
+        "orders_count": len(rows),
+        "orders": [
+            {
+                "id": o.id,
+                "order_no": o.order_no,
+                "customer_name": o.customer_name,
+                "status": o.status,
+                "total_amount": o.total_amount,
+                "currency": o.currency,
+            }
+            for o in rows[:20]
+        ],
+    }
+
+
+@router.get("/portal/orders")
+async def portal_orders(request: Request, db: AsyncSession = Depends(get_db)):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "portal":
+        raise HTTPException(401, "Customer portal session required")
+    result = await db.execute(
+        select(SalesOrder)
+        .where(SalesOrder.customer_email == session.email)
+        .order_by(SalesOrder.created_at.desc())
+    )
+    out = []
+    for order in result.scalars().all():
+        lines = await db.execute(
+            select(SalesOrderLine).where(SalesOrderLine.order_id == order.id)
+        )
+        out.append(order_dict(order, list(lines.scalars().all())))
+    return out
+
+
+@router.post("/share/links")
+async def create_share(
+    req: ShareLinkRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    session = await session_from_request(request, db)
+    created_by = session.email if session else ""
+    link = await create_share_link(
+        db,
+        resource_type=req.resource_type,
+        resource_id=req.resource_id,
+        customer_email=req.customer_email,
+        created_by=created_by,
+        ttl_days=req.ttl_days,
+    )
+    base = settings.app_base_url.rstrip("/")
+    return {
+        "token": link.token,
+        "url": f"{base.rstrip('/')}/s/{link.token}",
+        "expires_at": link.expires_at.isoformat() if link.expires_at else None,
+        "resource_type": link.resource_type,
+        "resource_id": link.resource_id,
+    }
+
+
+@router.get("/share/{token}")
+async def get_share(token: str, db: AsyncSession = Depends(get_db)):
+    """公开分享内容（无需登录）。"""
+    return await resolve_share(db, token)
 
 
 # --- Auth ---

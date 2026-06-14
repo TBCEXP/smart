@@ -72,7 +72,15 @@ sudo bash scripts/setup_backup_cron.sh
 | `POST /api/orders/from-lead/{id}` | 线索转草稿订单 |
 | `bash scripts/phase1_verify.sh` | Phase 1 验收脚本 |
 
-## Phase 1+（未开始）
+## Phase 2 起步（本分支）
+
+| 功能 | 状态 |
+|------|------|
+| `/portal/dashboard` | ✅ 客户只读订单 |
+| `/s/{token}` | ✅ 订单/工厂分享外链 |
+| `POST /api/share/links` | ✅ 员工生成分享（需登录） |
+
+## Phase 1+（ERP 深度对接）
 
 员工门户、工厂目录、订单、包装 AI — 见 [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)，在 Phase 1.5 生产验收通过后启动。
 

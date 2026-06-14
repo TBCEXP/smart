@@ -102,6 +102,7 @@ def order_dict(order: SalesOrder, lines: list[SalesOrderLine] | None = None) -> 
         "id": order.id,
         "order_no": order.order_no,
         "customer_name": order.customer_name,
+        "customer_email": order.customer_email,
         "country_iso": order.country_iso,
         "status": order.status,
         "currency": order.currency,

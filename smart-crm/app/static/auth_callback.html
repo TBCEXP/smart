@@ -28,7 +28,7 @@
         if (res.session_token) {
           localStorage.setItem('session_token', res.session_token);
           msg.textContent = '登录成功，跳转中…';
-          location.href = portal === 'admin' ? '/admin/dashboard' : '/';
+          location.href = portal === 'admin' ? '/admin/dashboard' : '/portal/dashboard';
         } else {
           msg.textContent = JSON.stringify(res);
         }

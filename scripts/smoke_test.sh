@@ -82,6 +82,16 @@ if curl -sf "$BASE/api/feishu/records/mock-test" | grep -q 'record_id'; then
 else
   fail "GET /api/feishu/records/{id}"
 fi
+if curl -sf "$BASE/portal/dashboard" | grep -q '客户门户'; then
+  ok "GET /portal/dashboard"
+else
+  fail "GET /portal/dashboard"
+fi
+if curl -sf "$BASE/api/share/invalid-token-test" | grep -q '"valid":false'; then
+  ok "GET /api/share/{token} (invalid)"
+else
+  fail "GET /api/share/{token}"
+fi
 
 # 5. Brainstorm generate
 BS=$(curl -sf -X POST "$BASE/api/brainstorm/generate" \

@@ -84,12 +84,14 @@ async def lifespan(app: FastAPI):
         from app.services.auth import AuthService
         from app.services.geo_track import TradeShowService
         from app.services.phase1 import seed_factories
+        from app.services.share import seed_portal_demo
         from app.services.pipeline import seed_geo_data
 
         auth = AuthService()
         await auth.ensure_default_whitelist(db)
         await seed_geo_data(db)
         await seed_factories(db)
+        await seed_portal_demo(db)
         await TradeShowService().seed_defaults(db)
     task = asyncio.create_task(scheduler_loop())
     yield
@@ -127,6 +129,16 @@ async def admin_dashboard():
 @app.get("/portal")
 async def customer_portal():
     return FileResponse(STATIC_DIR / "login.html")
+
+
+@app.get("/portal/dashboard")
+async def portal_dashboard_page():
+    return FileResponse(STATIC_DIR / "portal_dashboard.html")
+
+
+@app.get("/s/{token}")
+async def share_page(token: str):
+    return FileResponse(STATIC_DIR / "share.html")
 
 
 @app.get("/auth/callback")

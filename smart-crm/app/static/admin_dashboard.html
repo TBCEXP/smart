@@ -254,18 +254,42 @@
         (list || []).map((f) => `<option value="${f.id}">${f.code} ${f.name_zh}</option>`).join('');
     }
 
+    async function shareOrder(orderId) {
+      const r = await api('/share/links', {
+        method: 'POST',
+        body: JSON.stringify({ resource_type: 'order', resource_id: orderId, ttl_days: 14 }),
+      });
+      if (r.url) {
+        prompt('分享链接（复制发给客户）', r.url);
+      }
+    }
+
     async function loadOrders() {
       const orders = await api('/orders');
       const el = document.getElementById('orders-list');
       el.innerHTML = (orders || []).map((o) =>
-        `<div class="p-3 rounded bg-slate-900/50 cursor-pointer" data-oid="${o.id}">
+        `<div class="p-3 rounded bg-slate-900/50" data-oid="${o.id}">
            <div class="flex justify-between"><strong>${o.order_no}</strong><span>${o.status}</span></div>
            <div>${o.customer_name} · ${o.country_iso} · ${o.currency} ${o.total_amount}</div>
            <div class="text-slate-500">${(o.lines || []).length} 行 · ${o.assigned_to || '未分配'}</div>
+           <div class="mt-2 flex gap-2">
+             <button class="text-xs text-emerald-400" data-select="${o.id}">编辑行</button>
+             <button class="text-xs text-amber-400" data-share="${o.id}">分享链接</button>
+           </div>
          </div>`
       ).join('') || '<p class="text-slate-500">暂无订单</p>';
-      el.querySelectorAll('[data-oid]').forEach((node) => {
-        node.onclick = () => selectOrder(node.dataset.oid, node.querySelector('strong').textContent);
+      el.querySelectorAll('[data-select]').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const node = btn.closest('[data-oid]');
+          selectOrder(btn.dataset.select, node.querySelector('strong').textContent);
+        };
+      });
+      el.querySelectorAll('[data-share]').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          shareOrder(btn.dataset.share);
+        };
       });
     }
 

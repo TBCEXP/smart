@@ -72,6 +72,7 @@ async def init_db() -> None:
         for col, ddl_sqlite, ddl_pg in (
             ("assigned_to", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
             ("confirmed_by", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+            ("contact_email", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
         ):
             try:
                 if "sqlite" in ASYNC_DB_URL:
@@ -82,6 +83,25 @@ async def init_db() -> None:
                 elif "postgresql" in ASYNC_DB_URL:
                     await conn.execute(
                         text(f"ALTER TABLE leads ADD COLUMN IF NOT EXISTS {col} {ddl_pg}")
+                    )
+            except Exception:
+                pass
+        for col, ddl_sqlite, ddl_pg in (
+            ("customer_email", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+        ):
+            try:
+                if "sqlite" in ASYNC_DB_URL:
+                    cols = await conn.execute(text("PRAGMA table_info(sales_orders)"))
+                    names = {row[1] for row in cols.fetchall()}
+                    if col not in names:
+                        await conn.execute(
+                            text(f"ALTER TABLE sales_orders ADD COLUMN {col} {ddl_sqlite}")
+                        )
+                elif "postgresql" in ASYNC_DB_URL:
+                    await conn.execute(
+                        text(
+                            f"ALTER TABLE sales_orders ADD COLUMN IF NOT EXISTS {col} {ddl_pg}"
+                        )
                     )
             except Exception:
                 pass
