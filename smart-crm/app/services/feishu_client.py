@@ -97,6 +97,39 @@ class FeishuClient:
                 raise RuntimeError(f"Feishu write failed: {data}")
             return data.get("data", {}).get("record", {}).get("record_id", "")
 
+    async def get_record(self, record_id: str) -> dict[str, Any]:
+        """只读查询飞书记录（Phase 1 员工后台核对）。"""
+        if not record_id:
+            return {"mode": "mock", "detail": "无 record_id"}
+        if not self._configured():
+            return {
+                "mode": "mock",
+                "record_id": record_id,
+                "fields": {
+                    "公司名称": "Mock Feishu Record",
+                    "状态": "待联系",
+                    "备注": "配置飞书后可读取真实记录",
+                },
+            }
+        token = await self._tenant_token()
+        table_id = self.config.get("feishu_table_id")
+        base_token = self.config.get("feishu_base_token")
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                f"https://open.feishu.cn/open-apis/bitable/v1/apps/{base_token}/tables/{table_id}/records/{record_id}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("code") != 0:
+                raise RuntimeError(f"Feishu read failed: {data}")
+            record = data.get("data", {}).get("record", {})
+            return {
+                "mode": "live",
+                "record_id": record.get("record_id", record_id),
+                "fields": record.get("fields", {}),
+            }
+
     async def update_status(self, record_id: str, status: str) -> None:
         if not record_id or not self._configured():
             return

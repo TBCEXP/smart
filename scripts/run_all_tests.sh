@@ -27,6 +27,10 @@ else
 fi
 
 echo ""
+echo ">>> Phase 1 员工业务"
+bash "$SCRIPT_DIR/phase1_verify.sh" "$BASE"
+
+echo ""
 echo ">>> KB / 系统状态"
 curl -sf "$BASE/api/kb/status" | python3 -m json.tool 2>/dev/null || true
 curl -sf "$BASE/api/health" | python3 -m json.tool 2>/dev/null || true

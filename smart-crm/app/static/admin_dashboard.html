@@ -28,6 +28,8 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="summary-cards" class="grid md:grid-cols-4 gap-3 mb-6 hidden"></div>
+
     <!-- Leads -->
     <section id="panel-leads" class="panel">
       <div class="card mb-4">
@@ -56,7 +58,9 @@
               <th class="py-2 pr-3">L3</th>
               <th class="py-2 pr-3">评分</th>
               <th class="py-2 pr-3">飞书</th>
+              <th class="py-2 pr-3">ERP</th>
               <th class="py-2 pr-3">负责人</th>
+              <th class="py-2 pr-3">操作</th>
             </tr>
           </thead>
           <tbody id="leads-tbody"></tbody>
@@ -166,6 +170,42 @@
       }
     }
 
+    async function loadSummary() {
+      const s = await api('/admin/summary');
+      const el = document.getElementById('summary-cards');
+      if (!s.leads) return;
+      el.classList.remove('hidden');
+      const scoped = s.user?.scoped ? '（仅我的）' : '';
+      el.innerHTML = `
+        <div class="card text-sm"><div class="text-slate-400">线索${scoped}</div><div class="text-2xl text-emerald-400">${s.leads.total}</div>
+          <div class="text-xs text-slate-500">飞书 ${s.leads.feishu_synced} · ERP ${s.leads.erp_synced}</div></div>
+        <div class="card text-sm"><div class="text-slate-400">订单</div><div class="text-2xl text-emerald-400">${s.orders.total}</div>
+          <div class="text-xs text-slate-500">草稿 ${s.orders.draft}</div></div>
+        <div class="card text-sm"><div class="text-slate-400">工厂</div><div class="text-2xl text-emerald-400">${s.factories}</div></div>
+        <div class="card text-sm"><div class="text-slate-400">角色</div><div class="text-lg">${s.user?.role || '-'}</div>
+          <div class="text-xs text-slate-500">${s.user?.email || ''}</div></div>`;
+    }
+
+    async function syncErp(leadId) {
+      const r = await api(`/bridge/tbcexp/${leadId}`, { method: 'POST' });
+      alert(r.detail || r.status);
+      loadLeads();
+      loadSummary();
+    }
+
+    async function createOrderFromLead(leadId) {
+      const r = await api(`/orders/from-lead/${leadId}`, { method: 'POST' });
+      alert('订单已创建: ' + r.order_no);
+      loadOrders();
+      loadSummary();
+    }
+
+    async function viewFeishu(recordId) {
+      if (!recordId) return alert('无飞书记录 ID');
+      const r = await fetch('/api/feishu/records/' + recordId).then((x) => x.json());
+      alert(JSON.stringify(r.fields || r, null, 2));
+    }
+
     async function loadLeads() {
       const params = new URLSearchParams({ limit: '50' });
       const country = document.getElementById('filter-country').value.trim();
@@ -188,11 +228,17 @@
           <td class="py-2 pr-3">${lead.category_l3 || '-'}</td>
           <td class="py-2 pr-3">${lead.lead_score || '-'}</td>
           <td class="py-2 pr-3">${lead.feishu_record_id ? '✓' : '○'}</td>
-          <td class="py-2 pr-3">${lead.assigned_to || '-'}</td>`;
+          <td class="py-2 pr-3">${lead.tbcexp_synced ? '✓' : '○'}</td>
+          <td class="py-2 pr-3">${lead.assigned_to || '-'}</td>
+          <td class="py-2 pr-3 whitespace-nowrap">
+            ${lead.feishu_record_id ? `<button class="text-xs text-slate-400" onclick="viewFeishu('${lead.feishu_record_id}')">飞书</button>` : ''}
+            <button class="text-xs text-amber-400 ml-1" onclick="syncErp('${lead.id}')">ERP</button>
+            <button class="text-xs text-emerald-400 ml-1" onclick="createOrderFromLead('${lead.id}')">订单</button>
+          </td>`;
         tbody.appendChild(tr);
       }
       if (!data.leads?.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">暂无线索</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="py-6 text-center text-slate-500">暂无线索</td></tr>';
       }
     }
 
@@ -283,6 +329,7 @@
     };
 
     loadSession();
+    loadSummary();
     loadLeads();
   </script>
 </body>

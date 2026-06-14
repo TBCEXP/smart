@@ -27,6 +27,7 @@ class IntegrationsProbeService:
             await self._probe_firecrawl(),
             await self._probe_openai(),
             await self._probe_feishu(),
+            await self._probe_tbcexp(),
         ]
         live_ok = sum(1 for p in probes if p.get("status") == "ok" and not p.get("mock"))
         live_fail = sum(1 for p in probes if p.get("status") == "error")
@@ -163,6 +164,11 @@ class IntegrationsProbeService:
             }
         except Exception as exc:
             return {"status": "error", "detail": str(exc)[:300]}
+
+    async def _probe_tbcexp(self) -> dict[str, Any]:
+        from app.services.tbcexp_client import TbcexpClient
+
+        return await TbcexpClient(self.config).probe()
 
     async def probe_resend(self) -> dict[str, Any]:
         key = self.config.get("resend_api_key")

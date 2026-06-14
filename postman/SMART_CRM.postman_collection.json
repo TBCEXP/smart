@@ -378,6 +378,37 @@
           }
         },
         {
+          "name": "Admin Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/admin/summary"
+          }
+        },
+        {
+          "name": "Feishu Read Record",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/feishu/records/mock-rec-001"
+          }
+        },
+        {
+          "name": "Bridge TBCEXP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/bridge/tbcexp/{{lead_id}}"
+          }
+        },
+        {
+          "name": "Order From Lead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/orders/from-lead/{{lead_id}}"
+          }
+        },
+        {
           "name": "Exa Preview Query",
           "request": {
             "method": "GET",

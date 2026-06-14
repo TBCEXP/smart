@@ -52,6 +52,7 @@ from app.models.entities import (
     StrategySession,
     TradeShow,
 )
+from app.services.access import is_sales_scoped, session_from_request
 from app.services.auth import AuthService
 from app.services.brainstorm import BrainstormService
 from app.services.config_store import ConfigStore
@@ -77,6 +78,8 @@ from app.services.phase1 import (
     seed_factories,
 )
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
+from app.services.tbcexp_client import TbcexpClient
+from app.services.feishu_client import FeishuClient
 
 router = APIRouter()
 config_store = ConfigStore()
@@ -91,6 +94,8 @@ kb_svc = KnowledgeBaseService()
 content_svc = ContentStudioService()
 pilot_svc = LatamPilotService()
 probe_svc = IntegrationsProbeService()
+tbcexp_svc = TbcexpClient()
+feishu_svc = FeishuClient()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -244,15 +249,14 @@ async def list_leads(
     limit: int = 50,
     offset: int = 0,
 ):
-    """Phase 1 线索查询 — 只读列表，支持国家/状态/赛道筛选；mine=1 需登录。"""
+    """Phase 1 线索查询 — sales 角色自动仅看自己的线索。"""
     q = select(Lead).order_by(Lead.created_at.desc())
+    session = await session_from_request(request, db)
     if mine:
-        token = request.headers.get("X-Session-Token", "")
-        if not token:
-            raise HTTPException(401, "mine=1 requires session")
-        session = await auth_svc.get_session(db, token)
         if not session:
-            raise HTTPException(401, "Invalid session")
+            raise HTTPException(401, "mine=1 requires session")
+        q = q.where(Lead.assigned_to == session.email)
+    elif is_sales_scoped(session):
         q = q.where(Lead.assigned_to == session.email)
     if country_iso:
         q = q.where(Lead.country_iso == country_iso.upper())
@@ -278,7 +282,49 @@ def _lead_public_dict(lead: Lead) -> dict[str, Any]:
     data["feishu_record_id"] = lead.feishu_record_id
     data["assigned_to"] = lead.assigned_to
     data["confirmed_by"] = lead.confirmed_by
+    data["tbcexp_synced"] = lead.tbcexp_synced
     return data
+
+
+@router.get("/admin/summary")
+async def admin_summary(request: Request, db: AsyncSession = Depends(get_db)):
+    """Phase 1 员工后台汇总（按角色统计）。"""
+    session = await session_from_request(request, db)
+    lead_q = select(Lead)
+    order_q = select(SalesOrder)
+    if is_sales_scoped(session):
+        lead_q = lead_q.where(Lead.assigned_to == session.email)
+        order_q = order_q.where(SalesOrder.assigned_to == session.email)
+
+    leads = (await db.execute(lead_q)).scalars().all()
+    orders = (await db.execute(order_q)).scalars().all()
+    factories = (await db.execute(select(Factory).where(Factory.active.is_(True)))).scalars().all()
+
+    return {
+        "user": {
+            "email": session.email if session else None,
+            "role": session.role if session else None,
+            "scoped": is_sales_scoped(session),
+        },
+        "leads": {
+            "total": len(leads),
+            "feishu_synced": sum(1 for l in leads if l.feishu_record_id),
+            "erp_synced": sum(1 for l in leads if l.tbcexp_synced),
+            "assigned": sum(1 for l in leads if l.assigned_to),
+        },
+        "orders": {
+            "total": len(orders),
+            "draft": sum(1 for o in orders if o.status == "draft"),
+            "confirmed": sum(1 for o in orders if o.status == "confirmed"),
+        },
+        "factories": len(factories),
+    }
+
+
+@router.get("/feishu/records/{record_id}")
+async def get_feishu_record(record_id: str):
+    """飞书记录只读查询（核对入库字段）。"""
+    return await feishu_svc.get_record(record_id)
 
 
 @router.get("/catalog/tree")
@@ -321,16 +367,20 @@ async def create_factory(req: FactoryRequest, db: AsyncSession = Depends(get_db)
 
 @router.get("/orders")
 async def list_orders(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     status: str = "",
     assigned_to: str = "",
     limit: int = 50,
 ):
     q = select(SalesOrder).order_by(SalesOrder.created_at.desc())
+    session = await session_from_request(request, db)
+    if is_sales_scoped(session):
+        q = q.where(SalesOrder.assigned_to == session.email)
+    elif assigned_to:
+        q = q.where(SalesOrder.assigned_to == assigned_to)
     if status:
         q = q.where(SalesOrder.status == status)
-    if assigned_to:
-        q = q.where(SalesOrder.assigned_to == assigned_to)
     result = await db.execute(q.limit(min(limit, 100)))
     orders = result.scalars().all()
     out = []
@@ -360,6 +410,33 @@ async def create_order(
         lead_id=req.lead_id or None,
         notes=req.notes,
         assigned_to=assigned,
+        status="draft",
+    )
+    db.add(order)
+    await db.commit()
+    await db.refresh(order)
+    return order_dict(order, [])
+
+
+@router.post("/orders/from-lead/{lead_id}")
+async def create_order_from_lead(
+    lead_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """从确认线索一键生成草稿订单。"""
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    session = await session_from_request(request, db)
+    assigned = session.email if session else lead.assigned_to
+    order = SalesOrder(
+        order_no=next_order_no(),
+        customer_name=lead.company_name,
+        country_iso=lead.country_iso,
+        lead_id=lead.id,
+        assigned_to=assigned,
+        notes=f"From lead {lead.id} · {lead.category_l3}",
         status="draft",
     )
     db.add(order)
@@ -612,9 +689,18 @@ async def bridge_tbcexp(lead_id: str, db: AsyncSession = Depends(get_db)):
     lead = await db.get(Lead, lead_id)
     if not lead:
         raise HTTPException(404, "Lead not found")
-    lead.tbcexp_synced = True
-    await db.commit()
-    return {"status": "synced", "sourceType": "smart_crm"}
+    result = await tbcexp_svc.push_lead(lead)
+    if result.get("status") == "ok":
+        lead.tbcexp_synced = True
+        await db.commit()
+    return {
+        "status": result.get("status", "error"),
+        "mode": result.get("mode", "mock"),
+        "external_id": result.get("external_id", ""),
+        "detail": result.get("detail", ""),
+        "sourceType": "smart_crm",
+        "lead_id": lead_id,
+    }
 
 
 @router.post("/send-email")

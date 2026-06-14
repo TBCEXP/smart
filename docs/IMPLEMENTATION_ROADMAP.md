@@ -37,7 +37,7 @@
 | 获客主链路 Exa→Firecrawl→LLM | PDF §2.1 完整 | 框架有，**无 API Key 时走 Mock** | 未在真实环境验质量 |
 | 飞书自动入库 | PDF 必填 10 字段 | **已实现** `feishu_client.py`；未配置时 mock 确认 | 需真实表字段对齐 |
 | pgvector 语义检索 | §0A 知识库 | **Postgres 原生 pgvector** + SQLite JSON 回退 | 需 OpenAI Key 做语义召回 |
-| TBCEXP 桥接 | 可选 | 仅标记 `tbcexp_synced` | 未调真实 ERP |
+| TBCEXP 桥接 | 可选 | **`tbcexp_client.py` + bridge API**；未配置时 Mock | 需真实 ERP URL |
 | 邮箱登录 | §2.2 + 双门户 | OTP/Link + **鉴权中间件**保护敏感 POST | GET 接口仍公开 |
 | Brainstorm Lab | §0G Tab6 | 已实现 | 依赖 Mock LLM 时策略质量未知 |
 | Track B/C、展会、地理队列 | §0E/§0G | 已实现 + 验收脚本 | 需真实 API 验证 |

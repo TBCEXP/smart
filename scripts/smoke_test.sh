@@ -77,6 +77,11 @@ if curl -sf "$BASE/api/factories" | grep -q 'F-SD-01'; then
 else
   fail "GET /api/factories"
 fi
+if curl -sf "$BASE/api/feishu/records/mock-test" | grep -q 'record_id'; then
+  ok "GET /api/feishu/records/{id}"
+else
+  fail "GET /api/feishu/records/{id}"
+fi
 
 # 5. Brainstorm generate
 BS=$(curl -sf -X POST "$BASE/api/brainstorm/generate" \

@@ -30,6 +30,7 @@ PROTECTED_POST_PATHS = (
     "/api/integrations/feishu/test-write",
     "/api/factories",
     "/api/orders",
+    "/api/orders/from-lead/",
 )
 
 

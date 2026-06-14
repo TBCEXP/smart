@@ -15,7 +15,8 @@
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
 | 验收脚本 | ✅ | smoke 32+、phase15、latam_full_pilot |
-| Phase 1 起步 | ✅ | 线索查询、`/admin/dashboard`、工厂/订单/品类树 API |
+| Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
+| TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图 |
 
 ## 本地 / Mock 验收
@@ -65,7 +66,11 @@ sudo bash scripts/setup_backup_cron.sh
 | `GET /admin/dashboard` | 员工后台（线索/工厂/订单/品类） |
 | `GET /api/catalog/tree` | L1/L2/L3 品类树 |
 | `GET /api/factories` | 工厂主数据 |
-| `GET/POST /api/orders` | 订单主表 + 货号行 |
+| `POST /api/bridge/tbcexp/{lead_id}` | 推送线索至 ERP（需登录） |
+| `GET /api/feishu/records/{id}` | 飞书记录只读查询 |
+| `GET /api/admin/summary` | 员工后台汇总（按角色） |
+| `POST /api/orders/from-lead/{id}` | 线索转草稿订单 |
+| `bash scripts/phase1_verify.sh` | Phase 1 验收脚本 |
 
 ## Phase 1+（未开始）
 
