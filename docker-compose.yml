@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: smartcrm
+      POSTGRES_PASSWORD: smartcrm
+      POSTGRES_DB: smartcrm
+    volumes:
+      - /var/lib/smart-crm/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcrm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  smart-crm:
+    build:
+      context: ./smart-crm
+      dockerfile: Dockerfile
+    image: smart-crm:${VERSION:-latest}
+    environment:
+      DATA_DIR: /app/data
+      DATABASE_URL: postgresql+asyncpg://smartcrm:smartcrm@postgres:5432/smartcrm
+      SYNC_DATABASE_URL: postgresql://smartcrm:smartcrm@postgres:5432/smartcrm
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      APP_BASE_URL: ${APP_BASE_URL:-https://crm.yourdomain.com}
+    volumes:
+      - /var/lib/smart-crm/smart-crm-data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/crm.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - smart-crm
+    restart: unless-stopped

@@ -1,0 +1,30 @@
+.tab-btn {
+  @apply px-3 py-1.5 rounded-lg text-sm whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition;
+}
+.tab-btn.active {
+  @apply bg-emerald-600 text-white;
+}
+.card {
+  @apply bg-slate-900 border border-slate-800 rounded-xl p-5;
+}
+.input {
+  @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500;
+}
+.btn-primary {
+  @apply bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg transition;
+}
+.btn-secondary {
+  @apply bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg transition;
+}
+.lead-card {
+  @apply card border-l-4 border-l-emerald-500;
+}
+.bs-card {
+  @apply card border-l-4 border-l-amber-500;
+}
+.channel-badge {
+  @apply inline-block px-2 py-0.5 rounded text-xs bg-slate-800 mr-1;
+}
+.heat-high { @apply text-emerald-400; }
+.heat-medium { @apply text-amber-400; }
+.heat-low { @apply text-slate-400; }

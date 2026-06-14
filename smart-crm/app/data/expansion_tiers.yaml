@@ -1,0 +1,67 @@
+# Global expansion: macro regions + B2B digital tiers (hybrid model C)
+macros:
+  Macro1_Americas:
+    order: 1
+    description: 美洲核心
+    tiers:
+      T1: [US, MX, BR, CO]
+      T2: [AR, CL, PE, CA]
+      T3: [EC, GT, CR, PA, DO, UY]
+      T4_defer: [BZ, GY, SR, Caribbean micro-states]
+  Macro2_Europe:
+    order: 2
+    description: 欧洲核心
+    tiers:
+      T1: [ES, PT, UK, FR, DE, IT, NL]
+      T2: [PL, BE, SE, TR]
+  Macro3_Oceania:
+    order: 3
+    tiers:
+      T1: [AU, NZ]
+  Macro4_SEA:
+    order: 4
+    tiers:
+      T1: [TH, VN, ID, PH, MY, SG]
+  Macro5_MENA:
+    order: 5
+    tiers:
+      T1: [AE, SA, EG, MA, QA]
+  Macro6_LongTail:
+    order: 6
+    description: 美洲及其它长尾批量试搜
+    batch_mode: true
+
+b2b_digital_score_weights:
+  hospitality_supply_online: 0.30
+  exa_discoverability: 0.25
+  import_distribution_scale: 0.20
+  language_fit: 0.15
+  china_supply_chain_link: 0.10
+
+language_macro_overlap:
+  es_phase1: [MX, CO, CL, PE, AR, ES]
+  pt_phase2: [BR, PT]
+  en_phase3: [US, CA, UK, AU, NZ]
+  fr_phase4: [FR, BE, MA]
+
+execution_order:
+  - macro: Macro1_Americas
+    tier: T1
+    countries: [MX, CO]
+    note: 西语试点先跑 MX+CO
+  - macro: Macro1_Americas
+    tier: T1
+    countries: [US, BR]
+  - macro: Macro2_Europe
+    tier: T1
+    countries: [ES, PT, UK, FR, DE]
+
+country_scores:
+  MX: 88
+  CO: 82
+  US: 95
+  BR: 85
+  ES: 80
+  AR: 72
+  CL: 75
+  PE: 68

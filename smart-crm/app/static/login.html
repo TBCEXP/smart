@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 登录</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
+  <div class="card w-full max-w-md">
+    <h1 class="text-xl font-bold text-emerald-400 mb-2">SMART CRM 登录</h1>
+    <p class="text-sm text-slate-400 mb-6">员工 /admin · 客户 /portal · OTP + 魔法链接</p>
+    <input id="login-email" type="email" class="input mb-3" placeholder="邮箱" />
+    <select id="login-portal" class="input mb-4">
+      <option value="admin">员工后台 /admin</option>
+      <option value="portal">客户门户 /portal</option>
+    </select>
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <button id="btn-otp-send" class="btn-primary">获取验证码</button>
+      <button id="btn-magic-send" class="btn-secondary">发送登录链接</button>
+    </div>
+    <input id="login-otp" class="input mb-3" placeholder="6 位验证码" maxlength="6" />
+    <button id="btn-otp-verify" class="btn-primary w-full">验证码登录</button>
+    <p id="login-msg" class="text-sm text-slate-400 mt-4"></p>
+    <a href="/" class="text-sm text-emerald-400 mt-4 inline-block">← 返回获客面板</a>
+  </div>
+  <script>
+    const portal = location.pathname.includes('portal') ? 'portal' : 'admin';
+    document.getElementById('login-portal').value = portal;
+
+    async function post(url, body) {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      return r.json();
+    }
+
+    document.getElementById('btn-otp-send').onclick = async () => {
+      const email = document.getElementById('login-email').value;
+      const p = document.getElementById('login-portal').value;
+      const res = await post('/api/auth/otp/send', { email, portal: p });
+      document.getElementById('login-msg').textContent = JSON.stringify(res);
+    };
+
+    document.getElementById('btn-magic-send').onclick = async () => {
+      const email = document.getElementById('login-email').value;
+      const p = document.getElementById('login-portal').value;
+      const res = await post('/api/auth/magic/send', { email, portal: p });
+      document.getElementById('login-msg').textContent = '登录链接已发送（开发模式见 data/auth_emails.log）';
+    };
+
+    document.getElementById('btn-otp-verify').onclick = async () => {
+      const email = document.getElementById('login-email').value;
+      const code = document.getElementById('login-otp').value;
+      const p = document.getElementById('login-portal').value;
+      const res = await post('/api/auth/otp/verify', { email, code, portal: p });
+      if (res.session_token) {
+        localStorage.setItem('session_token', res.session_token);
+        location.href = '/';
+      } else {
+        document.getElementById('login-msg').textContent = JSON.stringify(res);
+      }
+    };
+  </script>
+</body>
+</html>

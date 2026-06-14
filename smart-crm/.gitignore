@@ -1,0 +1,11 @@
+/data/
+*.key
+config.json
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+auth_emails.log
+batches/

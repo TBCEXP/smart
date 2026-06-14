@@ -1,0 +1,136 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    data_dir: Path = Path(os.getenv("DATA_DIR", "data"))
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://smartcrm:smartcrm@postgres:5432/smartcrm",
+    )
+    sync_database_url: str = os.getenv(
+        "SYNC_DATABASE_URL",
+        "postgresql://smartcrm:smartcrm@postgres:5432/smartcrm",
+    )
+    session_secret: str = os.getenv("SESSION_SECRET", "change-me-in-production")
+    session_days: int = int(os.getenv("SESSION_DAYS", "7"))
+    otp_ttl_minutes: int = 10
+    magic_link_ttl_minutes: int = 15
+    otp_resend_seconds: int = 60
+    app_base_url: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()
+settings.data_dir.mkdir(parents=True, exist_ok=True)
+(settings.data_dir / "batches").mkdir(parents=True, exist_ok=True)
+
+
+class ConfigPayload(BaseModel):
+    exa_api_key: str = ""
+    firecrawl_api_key: str = ""
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    feishu_app_id: str = ""
+    feishu_app_secret: str = ""
+    feishu_base_token: str = ""
+    feishu_table_id: str = ""
+    ingest_mode: str = "review"
+    max_concurrency: int = 5
+    extended_feishu_fields: bool = True
+    tbcexp_api_url: str = ""
+    tbcexp_api_token: str = ""
+    resend_api_key: str = ""
+    resend_from_email: str = ""
+    scheduler_enabled: bool = False
+    apollo_api_key: str = ""
+    importgenius_api_key: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+
+
+class RunRequest(BaseModel):
+    keyword: str
+    industry: str = "跨境电商"
+    count: int = 10
+    country_iso: str = ""
+    city: str = ""
+    category_l3: str = ""
+    language: str = "es"
+    search_type: str = "standard"
+
+
+class ScheduleRequest(BaseModel):
+    keyword: str
+    industry: str = "跨境电商"
+    interval_hours: int = 24
+    country_iso: str = ""
+    city: str = ""
+    category_l3: str = ""
+    language: str = "es"
+    track: str = "track_a"
+
+
+class BrainstormRequest(BaseModel):
+    country_iso: str
+    city: str = ""
+    category_l3: str
+    language: str = "es"
+    moq: str = ""
+    certifications: str = ""
+    oem_experience: str = ""
+
+
+class BrainstormActionRequest(BaseModel):
+    session_id: str
+    action_type: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class MarketIntelCrawlRequest(BaseModel):
+    anchor_id: str
+
+
+class TradeShowCrawlRequest(BaseModel):
+    tradeshow_id: str
+
+
+class ImportCsvRequest(BaseModel):
+    source: str = "manual"
+    hs_codes: list[str] = Field(default_factory=list)
+    country_iso: str = ""
+
+
+class AuthEmailRequest(BaseModel):
+    email: str
+    portal: str = "admin"
+
+
+class AuthOtpRequest(BaseModel):
+    email: str
+    code: str
+    portal: str = "admin"
+
+
+class SendEmailRequest(BaseModel):
+    lead_id: str
+    to_email: str = ""
+    subject: str = ""
+    body: str = ""
+
+
+class FeishuWebhookRequest(BaseModel):
+    batch_id: str
+    lead_index: int
+    status: str
+    record_id: str = ""

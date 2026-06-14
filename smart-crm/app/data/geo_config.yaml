@@ -1,0 +1,133 @@
+languages:
+  - code: es
+    name: 西班牙语
+    phase: 1
+    countries: [MX, CO, ES, CL, PE, AR]
+  - code: pt
+    name: 葡萄牙语
+    phase: 2
+    countries: [BR, PT]
+  - code: en
+    name: 英语
+    phase: 3
+    countries: [US, CA, UK, AU, NZ]
+  - code: fr
+    name: 法语
+    phase: 4
+    countries: [FR, BE, MA]
+
+countries:
+  MX:
+    name: 墨西哥
+    language: es
+    tier: T1
+    macro: Macro1_Americas
+    cities: [CDMX, Monterrey, Guadalajara]
+    default_hs: ["7323", "7615", "3924"]
+    channel_priority: [email, whatsapp, tradeshow]
+  CO:
+    name: 哥伦比亚
+    language: es
+    tier: T1
+    macro: Macro1_Americas
+    cities: [Bogotá, Medellín, Cali]
+    default_hs: ["7323", "7615", "3924"]
+    channel_priority: [email, whatsapp, chamber]
+  ES:
+    name: 西班牙
+    language: es
+    tier: T1
+    macro: Macro2_Europe
+    cities: [Madrid, Barcelona, Valencia]
+  BR:
+    name: 巴西
+    language: pt
+    tier: T1
+    macro: Macro1_Americas
+    cities: [São Paulo, Rio, Curitiba]
+  US:
+    name: 美国
+    language: en
+    tier: T1
+    macro: Macro1_Americas
+    cities: [Miami, Los Angeles, Chicago]
+
+categories:
+  l1:
+    code: kitchen
+    name_zh: 厨房用品
+    name_en: Kitchen & Foodservice
+  l2:
+    code: hotel-restaurant
+    name_zh: 酒店餐饮用品
+    name_en: Hotel & Restaurant Supplies
+  l3:
+    - code: cookware-commercial
+      name_zh: 商用锅具与烤盘
+      name_en: Commercial Cookware
+      reference_brands: [Choice, Winco, Vollrath]
+      reference_brands_latam: [Vasconia, Imusa]
+    - code: bakeware
+      name_zh: 烘焙模具与器皿
+      name_en: Bakeware
+      reference_brands: [Choice, American Metalcraft]
+      reference_brands_latam: [Vasconia]
+    - code: flatware
+      name_zh: 餐具与侍酒
+      name_en: Hotel Flatware & Dinnerware
+      reference_brands: [Walco, Libbey, GET]
+      reference_brands_latam: [Corona]
+    - code: food-storage
+      name_zh: 食品储存与周转
+      name_en: Food Storage
+      reference_brands: [Cambro, Rubbermaid Commercial]
+      reference_brands_latam: []
+    - code: buffet
+      name_zh: 自助餐与宴会
+      name_en: Buffet & Banquet
+      reference_brands: [Vollrath, Server Products]
+      reference_brands_latam: []
+    - code: kitchen-tools
+      name_zh: 厨房小工具
+      name_en: Kitchen Hand Tools
+      reference_brands: [TableCraft, Browne]
+      reference_brands_latam: []
+
+anchors:
+  MX:
+    - company_name: Vasconia
+      website: https://www.vasconia.com
+      anchor_type: brand
+      crawl_paths: [/collections, /productos]
+    - company_name: City Club
+      website: https://www.cityclub.com.mx
+      anchor_type: distributor
+      crawl_paths: [/cocina, /restaurantes]
+    - company_name: Imusa
+      website: https://www.imusa.com.mx
+      anchor_type: brand
+      crawl_paths: [/productos]
+  CO:
+    - company_name: Vasconia Colombia
+      website: https://www.vasconia.com
+      anchor_type: brand
+      crawl_paths: [/collections]
+    - company_name: Corona
+      website: https://www.corona.co
+      anchor_type: brand
+      crawl_paths: [/productos]
+  US:
+    - company_name: WebstaurantStore
+      website: https://www.webstaurantstore.com
+      anchor_type: platform
+      crawl_paths: [/cookware.html, /bakeware.html]
+
+brainstorm_defaults:
+  MX:
+    cities: [CDMX, Monterrey, Guadalajara]
+    similar_search: "mayorista utensilios cocina hotel Ciudad de México"
+    tradeshows: [Expo ANTAD]
+  CO:
+    cities: [Bogotá, Medellín, Cali]
+    similar_search: "distribuidor menaje hotelero Colombia importador"
+    tradeshows: []
