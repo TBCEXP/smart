@@ -30,11 +30,14 @@ for s in erp_verify.sh prod_readiness_check.sh release_check.sh; do
 done
 
 cd smart-crm
-CNT=$(PYTHONPATH=. python3 -m pytest tests/ -q 2>/dev/null | tail -1 | grep -oE '[0-9]+ passed' || echo "0 passed")
-if echo "$CNT" | grep -q '39 passed'; then
-  ok "pytest ($CNT)"
+PY_SUMMARY=$(PYTHONPATH=. python3 -m pytest tests/ -q --tb=no 2>/dev/null | tail -1)
+PY_EXIT=$?
+PY_CNT=$(echo "$PY_SUMMARY" | grep -oE '^[0-9]+ passed' | head -1 || true)
+EXPECTED=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -q 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo "39")
+if [ "$PY_EXIT" -eq 0 ] && [ -n "$PY_CNT" ] && [ "$(echo "$PY_CNT" | grep -oE '^[0-9]+')" = "$EXPECTED" ]; then
+  ok "pytest ($PY_CNT)"
 else
-  fail "pytest ($CNT, expected 39)"
+  fail "pytest (${PY_SUMMARY:-failed}, expected ${EXPECTED})"
 fi
 cd ..
 
