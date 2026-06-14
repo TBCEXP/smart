@@ -31,6 +31,11 @@ jobs:
             sleep 1
           done
 
+      - name: Unit tests (Exa query)
+        run: |
+          cd smart-crm
+          PYTHONPATH=. python -m pytest tests/test_exa_query.py -q
+
       - name: Smoke test
         run: bash scripts/smoke_test.sh http://127.0.0.1:8000
 

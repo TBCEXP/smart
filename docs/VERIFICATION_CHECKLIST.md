@@ -27,6 +27,9 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A13 | WhatsApp 里程碑 | `bash scripts/outreach_pilot.sh` |
 | A14 | KB 状态 | `GET /api/kb/status` → search_engine |
 | A15 | 全量测试 | `bash scripts/run_all_tests.sh` |
+| A16 | Exa 查询预览 | `GET /api/exa/preview-query` → resolved + semantic |
+| A17 | 线索列表 | `GET /api/leads` · `/admin/leads` 员工视图 |
+| A18 | LATAM 联合试点 | `bash scripts/latam_full_pilot.sh` |
 
 ## B. 浏览器手动
 

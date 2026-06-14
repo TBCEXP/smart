@@ -23,6 +23,7 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | `bash scripts/mx_pilot.sh` | 墨西哥 MX：Track B → Brainstorm → Track A 入队 |
 | `bash scripts/co_pilot.sh` | 哥伦比亚 CO：同上 |
 | `bash scripts/latam_full_pilot.sh` | **MX + CO 联合试点** + 报告导出（`--run-due=N`） |
+| `/admin/leads` | **员工线索查询**（登录后只读列表） |
 | `bash scripts/pilot_live.sh` | 真实 API 环境全流程（含飞书 confirm） |
 | `bash scripts/outreach_pilot.sh` | 1.5.5 WhatsApp 触达里程碑（≥5 条） |
 | `bash scripts/trackc_pilot.sh` | 1.5.6 海关 CSV 导入 + 域名匹配 |

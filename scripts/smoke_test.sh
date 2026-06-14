@@ -51,7 +51,24 @@ else
   fail "GET /api/geo/config"
 fi
 
-# 4. Brainstorm generate
+# 4. Exa query preview + leads list
+if curl -sf "$BASE/api/exa/preview-query?category_l3=bakeware&country_iso=MX&city=CDMX" | grep -q 'resolved_query'; then
+  ok "GET /api/exa/preview-query"
+else
+  fail "GET /api/exa/preview-query"
+fi
+if curl -sf "$BASE/api/leads?limit=5" | grep -q '"leads"'; then
+  ok "GET /api/leads"
+else
+  fail "GET /api/leads"
+fi
+if curl -sf "$BASE/admin/leads" | grep -q '员工线索查询'; then
+  ok "GET /admin/leads"
+else
+  fail "GET /admin/leads"
+fi
+
+# 5. Brainstorm generate
 BS=$(curl -sf -X POST "$BASE/api/brainstorm/generate" \
   -H "Content-Type: application/json" \
   -d '{"country_iso":"MX","city":"CDMX","category_l3":"bakeware","language":"es"}')
@@ -174,6 +191,14 @@ if curl -sf "$BASE/api/pilot/co/status" | grep -q 'CO'; then
   ok "GET /api/pilot/co/status"
 else
   fail "GET /api/pilot/co/status"
+fi
+CO_PILOT=$(curl -sf -X POST "$BASE/api/pilot/co/start" \
+  -H "Content-Type: application/json" \
+  -d '{"country_iso":"CO","city":"Bogotá","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
+if echo "$CO_PILOT" | grep -q 'pilot_id'; then
+  ok "POST /api/pilot/co/start"
+else
+  fail "POST /api/pilot/co/start"
 fi
 
 # 14. Run due schedules

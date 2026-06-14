@@ -331,12 +331,36 @@ document.getElementById('btn-save-config').onclick = async () => {
 };
 
 // Run batch
+async function previewExaQuery() {
+  const l3 = document.getElementById('search-l3').value;
+  const country = document.getElementById('search-country').value;
+  const city = document.getElementById('search-city').value;
+  const keyword = document.getElementById('search-keyword').value.trim();
+  const searchType = document.getElementById('search-type').value;
+  const params = new URLSearchParams({
+    keyword,
+    category_l3: l3,
+    country_iso: country,
+    city,
+    language: 'es',
+    search_type: searchType,
+  });
+  const data = await api(`/exa/preview-query?${params}`);
+  const el = document.getElementById('exa-query-preview');
+  el.classList.remove('hidden');
+  el.innerHTML =
+    `<span class="text-emerald-400">resolved:</span> ${data.resolved_query}<br>` +
+    `<span class="text-amber-400">semantic:</span> ${data.semantic_query}`;
+}
+
+document.getElementById('btn-preview-query')?.addEventListener('click', previewExaQuery);
+
 document.getElementById('btn-run').onclick = async () => {
   const l3 = document.getElementById('search-l3').value;
   const country = document.getElementById('search-country').value;
   const city = document.getElementById('search-city').value;
   let keyword = document.getElementById('search-keyword').value.trim();
-  if (!keyword && geoConfig) {
+  if (!keyword && !l3 && geoConfig) {
     const templates = geoConfig.categories?.l3 || [];
     const cat = templates.find((c) => c.code === l3);
     keyword = `mayorista ${cat?.name_en || l3} ${city} ${country}`;

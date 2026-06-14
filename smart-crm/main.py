@@ -112,6 +112,11 @@ async def admin_portal():
     return FileResponse(STATIC_DIR / "login.html")
 
 
+@app.get("/admin/leads")
+async def admin_leads():
+    return FileResponse(STATIC_DIR / "admin_leads.html")
+
+
 @app.get("/portal")
 async def customer_portal():
     return FileResponse(STATIC_DIR / "login.html")

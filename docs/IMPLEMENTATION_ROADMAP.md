@@ -160,7 +160,7 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 
 ## 六、立即执行清单（第零期代码补齐）
 
-当前分支 `cursor/brainstorm-lab-c2f3` 下一步 **只做** 以下项（不新增 Tab）：
+当前分支 `main` 下一步可做（1.5 生产验收前）：
 
 1. ✅ 本路线图文档
 2. ✅ `feishu_client.py` — 真实写入 10+ 扩展字段（含首选渠道、L3、国家）
@@ -169,6 +169,9 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 5. ✅ `scripts/preflight.sh` — 部署前检查清单
 6. ✅ embedding 写入 + `GET /api/kb/search` 语义检索（1.5.7 提前打底）
 7. ✅ Phase 1.5 MX 试点向导 — `POST /api/pilot/mx/start` + Tab5 UI + `scripts/mx_pilot.sh`
+8. ✅ Exa L3 西语模板 + `resolve_exa_query` + Tab1 查询预览
+9. ✅ `scripts/latam_full_pilot.sh` — MX+CO 联合验收
+10. ✅ Phase 1 起步 — `GET /api/leads` + `/admin/leads` 员工线索查询
 
 **用户需配合（阻塞项）：**
 - [ ] RackNerd `df -h` / `free -h` 输出

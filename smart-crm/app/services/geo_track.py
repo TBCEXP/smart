@@ -147,8 +147,11 @@ class TrackCService:
         matched = 0
         for row in rows:
             query = f"category:company {row.company_name} {row.country_iso} website"
+            language = "es" if row.country_iso.upper() in ("MX", "CO", "CL", "PE", "AR") else "en"
             try:
-                hits = await self.exa.search(query, 1)
+                hits = await self.exa.search(
+                    query, 1, search_type="similar", country_iso=row.country_iso, language=language
+                )
                 if hits:
                     row.website = hits[0].get("url", "")
                     row.domain = hits[0].get("domain", "")

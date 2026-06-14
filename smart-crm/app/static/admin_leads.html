@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 员工线索查询</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-900/80">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h1 class="text-xl font-bold text-emerald-400">员工线索查询</h1>
+        <p class="text-xs text-slate-400">Phase 1 只读视图 · 飞书同步状态见获客面板 Tab3</p>
+      </div>
+      <div class="flex gap-2 text-sm">
+        <a href="/" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">获客面板</a>
+        <button id="btn-logout" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div class="card mb-4">
+      <div class="grid md:grid-cols-5 gap-3">
+        <input id="filter-country" class="input" placeholder="国家 ISO (MX/CO)" />
+        <input id="filter-status" class="input" placeholder="状态 (待联系)" />
+        <select id="filter-score" class="input">
+          <option value="">全部评分</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+        <input id="filter-limit" type="number" class="input" value="50" min="1" max="200" />
+        <button id="btn-refresh" class="btn-primary">刷新</button>
+      </div>
+      <p id="leads-summary" class="text-sm text-slate-400 mt-3">加载中...</p>
+    </div>
+
+    <div class="overflow-x-auto card">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-400 border-b border-slate-700">
+            <th class="py-2 pr-3">公司</th>
+            <th class="py-2 pr-3">国家/城市</th>
+            <th class="py-2 pr-3">L3</th>
+            <th class="py-2 pr-3">评分</th>
+            <th class="py-2 pr-3">状态</th>
+            <th class="py-2 pr-3">渠道</th>
+          </tr>
+        </thead>
+        <tbody id="leads-tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('session_token');
+    if (!token) {
+      location.href = '/admin';
+    }
+
+    async function loadLeads() {
+      const params = new URLSearchParams();
+      const country = document.getElementById('filter-country').value.trim();
+      const status = document.getElementById('filter-status').value.trim();
+      const score = document.getElementById('filter-score').value;
+      const limit = document.getElementById('filter-limit').value || '50';
+      if (country) params.set('country_iso', country);
+      if (status) params.set('status', status);
+      if (score) params.set('lead_score', score);
+      params.set('limit', limit);
+      const res = await fetch(`/api/leads?${params}`);
+      const data = await res.json();
+      document.getElementById('leads-summary').textContent =
+        `返回 ${data.total_returned} 条线索（limit=${data.limit}）`;
+      const tbody = document.getElementById('leads-tbody');
+      tbody.innerHTML = '';
+      for (const lead of data.leads || []) {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800 hover:bg-slate-900/50';
+        tr.innerHTML = `
+          <td class="py-2 pr-3">
+            <a href="${lead.website_url}" target="_blank" class="text-emerald-400">${lead.company_name}</a>
+            <div class="text-xs text-slate-500">${lead.domain || ''}</div>
+          </td>
+          <td class="py-2 pr-3">${lead.country_iso || '-'} · ${lead.city || '-'}</td>
+          <td class="py-2 pr-3">${lead.category_l3 || '-'}</td>
+          <td class="py-2 pr-3">${lead.lead_score || '-'}</td>
+          <td class="py-2 pr-3">${lead.status || '-'}</td>
+          <td class="py-2 pr-3">${lead.preferred_channel || '-'}</td>`;
+        tbody.appendChild(tr);
+      }
+      if (!data.leads?.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">暂无线索，请先在获客面板跑 Track A</td></tr>';
+      }
+    }
+
+    document.getElementById('btn-refresh').onclick = loadLeads;
+    document.getElementById('btn-logout').onclick = () => {
+      localStorage.removeItem('session_token');
+      location.href = '/admin';
+    };
+    loadLeads();
+  </script>
+</body>
+</html>

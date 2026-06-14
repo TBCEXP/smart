@@ -18,7 +18,7 @@ PUBLIC_PREFIXES = (
     "/s/",
 )
 
-PUBLIC_GET_PATHS = {"/", "/admin", "/portal"}
+PUBLIC_GET_PATHS = {"/", "/admin", "/admin/leads", "/portal", "/docs/feishu-fields"}
 
 # 仅保护敏感写操作：API Key 保存、确认入库、ERP 同步、发信
 PROTECTED_POST_PATHS = (

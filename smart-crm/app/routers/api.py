@@ -50,7 +50,13 @@ from app.services.auth import AuthService
 from app.services.brainstorm import BrainstormService
 from app.services.config_store import ConfigStore
 from app.services.content_studio import CONTENT_TYPES, ContentStudioService
-from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
+from app.services.data_loader import (
+    load_batch_file,
+    load_expansion_tiers,
+    load_geo_config,
+    resolve_exa_query,
+)
+from app.services.exa_utils import build_semantic_exa_query
 from app.services.integrations_probe import IntegrationsProbeService
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
@@ -175,6 +181,71 @@ async def get_config():
 @router.post("/config")
 async def save_config(payload: ConfigPayload):
     return config_store.save(payload)
+
+
+@router.get("/exa/preview-query")
+async def preview_exa_query(
+    keyword: str = "",
+    category_l3: str = "",
+    country_iso: str = "",
+    city: str = "",
+    language: str = "es",
+    search_type: str = "standard",
+):
+    """Preview resolved L3 template + semantic Exa query before running Track A."""
+    resolved = resolve_exa_query(
+        keyword,
+        category_l3=category_l3,
+        city=city,
+        country_iso=country_iso,
+        language=language,
+        search_type=search_type,
+    )
+    semantic = build_semantic_exa_query(
+        resolved, search_type, country_iso, city, language
+    )
+    return {
+        "keyword": keyword,
+        "category_l3": category_l3,
+        "country_iso": country_iso,
+        "city": city,
+        "language": language,
+        "search_type": search_type,
+        "resolved_query": resolved,
+        "semantic_query": semantic,
+        "uses_l3_template": bool(category_l3),
+    }
+
+
+@router.get("/leads")
+async def list_leads(
+    db: AsyncSession = Depends(get_db),
+    country_iso: str = "",
+    status: str = "",
+    track: str = "",
+    lead_score: str = "",
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Phase 1 线索查询 — 只读列表，支持国家/状态/赛道筛选。"""
+    q = select(Lead).order_by(Lead.created_at.desc())
+    if country_iso:
+        q = q.where(Lead.country_iso == country_iso.upper())
+    if status:
+        q = q.where(Lead.status == status)
+    if track:
+        q = q.where(Lead.track == track)
+    if lead_score:
+        q = q.where(Lead.lead_score == lead_score.upper()[:1])
+    q = q.limit(min(max(limit, 1), 200)).offset(max(offset, 0))
+    result = await db.execute(q)
+    rows = result.scalars().all()
+    return {
+        "total_returned": len(rows),
+        "offset": offset,
+        "limit": limit,
+        "leads": [pipeline._lead_dict(l) for l in rows],
+    }
 
 
 @router.post("/run")

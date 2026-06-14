@@ -56,6 +56,9 @@ if [ "$LIVE_READY" = "True" ]; then
   if [ "$FULL" -eq 1 ]; then
     bash "$SCRIPT_DIR/phase15_verify.sh" "$BASE"
     echo ""
+    echo ">>> LATAM 联合试点"
+    bash "$SCRIPT_DIR/latam_full_pilot.sh" "$BASE" --run-due=2
+    echo ""
     echo ">>> 启动 MX 真实试点"
     bash "$SCRIPT_DIR/pilot_live.sh" "$BASE"
   else
