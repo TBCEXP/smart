@@ -56,6 +56,12 @@ else
   fail "GET /api/prepress/ocr/status"
 fi
 
+if curl -sf "$BASE/api/prepress/barcode/scan/status" | grep -q '"available"'; then
+  ok "GET /api/prepress/barcode/scan/status"
+else
+  fail "GET /api/prepress/barcode/scan/status"
+fi
+
 if curl -sf "$BASE/admin/dashboard" | grep -q '印刷前稿'; then
   ok "GET /admin/dashboard (prepress tab)"
 else

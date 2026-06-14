@@ -10,6 +10,7 @@ from app.config import settings
 from app.models.entities import PrepressReview
 from app.services.artwork_diff import combined_verdict, image_diff, text_diff
 from app.services.barcode_engine import validate_barcode
+from app.services.barcode_scanner import compare_scanned_barcode, decode_barcodes, zbar_available
 from app.services.ocr_engine import extract_text, tesseract_available
 
 
@@ -63,6 +64,25 @@ def ensure_fixture_images() -> tuple[Path, Path]:
     return ref, cand
 
 
+def ensure_barcode_fixture() -> Path:
+    """Generate scannable EAN-13 PNG for zbar demos (seed barcode 5901234123457)."""
+    d = fixture_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / "ean13_scan.png"
+    if path.exists():
+        return path
+    try:
+        import barcode
+        from barcode.writer import ImageWriter
+
+        code = barcode.get("ean13", "5901234123457"[:12], writer=ImageWriter())
+        code.save(path.with_suffix(""))
+        return path
+    except Exception:
+        path.touch()
+        return path
+
+
 def review_dict(review: PrepressReview) -> dict[str, Any]:
     result = review.result_json if isinstance(review.result_json, dict) else {}
     return {
@@ -99,6 +119,22 @@ def run_prepress_analysis(review: PrepressReview) -> dict[str, Any]:
 
     ref_path = resolve_image_path(review.reference_image)
     cand_path = resolve_image_path(review.candidate_image)
+
+    if cand_path:
+        scan = decode_barcodes(cand_path)
+        checks.append(
+            compare_scanned_barcode(scan, review.barcode_expected, review.barcode_symbology)
+        )
+    else:
+        checks.append(
+            {
+                "check": "barcode_scan",
+                "status": "skipped",
+                "detail": "无候选图片",
+                "engine_available": zbar_available(),
+            }
+        )
+
     if ref_path and cand_path:
         img_check = image_diff(ref_path, cand_path)
     else:
@@ -134,6 +170,7 @@ def run_prepress_analysis(review: PrepressReview) -> dict[str, Any]:
             "text_similarity": text_check.get("similarity"),
             "pixel_diff_pct": img_check.get("pixel_diff_pct"),
             "ocr_available": tesseract_available(),
+            "zbar_available": zbar_available(),
         },
         "engine": "rule_based",
         "note": "规则引擎判定（非 LLM 一票否决）",
