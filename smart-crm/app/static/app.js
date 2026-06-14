@@ -416,6 +416,7 @@ function renderLeadCard(lead) {
     ${lead.whatsapp_intro ? `<details class="text-sm mt-2"><summary class="cursor-pointer text-amber-400">WhatsApp 话术</summary><pre class="whitespace-pre-wrap mt-2 text-xs">${lead.whatsapp_intro}</pre></details>` : ''}
     <div class="flex gap-2 mt-3 flex-wrap">
       <button class="btn-secondary text-xs" onclick="confirmLead('${lead.id}')">确认入库</button>
+      <button class="btn-secondary text-xs" onclick="enrichContact('${lead.id}')">Apollo 补邮箱</button>
       <button class="btn-secondary text-xs" onclick="regenLead('${lead.id}')">重新生成</button>
       ${lead.whatsapp_intro ? `<button class="btn-secondary text-xs text-amber-400" onclick="logWhatsApp('${lead.id}')">记录 WhatsApp</button>` : ''}
     </div>`;
@@ -425,6 +426,11 @@ function renderLeadCard(lead) {
 window.confirmLead = async (id) => {
   await api(`/confirm/${id}`, { method: 'POST' });
   alert('已确认入库');
+};
+
+window.enrichContact = async (id) => {
+  const res = await api(`/leads/${id}/enrich-contact`, { method: 'POST' });
+  alert(`Apollo ${res.mode}: ${res.contact_email || res.detail}`);
 };
 window.regenLead = async (id) => {
   await api(`/regenerate/${id}`, { method: 'POST' });

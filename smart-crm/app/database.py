@@ -73,6 +73,8 @@ async def init_db() -> None:
             ("assigned_to", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
             ("confirmed_by", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
             ("contact_email", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+            ("contact_name", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+            ("contact_title", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
         ):
             try:
                 if "sqlite" in ASYNC_DB_URL:

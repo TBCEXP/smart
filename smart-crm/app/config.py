@@ -209,6 +209,18 @@ class ShareLinkRequest(BaseModel):
     ttl_days: int = 14
 
 
+class CatalogDocumentRequest(BaseModel):
+    factory_id: str
+    title: str
+    title_en: str = ""
+    category_l3: str = ""
+    file_url: str = ""
+    pages: int = 0
+    file_size_mb: float = 0.0
+    authorized_emails: list[str] = Field(default_factory=list)
+    notes: str = ""
+
+
 class FactoryRequest(BaseModel):
     code: str
     name_zh: str = ""

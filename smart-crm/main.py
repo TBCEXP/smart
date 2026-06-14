@@ -83,6 +83,7 @@ async def lifespan(app: FastAPI):
     async with get_session() as db:
         from app.services.auth import AuthService
         from app.services.geo_track import TradeShowService
+        from app.services.catalog import seed_catalog_documents
         from app.services.phase1 import seed_factories
         from app.services.share import seed_portal_demo
         from app.services.pipeline import seed_geo_data
@@ -92,6 +93,7 @@ async def lifespan(app: FastAPI):
         await seed_geo_data(db)
         await seed_factories(db)
         await seed_portal_demo(db)
+        await seed_catalog_documents(db)
         await TradeShowService().seed_defaults(db)
     task = asyncio.create_task(scheduler_loop())
     yield

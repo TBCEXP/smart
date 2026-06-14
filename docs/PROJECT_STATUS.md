@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 32+、phase15、latam_full_pilot |
+| 验收脚本 | ✅ | smoke 39+、phase15、phase1、phase2 |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图 |
@@ -78,7 +78,8 @@ sudo bash scripts/setup_backup_cron.sh
 |------|------|
 | `/portal/dashboard` | ✅ 客户只读订单 |
 | `/s/{token}` | ✅ 订单/工厂分享外链 |
-| `POST /api/share/links` | ✅ 员工生成分享（需登录） |
+| Phase 2 目录元数据 | ✅ | `CatalogDocument` + 门户授权目录 + R2 占位 |
+| Apollo 联系人补充 | ✅ | `POST /api/leads/{id}/enrich-contact`（Mock/Live） |
 
 ## Phase 1+（ERP 深度对接）
 

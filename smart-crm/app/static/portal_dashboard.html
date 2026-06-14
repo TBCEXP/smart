@@ -12,50 +12,73 @@
     <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold text-emerald-400">客户门户</h1>
-        <p id="user-info" class="text-xs text-slate-400">Phase 2 起步 · 订单只读</p>
+        <p id="user-info" class="text-xs text-slate-400">订单 · 授权目录</p>
       </div>
-      <div class="flex gap-2 text-sm">
-        <button id="btn-logout" class="px-3 py-1 rounded bg-slate-800">退出</button>
-      </div>
+      <button id="btn-logout" class="px-3 py-1 rounded bg-slate-800 text-sm">退出</button>
     </div>
+    <nav class="max-w-5xl mx-auto px-4 flex gap-2 pb-2">
+      <button data-tab="orders" class="tab-btn active">我的订单</button>
+      <button data-tab="catalogs" class="tab-btn">授权目录</button>
+    </nav>
   </header>
   <main class="max-w-5xl mx-auto px-4 py-6">
-    <div id="summary" class="card mb-4 text-sm text-slate-400"></div>
-    <div id="orders-list" class="space-y-3"></div>
+    <section id="tab-orders">
+      <div id="summary" class="card mb-4 text-sm text-slate-400"></div>
+      <div id="orders-list" class="space-y-3"></div>
+    </section>
+    <section id="tab-catalogs" class="hidden">
+      <p class="text-sm text-slate-400 mb-3">仅显示授权给您的工厂 PDF 目录（元数据；文件待 R2 上线）。</p>
+      <div id="catalogs-list" class="space-y-3"></div>
+    </section>
   </main>
   <script>
     const token = localStorage.getItem('session_token');
     if (!token) location.href = '/portal';
-
     const headers = () => ({ 'X-Session-Token': token });
 
-    async function load() {
-      const r = await fetch('/api/portal/overview', { headers: headers() });
-      if (r.status === 401) {
-        localStorage.removeItem('session_token');
-        location.href = '/portal';
-        return;
-      }
-      const data = await r.json();
-      document.getElementById('user-info').textContent = data.email + ' · ' + data.orders_count + ' 个订单';
-      document.getElementById('summary').textContent =
-        '仅显示与您的邮箱关联的订单。完整目录分享链接由业务员通过 /s/{token} 发送。';
-      const el = document.getElementById('orders-list');
-      el.innerHTML = (data.orders || []).map((o) => `
-        <div class="card text-sm">
-          <div class="flex justify-between mb-1">
-            <strong class="text-emerald-400">${o.order_no}</strong>
-            <span>${o.status}</span>
-          </div>
+    document.querySelectorAll('[data-tab]').forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll('[data-tab]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-orders').classList.toggle('hidden', btn.dataset.tab !== 'orders');
+        document.getElementById('tab-catalogs').classList.toggle('hidden', btn.dataset.tab !== 'catalogs');
+        if (btn.dataset.tab === 'catalogs') loadCatalogs();
+      };
+    });
+
+    async function loadOrders() {
+      const data = await fetch('/api/portal/overview', { headers: headers() }).then((r) => r.json());
+      if (!data.email) { location.href = '/portal'; return; }
+      document.getElementById('user-info').textContent = data.email;
+      document.getElementById('summary').textContent = `${data.orders_count} 个订单`;
+      document.getElementById('orders-list').innerHTML = (data.orders || []).map((o) => `
+        <div class="card text-sm cursor-pointer" onclick="viewOrder('${o.id}')">
+          <div class="flex justify-between"><strong class="text-emerald-400">${o.order_no}</strong><span>${o.status}</span></div>
           <div>${o.customer_name} · ${o.currency} ${o.total_amount}</div>
-        </div>`).join('') || '<p class="text-slate-500">暂无订单，请联系业务员。</p>';
+        </div>`).join('') || '<p class="text-slate-500">暂无订单</p>';
+    }
+
+    async function viewOrder(id) {
+      const o = await fetch('/api/portal/orders/' + id, { headers: headers() }).then((r) => r.json());
+      const lines = (o.lines || []).map((l) => `${l.sku} ${l.product_name} x${l.qty}`).join('\n');
+      alert(`${o.order_no}\n${o.customer_name}\n合计 ${o.currency} ${o.total_amount}\n\n${lines}`);
+    }
+
+    async function loadCatalogs() {
+      const list = await fetch('/api/portal/catalogs', { headers: headers() }).then((r) => r.json());
+      document.getElementById('catalogs-list').innerHTML = (list || []).map((c) => `
+        <div class="card text-sm">
+          <strong>${c.title}</strong> <span class="text-slate-500">(${c.factory_code})</span>
+          <div class="text-slate-400">${c.category_l3} · ${c.pages} 页 · ${c.file_size_mb} MB</div>
+          <div class="text-xs text-amber-400 mt-1">${c.storage === 'r2_pending' ? 'PDF 待 R2 部署' : c.file_url}</div>
+        </div>`).join('') || '<p class="text-slate-500">暂无授权目录</p>';
     }
 
     document.getElementById('btn-logout').onclick = () => {
       localStorage.removeItem('session_token');
       location.href = '/portal';
     };
-    load();
+    loadOrders();
   </script>
 </body>
 </html>

@@ -44,6 +44,11 @@
                 <td>${l.unit_price}</td>
               </tr>`).join('')}
           </table>`;
+      } else if (data.catalog) {
+        const c = data.catalog;
+        content.innerHTML = `<div><strong>${c.title}</strong> · ${c.factory_name}</div>
+          <div class="text-slate-400">${c.category_l3} · ${c.pages}p · ${c.file_size_mb}MB</div>
+          <div class="text-amber-400 text-xs">${c.file_url}</div>`;
       } else if (data.factories) {
         content.innerHTML = data.factories.map((f) =>
           `<div class="p-2 bg-slate-900/50 rounded"><strong>${f.code}</strong> ${f.name_zh}<br>

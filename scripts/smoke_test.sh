@@ -92,6 +92,11 @@ if curl -sf "$BASE/api/share/invalid-token-test" | grep -q '"valid":false'; then
 else
   fail "GET /api/share/{token}"
 fi
+if curl -sf "$BASE/api/catalog/documents" | grep -q '商用锅具\|title'; then
+  ok "GET /api/catalog/documents"
+else
+  fail "GET /api/catalog/documents"
+fi
 
 # 5. Brainstorm generate
 BS=$(curl -sf -X POST "$BASE/api/brainstorm/generate" \

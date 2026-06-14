@@ -45,6 +45,9 @@ jobs:
       - name: Phase 1 verify
         run: bash scripts/phase1_verify.sh http://127.0.0.1:8000
 
+      - name: Phase 2 verify
+        run: bash scripts/phase2_verify.sh http://127.0.0.1:8000
+
   postgres-smoke:
     runs-on: ubuntu-latest
     steps:

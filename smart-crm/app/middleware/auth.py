@@ -40,6 +40,7 @@ PROTECTED_POST_PATHS = (
     "/api/orders",
     "/api/orders/from-lead/",
     "/api/share/links",
+    "/api/catalog/documents",
 )
 
 

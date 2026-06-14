@@ -56,6 +56,8 @@ class Lead(Base):
     source: Mapped[str] = mapped_column(String(64), default="exa")
     hs_code: Mapped[str] = mapped_column(String(16), default="")
     contact_email: Mapped[str] = mapped_column(String(256), default="")
+    contact_name: Mapped[str] = mapped_column(String(256), default="")
+    contact_title: Mapped[str] = mapped_column(String(256), default="")
     feishu_record_id: Mapped[str] = mapped_column(String(64), default="")
     assigned_to: Mapped[str] = mapped_column(String(256), default="", index=True)
     confirmed_by: Mapped[str] = mapped_column(String(256), default="")
@@ -310,6 +312,25 @@ class SalesOrderLine(Base):
     factory_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("factories.id"))
     notes: Mapped[str] = mapped_column(Text, default="")
     order: Mapped["SalesOrder"] = relationship(back_populates="lines")
+
+
+class CatalogDocument(Base):
+    """Phase 2 工厂目录元数据（PDF 存 R2，VPS 仅存索引）。"""
+
+    __tablename__ = "catalog_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    factory_id: Mapped[str] = mapped_column(String(36), ForeignKey("factories.id"), index=True)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    title_en: Mapped[str] = mapped_column(String(256), default="")
+    category_l3: Mapped[str] = mapped_column(String(64), default="")
+    file_url: Mapped[str] = mapped_column(String(1024), default="")
+    pages: Mapped[int] = mapped_column(Integer, default=0)
+    file_size_mb: Mapped[float] = mapped_column(Float, default=0.0)
+    authorized_emails: Mapped[dict] = mapped_column(JSON, default=list)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class ShareLink(Base):

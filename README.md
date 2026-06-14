@@ -77,7 +77,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 项目交接状态 | [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) |
 | 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | TBCEXP 桥接文档 | [docs/TBCEXP_BRIDGE.md](docs/TBCEXP_BRIDGE.md) |
-| Phase 1 登录验收 | `bash scripts/phase1_live.sh [URL]` |
+| Phase 2 验收 | `bash scripts/phase2_verify.sh [URL]` |
+| Phase 2 目录说明 | [docs/PHASE2_CATALOG.md](docs/PHASE2_CATALOG.md) |
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |
 | VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
 | 环境安全检查 | `bash scripts/check_env.sh` |

@@ -20,6 +20,7 @@ from app.config import (
     BrainstormActionRequest,
     BrainstormRequest,
     ConfigPayload,
+    CatalogDocumentRequest,
     ContentBatchGenerateRequest,
     ContentGenerateRequest,
     ContentUpdateRequest,
@@ -39,6 +40,7 @@ from app.config import (
 from app.database import ASYNC_DB_URL, get_session
 from app.models.entities import (
     Batch,
+    CatalogDocument,
     ContentDraft,
     CountryAnchor,
     Factory,
@@ -54,8 +56,14 @@ from app.models.entities import (
     TradeShow,
 )
 from app.services.access import is_sales_scoped, session_from_request
+from app.services.apollo_client import ApolloClient
 from app.services.auth import AuthService
 from app.services.brainstorm import BrainstormService
+from app.services.catalog import (
+    catalog_dict,
+    customer_can_view,
+    seed_catalog_documents,
+)
 from app.services.config_store import ConfigStore
 from app.services.content_studio import CONTENT_TYPES, ContentStudioService
 from app.services.data_loader import (
@@ -99,6 +107,7 @@ pilot_svc = LatamPilotService()
 probe_svc = IntegrationsProbeService()
 tbcexp_svc = TbcexpClient()
 feishu_svc = FeishuClient()
+apollo_svc = ApolloClient()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -287,6 +296,8 @@ def _lead_public_dict(lead: Lead) -> dict[str, Any]:
     data["confirmed_by"] = lead.confirmed_by
     data["tbcexp_synced"] = lead.tbcexp_synced
     data["contact_email"] = lead.contact_email
+    data["contact_name"] = lead.contact_name
+    data["contact_title"] = lead.contact_title
     return data
 
 
@@ -329,6 +340,75 @@ async def admin_summary(request: Request, db: AsyncSession = Depends(get_db)):
 async def get_feishu_record(record_id: str):
     """飞书记录只读查询（核对入库字段）。"""
     return await feishu_svc.get_record(record_id)
+
+
+@router.get("/catalog/documents")
+async def list_catalog_documents(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(CatalogDocument)
+        .where(CatalogDocument.active.is_(True))
+        .order_by(CatalogDocument.created_at.desc())
+    )
+    out = []
+    for doc in result.scalars().all():
+        factory = await db.get(Factory, doc.factory_id)
+        out.append(catalog_dict(doc, factory))
+    return out
+
+
+@router.post("/catalog/documents")
+async def create_catalog_document(
+    req: CatalogDocumentRequest, db: AsyncSession = Depends(get_db)
+):
+    factory = await db.get(Factory, req.factory_id)
+    if not factory:
+        raise HTTPException(404, "Factory not found")
+    doc = CatalogDocument(
+        factory_id=req.factory_id,
+        title=req.title,
+        title_en=req.title_en,
+        category_l3=req.category_l3,
+        file_url=req.file_url or "r2://pending/upload.pdf",
+        pages=req.pages,
+        file_size_mb=req.file_size_mb,
+        authorized_emails=req.authorized_emails,
+        notes=req.notes,
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+    return catalog_dict(doc, factory)
+
+
+@router.post("/leads/{lead_id}/enrich-contact")
+async def enrich_lead_contact(lead_id: str, db: AsyncSession = Depends(get_db)):
+    """Apollo 联系人补充（L4），写入 lead.contact_* 字段。"""
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    result = await apollo_svc.enrich_lead(lead)
+    if result.get("contact_email"):
+        lead.contact_email = result["contact_email"]
+    if result.get("contact_name"):
+        lead.contact_name = result["contact_name"]
+    if result.get("contact_title"):
+        lead.contact_title = result["contact_title"]
+    await db.commit()
+    return {"lead_id": lead_id, **result}
+
+
+@router.get("/bridge/tbcexp/status/{lead_id}")
+async def tbcexp_sync_status(lead_id: str, db: AsyncSession = Depends(get_db)):
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    return {
+        "lead_id": lead_id,
+        "tbcexp_synced": lead.tbcexp_synced,
+        "feishu_record_id": lead.feishu_record_id,
+        "assigned_to": lead.assigned_to,
+        "erp_configured": tbcexp_svc._configured(),
+    }
 
 
 @router.get("/catalog/tree")
@@ -1630,6 +1710,38 @@ async def portal_overview(request: Request, db: AsyncSession = Depends(get_db)):
             for o in rows[:20]
         ],
     }
+
+
+@router.get("/portal/orders/{order_id}")
+async def portal_order_detail(
+    order_id: str, request: Request, db: AsyncSession = Depends(get_db)
+):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "portal":
+        raise HTTPException(401, "Customer portal session required")
+    order = await db.get(SalesOrder, order_id)
+    if not order or order.customer_email != session.email:
+        raise HTTPException(404, "Order not found")
+    lines = await db.execute(
+        select(SalesOrderLine).where(SalesOrderLine.order_id == order_id)
+    )
+    return order_dict(order, list(lines.scalars().all()))
+
+
+@router.get("/portal/catalogs")
+async def portal_catalogs(request: Request, db: AsyncSession = Depends(get_db)):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "portal":
+        raise HTTPException(401, "Customer portal session required")
+    result = await db.execute(
+        select(CatalogDocument).where(CatalogDocument.active.is_(True))
+    )
+    out = []
+    for doc in result.scalars().all():
+        if customer_can_view(doc, session.email):
+            factory = await db.get(Factory, doc.factory_id)
+            out.append(catalog_dict(doc, factory))
+    return out
 
 
 @router.get("/portal/orders")
