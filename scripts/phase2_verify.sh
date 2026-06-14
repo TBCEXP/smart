@@ -45,6 +45,12 @@ else
   fail "POST /api/leads/{id}/enrich-contact"
 fi
 
+if curl -sf "$BASE/admin/dashboard" | grep -q '工厂目录'; then
+  ok "GET /admin/dashboard (catalog documents tab)"
+else
+  fail "GET /admin/dashboard (catalog documents tab)"
+fi
+
 if curl -sf "$BASE/portal/dashboard" | grep -q '授权目录'; then
   ok "GET /portal/dashboard (catalogs tab)"
 else

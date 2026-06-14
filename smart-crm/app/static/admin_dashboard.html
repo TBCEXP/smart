@@ -12,7 +12,7 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
       <div>
         <h1 class="text-xl font-bold text-emerald-400">SMART CRM 员工后台</h1>
-        <p id="user-info" class="text-xs text-slate-400">Phase 1 · 线索 / 工厂 / 订单 / 品类</p>
+        <p id="user-info" class="text-xs text-slate-400">Phase 1+2 · 线索 / 工厂 / 订单 / 目录</p>
       </div>
       <div class="flex gap-2 text-sm">
         <a href="/" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">获客面板</a>
@@ -24,6 +24,7 @@
       <button data-panel="factories" class="tab-btn">工厂</button>
       <button data-panel="orders" class="tab-btn">订单</button>
       <button data-panel="catalog" class="tab-btn">品类树</button>
+      <button data-panel="documents" class="tab-btn">工厂目录</button>
     </nav>
   </header>
 
@@ -93,6 +94,10 @@
       <div class="grid md:grid-cols-2 gap-6">
         <div class="card">
           <h2 class="font-semibold mb-3">订单列表</h2>
+          <div class="flex gap-2 mb-3">
+            <button id="btn-erp-orders" class="btn-secondary text-xs">拉取 ERP 订单</button>
+          </div>
+          <div id="erp-orders-hint" class="text-xs text-slate-500 mb-2 hidden"></div>
           <div id="orders-list" class="space-y-3 text-sm"></div>
         </div>
         <div class="card">
@@ -117,11 +122,33 @@
       </div>
     </section>
 
-    <!-- Catalog -->
+    <!-- Catalog tree -->
     <section id="panel-catalog" class="panel hidden">
       <div class="card">
         <h2 class="font-semibold mb-3">三级品类树</h2>
         <pre id="catalog-tree" class="text-xs font-mono bg-slate-900 p-4 rounded overflow-auto"></pre>
+      </div>
+    </section>
+
+    <!-- Catalog documents (Phase 2) -->
+    <section id="panel-documents" class="panel hidden">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card">
+          <h2 class="font-semibold mb-3">工厂 PDF 目录</h2>
+          <div id="documents-list" class="space-y-3 text-sm"></div>
+        </div>
+        <div class="card">
+          <h2 class="font-semibold mb-3">新增目录元数据</h2>
+          <div class="space-y-2">
+            <select id="doc-factory" class="input"></select>
+            <input id="doc-title" class="input" placeholder="目录名称（中文）" />
+            <input id="doc-title-en" class="input" placeholder="英文名称" />
+            <input id="doc-l3" class="input" placeholder="品类 L3 (bakeware,...)" />
+            <input id="doc-emails" class="input" placeholder="授权邮箱，逗号分隔（空=全部客户）" />
+            <button id="btn-add-document" class="btn-primary w-full">保存元数据</button>
+          </div>
+          <p class="text-xs text-slate-500 mt-3">PDF 文件通过 R2 上传；未配置 R2 时显示「待部署」。</p>
+        </div>
       </div>
     </section>
   </main>
@@ -159,6 +186,7 @@
         if (btn.dataset.panel === 'factories') loadFactories();
         if (btn.dataset.panel === 'orders') loadOrders();
         if (btn.dataset.panel === 'catalog') loadCatalog();
+        if (btn.dataset.panel === 'documents') loadDocuments();
       };
     });
 
@@ -200,6 +228,121 @@
       loadSummary();
     }
 
+    async function enrichApollo(leadId) {
+      const r = await fetch('/api/leads/' + leadId + '/enrich-contact', { method: 'POST' }).then((x) => x.json());
+      alert((r.contact_email || r.detail || '无结果') + (r.contact_name ? '\n' + r.contact_name : ''));
+      loadLeads();
+    }
+
+    async function shareCatalog(docId) {
+      const r = await api('/share/links', {
+        method: 'POST',
+        body: JSON.stringify({ resource_type: 'catalog', resource_id: docId, ttl_days: 14 }),
+      });
+      if (r.url) prompt('目录分享链接', r.url);
+    }
+
+    async function requestUploadUrl(docId) {
+      const r = await api(`/catalog/documents/${docId}/upload-url`, {
+        method: 'POST',
+        body: JSON.stringify({ update_file_url: true }),
+      });
+      if (r.upload_url) {
+        prompt('R2 预签名上传 URL（curl PUT）', r.upload_url);
+      } else {
+        alert(r.detail || 'R2 未配置，请在 Tab2 填写凭据');
+      }
+    }
+
+    async function loadDocuments() {
+      await loadFactories();
+      const list = await fetch('/api/catalog/documents').then((r) => r.json());
+      const el = document.getElementById('documents-list');
+      el.innerHTML = (list || []).map((d) => {
+        const storage = d.storage === 'r2_pending'
+          ? '<span class="text-amber-400">PDF 待 R2</span>'
+          : (d.download_url
+            ? `<a class="text-emerald-400" href="${d.download_url}" target="_blank">下载</a>`
+            : `<span class="text-slate-500">${d.storage || '-'}</span>`);
+        const emails = (d.authorized_emails || []).join(', ') || '全部门户客户';
+        return `<div class="p-3 rounded bg-slate-900/50" data-did="${d.id}">
+          <div class="flex justify-between gap-2"><strong>${d.title}</strong><span>${d.factory_code}</span></div>
+          <div class="text-slate-400">${d.category_l3} · ${d.pages}p · ${d.file_size_mb}MB</div>
+          <div class="text-xs text-slate-500 mt-1">授权: ${emails}</div>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            ${storage}
+            <button class="text-amber-400" data-upload="${d.id}">上传 URL</button>
+            <button class="text-emerald-400" data-share-doc="${d.id}">分享</button>
+          </div>
+        </div>`;
+      }).join('') || '<p class="text-slate-500">暂无目录，请右侧新增</p>';
+      el.querySelectorAll('[data-upload]').forEach((btn) => {
+        btn.onclick = () => requestUploadUrl(btn.dataset.upload);
+      });
+      el.querySelectorAll('[data-share-doc]').forEach((btn) => {
+        btn.onclick = () => shareCatalog(btn.dataset.shareDoc);
+      });
+      const sel = document.getElementById('doc-factory');
+      if (!sel.options.length) {
+        const factories = await api('/factories');
+        sel.innerHTML = (factories || []).map((f) =>
+          `<option value="${f.id}">${f.code} ${f.name_zh}</option>`
+        ).join('');
+      }
+    }
+
+    async function loadErpOrders() {
+      const r = await api('/bridge/tbcexp/orders?limit=10');
+      const hint = document.getElementById('erp-orders-hint');
+      hint.classList.remove('hidden');
+      hint.textContent = `${r.detail || ''} · ${r.total || 0} 条 (${r.mode || 'mock'})`;
+      const el = document.getElementById('orders-list');
+      const erpHtml = (r.orders || []).map((o) =>
+        `<div class="p-3 rounded bg-indigo-950/40 border border-indigo-900/50 text-sm mb-2">
+           <div class="flex justify-between"><strong>${o.order_no}</strong><span class="text-indigo-300">ERP</span></div>
+           <div>${o.customer_name} · ${o.country_iso} · ${o.currency} ${o.total_amount}</div>
+           <div class="text-slate-500">${o.status} · ${o.assigned_to || '-'}</div>
+         </div>`
+      ).join('');
+      const local = await api('/orders');
+      const localHtml = (local || []).map((o) =>
+        `<div class="p-3 rounded bg-slate-900/50" data-oid="${o.id}">
+           <div class="flex justify-between"><strong>${o.order_no}</strong><span>${o.status}</span></div>
+           <div>${o.customer_name} · ${o.country_iso} · ${o.currency} ${o.total_amount}</div>
+           <div class="text-slate-500">${(o.lines || []).length} 行 · ${o.assigned_to || '未分配'}</div>
+           <div class="mt-2 flex gap-2">
+             <button class="text-xs text-emerald-400" data-select="${o.id}">编辑行</button>
+             <button class="text-xs text-amber-400" data-share="${o.id}">分享链接</button>
+           </div>
+         </div>`
+      ).join('');
+      el.innerHTML = (erpHtml ? erpHtml + '<div class="text-xs text-slate-500 my-2">— 本地 CRM 订单 —</div>' : '') +
+        (localHtml || '<p class="text-slate-500">暂无本地订单</p>');
+      bindOrderButtons(el);
+    }
+
+    function bindOrderButtons(el) {
+      el.querySelectorAll('[data-select]').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const node = btn.closest('[data-oid]');
+          selectOrder(btn.dataset.select, node.querySelector('strong').textContent);
+        };
+      });
+      el.querySelectorAll('[data-share]').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          shareOrder(btn.dataset.share);
+        };
+      });
+    }
+
+      const r = await api(`/orders/from-lead/${leadId}`, { method: 'POST' });
+      alert('订单已创建: ' + r.order_no);
+      loadOrders();
+      loadSummary();
+    }
+
     async function viewFeishu(recordId) {
       if (!recordId) return alert('无飞书记录 ID');
       const r = await fetch('/api/feishu/records/' + recordId).then((x) => x.json());
@@ -233,6 +376,7 @@
           <td class="py-2 pr-3 whitespace-nowrap">
             ${lead.feishu_record_id ? `<button class="text-xs text-slate-400" onclick="viewFeishu('${lead.feishu_record_id}')">飞书</button>` : ''}
             <button class="text-xs text-amber-400 ml-1" onclick="syncErp('${lead.id}')">ERP</button>
+            <button class="text-xs text-indigo-400 ml-1" onclick="enrichApollo('${lead.id}')">Apollo</button>
             <button class="text-xs text-emerald-400 ml-1" onclick="createOrderFromLead('${lead.id}')">订单</button>
           </td>`;
         tbody.appendChild(tr);
@@ -267,6 +411,7 @@
     async function loadOrders() {
       const orders = await api('/orders');
       const el = document.getElementById('orders-list');
+      document.getElementById('erp-orders-hint').classList.add('hidden');
       el.innerHTML = (orders || []).map((o) =>
         `<div class="p-3 rounded bg-slate-900/50" data-oid="${o.id}">
            <div class="flex justify-between"><strong>${o.order_no}</strong><span>${o.status}</span></div>
@@ -278,19 +423,7 @@
            </div>
          </div>`
       ).join('') || '<p class="text-slate-500">暂无订单</p>';
-      el.querySelectorAll('[data-select]').forEach((btn) => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const node = btn.closest('[data-oid]');
-          selectOrder(btn.dataset.select, node.querySelector('strong').textContent);
-        };
-      });
-      el.querySelectorAll('[data-share]').forEach((btn) => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          shareOrder(btn.dataset.share);
-        };
-      });
+      bindOrderButtons(el);
     }
 
     function selectOrder(id, label) {
@@ -308,6 +441,24 @@
     document.getElementById('btn-logout').onclick = () => {
       localStorage.removeItem('session_token');
       location.href = '/admin';
+    };
+
+    document.getElementById('btn-erp-orders').onclick = loadErpOrders;
+
+    document.getElementById('btn-add-document').onclick = async () => {
+      const emails = document.getElementById('doc-emails').value
+        .split(',').map((e) => e.trim()).filter(Boolean);
+      await api('/catalog/documents', {
+        method: 'POST',
+        body: JSON.stringify({
+          factory_id: document.getElementById('doc-factory').value,
+          title: document.getElementById('doc-title').value,
+          title_en: document.getElementById('doc-title-en').value,
+          category_l3: document.getElementById('doc-l3').value,
+          authorized_emails: emails,
+        }),
+      });
+      loadDocuments();
     };
 
     document.getElementById('btn-add-factory').onclick = async () => {

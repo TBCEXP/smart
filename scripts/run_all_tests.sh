@@ -6,6 +6,7 @@ set -euo pipefail
 BASE="http://127.0.0.1:8000"
 FULL=0
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 for arg in "$@"; do
   case "$arg" in
@@ -33,6 +34,12 @@ bash "$SCRIPT_DIR/phase1_verify.sh" "$BASE"
 echo ""
 echo ">>> Phase 2 目录/门户"
 bash "$SCRIPT_DIR/phase2_verify.sh" "$BASE"
+
+if [ -f "$ROOT/smart-crm/data/auth_emails.log" ]; then
+  echo ""
+  echo ">>> Phase 2 Live（OTP）"
+  bash "$SCRIPT_DIR/phase2_live.sh" "$BASE" || echo "  (phase2_live 失败 — 检查 auth_emails.log)"
+fi
 
 echo ""
 echo ">>> KB / 系统状态"

@@ -21,6 +21,15 @@ async def test_push_lead_mock_mode():
     assert "external_id" in result
 
 
+@pytest.mark.asyncio
+async def test_list_orders_mock_mode():
+    client = TbcexpClient()
+    result = await client.list_orders()
+    assert result["mode"] == "mock"
+    assert result["total"] >= 1
+    assert result["orders"][0]["order_no"]
+
+
 def test_lead_payload_fields():
     client = TbcexpClient()
     lead = Lead(

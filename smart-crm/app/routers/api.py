@@ -472,6 +472,17 @@ async def tbcexp_sync_status(lead_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 
+@router.get("/bridge/tbcexp/orders")
+async def tbcexp_list_orders(request: Request, limit: int = 20):
+    """TBCEXP ERP 订单只读拉取（需员工登录）。"""
+    async with get_session() as db:
+        session = await session_from_request(request, db)
+        if not session or session.portal != "admin":
+            raise HTTPException(401, "Admin session required")
+    safe_limit = max(1, min(limit, 100))
+    return await tbcexp_svc.list_orders(safe_limit)
+
+
 @router.get("/catalog/tree")
 async def get_catalog_tree():
     """Phase 1 三级品类树（只读，源自 geo_config）。"""
