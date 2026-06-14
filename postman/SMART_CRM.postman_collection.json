@@ -296,6 +296,13 @@
           }
         },
         {
+          "name": "KB Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/kb/status"
+          }
+        },
+        {
           "name": "KB Search CO Bakeware",
           "request": {
             "method": "GET",

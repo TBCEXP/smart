@@ -296,6 +296,9 @@ document.getElementById('btn-feishu-test')?.addEventListener('click', async () =
 document.getElementById('btn-goto-config')?.addEventListener('click', () => {
   document.querySelector('[data-tab="config"]')?.click();
 });
+document.getElementById('btn-goto-dashboard')?.addEventListener('click', () => {
+  document.querySelector('[data-tab="dashboard"]')?.click();
+});
 
 function updateOnboardBanner(productionReady) {
   const banner = document.getElementById('onboard-banner');
@@ -857,6 +860,9 @@ async function loadReadinessBadge() {
       el.textContent = `Mock 模式 · 任务${due}`;
     }
     el.title = `MX 情报${mx.intel_reports || 0} · 定时${mx.active_schedules || 0}`;
+    const ms = r.milestones || {};
+    const done = ['1_5_5_whatsapp_5', '1_5_7_kb_recall'].filter((k) => ms[k]).length;
+    if (r.milestones) el.title += ` · 里程碑 ${done}/2+`;
   } catch {
     el.classList.add('hidden');
   }

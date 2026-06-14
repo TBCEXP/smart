@@ -37,6 +37,36 @@ jobs:
       - name: Phase 1.5 quick verify
         run: bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick
 
+  postgres-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare .env
+        run: |
+          cp .env.example .env
+          sed -i 's/change-me-to-random-32-chars-min/ci-test-secret-32chars-minimum-ok/' .env
+
+      - name: Start Postgres + smart-crm
+        run: |
+          export VERSION=ci-postgres
+          docker compose up -d postgres
+          for i in $(seq 1 30); do
+            docker compose exec -T postgres pg_isready -U smartcrm && break
+            sleep 2
+          done
+          docker compose build smart-crm
+          docker compose up -d smart-crm
+          for i in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8000/api/health && break
+            sleep 3
+          done
+
+      - name: Smoke on Postgres (pgvector)
+        run: |
+          curl -sf http://127.0.0.1:8000/api/kb/status | grep -q '"search_engine":"pgvector"'
+          bash scripts/smoke_test.sh http://127.0.0.1:8000
+
       - name: Integrations probe
         run: |
           curl -sf -X POST http://127.0.0.1:8000/api/integrations/probe | grep -q probes

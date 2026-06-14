@@ -4,6 +4,7 @@ import asyncio
 import csv
 import io
 import json
+import os
 import zipfile
 from datetime import datetime, timedelta
 from typing import Any
@@ -31,7 +32,7 @@ from app.config import (
     SendEmailRequest,
     TradeShowCrawlRequest,
 )
-from app.database import get_session
+from app.database import ASYNC_DB_URL, get_session
 from app.models.entities import (
     Batch,
     ContentDraft,
@@ -82,7 +83,12 @@ async def get_db():
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "time": datetime.utcnow().isoformat()}
+    return {
+        "status": "ok",
+        "time": datetime.utcnow().isoformat(),
+        "version": os.getenv("VERSION", "1.5.0"),
+        "db": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
+    }
 
 
 @router.get("/integrations/status")
@@ -152,6 +158,11 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "pilot_has_run": mx.get("latest_run") is not None,
             "schedules_queued": mx["totals"]["active_schedules"] > 0,
             "ready_for_live_pilot": integ.get("production_ready", False),
+        },
+        "milestones": (await _phase15_milestones(db))["milestones"],
+        "kb": {
+            "db_mode": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
+            "search_engine": "pgvector" if "postgresql" in ASYNC_DB_URL else "cosine_json",
         },
     }
 
@@ -716,6 +727,26 @@ async def country_queue(country_iso: str):
     return geo_scheduler.generate_country_queue(country_iso)
 
 
+@router.get("/kb/status")
+async def kb_status(db: AsyncSession = Depends(get_db)):
+    """知识库运行状态（pgvector / 索引覆盖率）。"""
+    from sqlalchemy import func
+
+    indexed = await db.execute(
+        select(func.count()).select_from(Lead).where(Lead.embedding.isnot(None))
+    )
+    total = await db.execute(select(func.count()).select_from(Lead))
+    pg = "postgresql" in ASYNC_DB_URL
+    return {
+        "db_mode": "postgresql" if pg else "sqlite",
+        "search_engine": "pgvector" if pg else "cosine_json",
+        "indexed_leads": indexed.scalar() or 0,
+        "total_leads": total.scalar() or 0,
+        "openai_configured": bool(config_store.get("openai_api_key")),
+        "semantic_ready": bool(config_store.get("openai_api_key")) and pg,
+    }
+
+
 @router.get("/kb/search")
 async def kb_search(q: str, limit: int = 10, db: AsyncSession = Depends(get_db)):
     results = await kb_svc.search(db, q, limit)
@@ -735,6 +766,22 @@ async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
 @router.get("/stats/overview")
 async def stats_overview(db: AsyncSession = Depends(get_db)):
     """试点看板汇总：线索、触达、海关、试点进度。"""
+    snap = await _phase15_milestones(db)
+    mx = await pilot_svc.status(db, "MX")
+    co = await pilot_svc.status(db, "CO")
+    return {
+        "leads": snap["leads"],
+        "outreach": snap["outreach"],
+        "track_c": snap["track_c"],
+        "pilot": {
+            "MX": mx.get("latest_run", {}).get("acceptance") if mx.get("latest_run") else None,
+            "CO": co.get("latest_run", {}).get("acceptance") if co.get("latest_run") else None,
+        },
+        "milestones": snap["milestones"],
+    }
+
+
+async def _phase15_milestones(db: AsyncSession) -> dict[str, Any]:
     leads = await db.execute(select(Lead))
     lead_list = leads.scalars().all()
     feishu_synced = sum(1 for l in lead_list if l.feishu_record_id)
@@ -745,11 +792,9 @@ async def stats_overview(db: AsyncSession = Depends(get_db)):
     imports = await db.execute(select(ImportLead))
     import_list = imports.scalars().all()
     matched = sum(1 for i in import_list if i.domain)
-    mx = await pilot_svc.status(db, "MX")
-    co = await pilot_svc.status(db, "CO")
-    kb_sample = await kb_svc.search(db, "bakeware distributor Colombia", limit=3)
     import_count = len(import_list)
     match_rate = round(matched / import_count, 2) if import_count else 0
+    kb_sample = await kb_svc.search(db, "bakeware distributor Colombia", limit=3)
     return {
         "leads": {
             "total": len(lead_list),
@@ -768,10 +813,6 @@ async def stats_overview(db: AsyncSession = Depends(get_db)):
             "domain_matched": matched,
             "match_rate": match_rate,
             "target_1_5_6": "CSV 50 条域名匹配率 >60%",
-        },
-        "pilot": {
-            "MX": mx.get("latest_run", {}).get("acceptance") if mx.get("latest_run") else None,
-            "CO": co.get("latest_run", {}).get("acceptance") if co.get("latest_run") else None,
         },
         "milestones": {
             "1_5_4_feishu_30": feishu_synced >= 30,

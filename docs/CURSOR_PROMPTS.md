@@ -60,10 +60,19 @@
 ### 改完代码全流程验收
 ```
 用 verification 清单验收 SMART CRM：
-1. 跑 bash scripts/smoke_test.sh
+1. 跑 bash scripts/run_all_tests.sh
 2. 对照 docs/VERIFICATION_CHECKLIST.md 的 A/B 节
 3. 列出失败项并修复
 4. 提交前确认 /api/integrations/status production_ready
+```
+
+### 生产上线引导
+```
+按 docs/PRODUCTION_ONBOARDING.md 执行：
+1. bash scripts/check_env.sh /opt/smart-crm
+2. bash scripts/prod_onboard.sh https://crm.domain.com
+3. 配置 Key 后 bash scripts/prod_onboard.sh URL --full
+4. 飞书字段对照 docs/FEISHU_FIELDS.md
 ```
 
 ### 浏览器测登录和 Tab

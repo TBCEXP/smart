@@ -21,6 +21,16 @@ if curl -sf "$BASE/api/health" | grep -q '"status":"ok"'; then
 else
   fail "GET /api/health"
 fi
+if curl -sf "$BASE/api/health" | grep -q '"version"'; then
+  ok "GET /api/health (version)"
+else
+  fail "GET /api/health (version)"
+fi
+if curl -sf "$BASE/api/kb/status" | grep -q 'search_engine'; then
+  ok "GET /api/kb/status"
+else
+  fail "GET /api/kb/status"
+fi
 
 # 2. Integrations status
 if curl -sf "$BASE/api/integrations/status" | grep -q 'configured_count'; then
