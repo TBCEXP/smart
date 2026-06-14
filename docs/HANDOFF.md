@@ -60,6 +60,8 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 | `export_blockers.sh` | 单独导出 `production_blockers` |
 | `delivery_complete.sh` | 代码交付确认（Agent 完结检查） |
 | `setup_github_deploy.sh` | GitHub Secrets 配置步骤 + 链接 |
+| `setup_tab2_keys.sh` | Tab2 API Key 配置指南 |
+| `production_start.sh` | 生产上线总入口（串联全部待办） |
 
 ## 仓库
 

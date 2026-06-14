@@ -47,6 +47,8 @@
 - `pre_merge_verify` 推荐 `go_live.sh` 替代 `final_acceptance`
 
 - `setup_github_deploy.sh` — GitHub Actions Secrets 配置助手（含仓库链接）
+- `production_start.sh` — 生产上线总入口
+- `setup_tab2_keys.sh` — Tab2 API Key 配置指南
 
 ### Added (final polish)
 

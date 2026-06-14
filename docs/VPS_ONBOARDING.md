@@ -1,6 +1,7 @@
 # VPS 上线引导（v2.1.0）
 
-> 代码验收已完成。按本清单在 RackNerd VPS 上完成生产部署。
+> 代码验收已完成。按本清单在 RackNerd VPS 上完成生产部署。  
+> 快速入口: `bash scripts/production_start.sh [URL] [VPS_IP]`
 
 ## 前置条件
 

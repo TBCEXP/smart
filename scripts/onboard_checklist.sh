@@ -75,4 +75,5 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 ```
 
 详见: docs/VPS_ONBOARDING.md · docs/HANDOFF.md
+快速入口: bash scripts/production_start.sh [BASE_URL] [VPS_IP]
 EOF
