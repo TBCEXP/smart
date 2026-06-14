@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 47+、`ready`、`go_live`、`deploy_verify`、`deploy_preflight`、`onboard_checklist` |
+| 验收脚本 | ✅ | `production_start` · `ready` · `go_live` · 40 pytest · 47 smoke |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | 字段映射 + 线索推送 + 订单 sync |
 | 文档 | ✅ | 部署、上线引导、**HANDOFF**、**PRODUCTION_READY**、Phase 3–5 专篇 |
@@ -44,13 +44,11 @@ bash scripts/latam_full_pilot.sh http://127.0.0.1:8000 --run-due=2
 ## 生产上线命令（VPS 就绪后）
 
 ```bash
+bash scripts/production_start.sh http://VPS_IP:8000 VPS_IP
 sudo bash scripts/bootstrap_vps.sh
 bash scripts/upgrade.sh
-bash scripts/ready.sh http://VPS_IP:8000
 bash scripts/go_live.sh https://crm.domain.com
 bash scripts/prod_onboard.sh https://crm.domain.com --full
-bash scripts/acceptance_report.sh https://crm.domain.com report.md
-sudo bash scripts/setup_backup_cron.sh
 ```
 
 ## 关键 API

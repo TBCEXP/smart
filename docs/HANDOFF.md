@@ -25,9 +25,9 @@ bash scripts/delivery_complete.sh http://127.0.0.1:8000
 详见 [VPS_ONBOARDING.md](VPS_ONBOARDING.md)。
 
 ```bash
+bash scripts/production_start.sh https://crm.yourdomain.com VPS_IP
 sudo bash scripts/bootstrap_vps.sh
 bash scripts/upgrade.sh
-bash scripts/ready.sh https://crm.yourdomain.com
 bash scripts/prod_onboard.sh https://crm.yourdomain.com --full
 bash scripts/acceptance_report.sh https://crm.yourdomain.com
 ```
