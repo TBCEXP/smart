@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 39+、phase15、phase1、phase2 |
+| 验收脚本 | ✅ | smoke 40+、phase15、phase1、phase2、**phase3** |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图、**合并清单** |
@@ -57,8 +57,8 @@ sudo bash scripts/setup_backup_cron.sh
 | 端点 | 说明 |
 |------|------|
 | `GET /api/health` | 版本、数据库模式 |
-| `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2 checklist |
-| `GET /api/system/handoff-report` | Phase 0–2 交接 Markdown |
+| `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2/3 checklist |
+| `GET /api/system/handoff-report` | Phase 0–3 交接 Markdown |
 | `PATCH /api/orders/{id}` | 确认/取消订单（需登录） |
 | `GET /api/pilot/report` | MX/CO 试点 + 里程碑 |
 | `GET /api/pilot/export?format=md` | 验收报告 Markdown |
@@ -88,6 +88,18 @@ sudo bash scripts/setup_backup_cron.sh
 | 验收脚本 | ✅ `phase2_verify.sh` + `phase2_live.sh` |
 | 报价单分发 | ✅ `doc_type=quote/price_list` + `/portal/quotes` |
 
+## Phase 3 大文件/通知
+
+| 功能 | 状态 |
+|------|------|
+| `FileTransfer` 元数据 | ✅ 大文件中转记录 + R2 上传 URL |
+| 分享邮件通知 | ✅ Resend 或 `auth_emails.log` 回退 |
+| 员工后台大文件 Tab | ✅ `/admin/dashboard` → 大文件 |
+| 分享 `resource_type=file` | ✅ `/s/{token}` 公开下载 |
+| 验收脚本 | ✅ `phase3_verify.sh` |
+
+详见 [PHASE3_FILES.md](PHASE3_FILES.md)。
+
 ## Phase 1+（ERP 深度对接）
 
 员工门户、工厂目录、订单、包装 AI — 见 [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)，在 Phase 1.5 生产验收通过后启动。
@@ -95,5 +107,5 @@ sudo bash scripts/setup_backup_cron.sh
 ## 仓库
 
 - GitHub: `https://github.com/TBCEXP/smart`
-- 主分支: `main`（已含 Phase 1.5 + Phase 1 + Phase 2）
+- 主分支: `main`（已含 Phase 1.5 + Phase 1 + Phase 2 + Phase 3）
 - 原功能分支: `cursor/exa-query-latam-pilot-c2f3`（已 fast-forward 合并）

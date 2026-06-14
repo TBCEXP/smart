@@ -38,6 +38,8 @@ from app.config import (
     ScheduleRequest,
     SendEmailRequest,
     ShareLinkRequest,
+    FileTransferRequest,
+    FileUploadUrlRequest,
     TradeShowCrawlRequest,
 )
 from app.database import ASYNC_DB_URL, get_session
@@ -54,6 +56,7 @@ from app.models.entities import (
     Schedule,
     SalesOrder,
     SalesOrderLine,
+    FileTransfer,
     ShareLink,
     StrategyAction,
     StrategySession,
@@ -93,6 +96,8 @@ from app.services.phase1 import (
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 from app.config import settings
 from app.services.r2_client import R2Client
+from app.services.files import file_dict
+from app.services.notify import notify_share_link
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
 from app.services.feishu_client import FeishuClient
@@ -210,6 +215,13 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             )
         )
     ).scalar_one()
+    file_transfers = (
+        await db.execute(
+            select(func.count())
+            .select_from(FileTransfer)
+            .where(FileTransfer.active.is_(True))
+        )
+    ).scalar_one()
     return {
         "phase1": {
             "factories": factories,
@@ -222,6 +234,10 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             "share_links": shares,
             "r2_configured": bool(cfg.get("r2_account_id") and cfg.get("r2_access_key_id")),
             "portal_demo_orders": portal_orders,
+        },
+        "phase3": {
+            "file_transfers": file_transfers,
+            "notify_service": True,
         },
     }
 
@@ -256,6 +272,8 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase2_catalog_seeded": biz["phase2"]["catalog_documents"] >= 1,
             "phase2_portal_ready": biz["phase2"]["portal_demo_orders"] >= 1,
             "phase2_r2_optional": biz["phase2"]["r2_configured"],
+            "phase3_files_seeded": biz.get("phase3", {}).get("file_transfers", 0) >= 1,
+            "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
         },
         "business": biz,
         "milestones": (await _phase15_milestones(db))["milestones"],
@@ -301,10 +319,16 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         f"- R2 已配置: {biz.get('phase2', {}).get('r2_configured')}",
         f"- 门户演示订单: {biz.get('phase2', {}).get('portal_demo_orders', 0)}",
         "",
+        "## Phase 3 大文件/通知",
+        "",
+        f"- 大文件元数据: {biz.get('phase3', {}).get('file_transfers', 0)}",
+        f"- 分享邮件通知: {'✓' if biz.get('phase3', {}).get('notify_service') else '○'}",
+        "",
         "## 验收命令",
         "",
         "```bash",
         "bash scripts/run_all_tests.sh http://YOUR_HOST:8000",
+        "bash scripts/phase3_verify.sh http://YOUR_HOST:8000",
         "bash scripts/phase2_live.sh http://YOUR_HOST:8000",
         "bash scripts/prod_onboard.sh http://YOUR_HOST:8000 --full",
         "```",
@@ -594,6 +618,76 @@ async def update_catalog_document(
     await db.refresh(doc)
     factory = await db.get(Factory, doc.factory_id)
     return catalog_dict(doc, factory, r2_svc)
+
+
+@router.get("/files/transfers")
+async def list_file_transfers(db: AsyncSession = Depends(get_db)):
+    """大文件中转元数据列表（员工后台 / 验收脚本）。"""
+    result = await db.execute(
+        select(FileTransfer)
+        .where(FileTransfer.active.is_(True))
+        .order_by(FileTransfer.created_at.desc())
+    )
+    return [file_dict(t, r2_svc) for t in result.scalars().all()]
+
+
+@router.post("/files/transfers")
+async def create_file_transfer(
+    req: FileTransferRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """创建大文件元数据（实体文件通过 R2 上传）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    transfer = FileTransfer(
+        title=req.title,
+        customer_email=req.customer_email,
+        order_id=req.order_id or None,
+        file_url=req.file_url or "r2://smart-crm/files/pending.bin",
+        file_size_mb=req.file_size_mb,
+        content_type=req.content_type,
+        notes=req.notes,
+        created_by=session.email,
+    )
+    db.add(transfer)
+    await db.commit()
+    await db.refresh(transfer)
+    return file_dict(transfer, r2_svc)
+
+
+@router.post("/files/transfers/{transfer_id}/upload-url")
+async def file_upload_url(
+    transfer_id: str,
+    req: FileUploadUrlRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """生成 R2 预签名上传 URL（大文件）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    transfer = await db.get(FileTransfer, transfer_id)
+    if not transfer or not transfer.active:
+        raise HTTPException(404, "File transfer not found")
+    key = req.key.strip()
+    if not key:
+        parsed = R2Client.parse_r2_url(transfer.file_url)
+        if parsed:
+            key = parsed[1]
+        else:
+            safe_title = "".join(c if c.isalnum() else "-" for c in transfer.title[:32]).strip("-")
+            key = f"files/{safe_title or transfer.id}.bin"
+    result = r2_svc.presign_put(
+        key=key,
+        ttl_seconds=max(60, min(req.ttl_seconds, 3600)),
+        content_type=req.content_type or transfer.content_type,
+    )
+    if req.update_file_url and result.get("file_url"):
+        transfer.file_url = result["file_url"]
+        await db.commit()
+    return {"transfer_id": transfer.id, **result}
 
 
 @router.post("/leads/{lead_id}/enrich-contact")
@@ -2065,12 +2159,24 @@ async def create_share(
         ttl_days=req.ttl_days,
     )
     base = settings.app_base_url.rstrip("/")
+    share_url = f"{base}/s/{link.token}"
+    notify_result = None
+    to_email = (req.customer_email or "").strip()
+    if req.notify_email and to_email:
+        notify_result = await notify_share_link(
+            to_email,
+            share_url,
+            req.resource_type,
+            req.notify_message,
+            config_store,
+        )
     return {
         "token": link.token,
-        "url": f"{base.rstrip('/')}/s/{link.token}",
+        "url": share_url,
         "expires_at": link.expires_at.isoformat() if link.expires_at else None,
         "resource_type": link.resource_type,
         "resource_id": link.resource_id,
+        "notify": notify_result,
     }
 
 

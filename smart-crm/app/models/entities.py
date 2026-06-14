@@ -351,6 +351,24 @@ class ShareLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class FileTransfer(Base):
+    """Phase 3 大文件中转元数据（实体文件存 R2）。"""
+
+    __tablename__ = "file_transfers"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    file_url: Mapped[str] = mapped_column(String(1024), default="")
+    file_size_mb: Mapped[float] = mapped_column(Float, default=0.0)
+    content_type: Mapped[str] = mapped_column(String(128), default="application/octet-stream")
+    customer_email: Mapped[str] = mapped_column(String(256), default="")
+    order_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("sales_orders.id"))
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class OutreachLog(Base):
     """人工触达记录（WhatsApp / 邮件），用于 1.5.5 回复率跟踪。"""
 

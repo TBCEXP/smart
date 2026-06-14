@@ -212,6 +212,25 @@ class ShareLinkRequest(BaseModel):
     resource_id: str
     customer_email: str = ""
     ttl_days: int = 14
+    notify_email: bool = False
+    notify_message: str = ""
+
+
+class FileTransferRequest(BaseModel):
+    title: str
+    customer_email: str = ""
+    order_id: str = ""
+    file_url: str = ""
+    file_size_mb: float = 0.0
+    content_type: str = "application/octet-stream"
+    notes: str = ""
+
+
+class FileUploadUrlRequest(BaseModel):
+    key: str = ""
+    content_type: str = "application/octet-stream"
+    ttl_seconds: int = 900
+    update_file_url: bool = True
 
 
 class CatalogUploadUrlRequest(BaseModel):

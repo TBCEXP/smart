@@ -7,8 +7,9 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.entities import CatalogDocument, Factory, SalesOrder, SalesOrderLine, ShareLink
+from app.models.entities import CatalogDocument, Factory, FileTransfer, SalesOrder, SalesOrderLine, ShareLink
 from app.services.catalog import catalog_dict
+from app.services.files import file_dict
 from app.services.phase1 import order_dict
 
 
@@ -88,6 +89,13 @@ async def resolve_share(db: AsyncSession, token: str) -> dict[str, Any]:
             return payload
         factory = await db.get(Factory, doc.factory_id)
         payload["catalog"] = catalog_dict(doc, factory)
+    elif link.resource_type == "file":
+        transfer = await db.get(FileTransfer, link.resource_id)
+        if not transfer or not transfer.active:
+            payload["valid"] = False
+            payload["detail"] = "文件不存在"
+            return payload
+        payload["file"] = file_dict(transfer)
     return payload
 
 
