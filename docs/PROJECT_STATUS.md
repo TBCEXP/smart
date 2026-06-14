@@ -108,6 +108,7 @@ sudo bash scripts/setup_backup_cron.sh
 | 文本 diff | ✅ difflib 相似度 |
 | 图形 diff | ✅ Pillow 像素差异 |
 | 规则引擎 verdict | ✅ passed/warnings/failed |
+| Tesseract OCR | ✅ 标签文字提取（Docker 默认启用） |
 | 员工后台印刷前稿 Tab | ✅ `/admin/dashboard` |
 | 验收脚本 | ✅ `phase4_verify.sh` |
 

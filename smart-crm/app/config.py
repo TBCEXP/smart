@@ -324,6 +324,10 @@ class PrepressReviewRequest(BaseModel):
     notes: str = ""
 
 
+class OcrExtractRequest(BaseModel):
+    image: str
+
+
 class ProductionInspectionRequest(BaseModel):
     title: str
     order_id: str = ""

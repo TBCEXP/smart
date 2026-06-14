@@ -41,6 +41,7 @@ from app.config import (
     FileTransferRequest,
     FileUploadUrlRequest,
     BarcodeValidateRequest,
+    OcrExtractRequest,
     PrepressReviewRequest,
     ProductionInspectionRequest,
     ProductionHumanReviewRequest,
@@ -105,6 +106,7 @@ from app.services.r2_client import R2Client
 from app.services.files import file_dict
 from app.services.notify import notify_share_link
 from app.services.prepress import review_dict, run_prepress_analysis, seed_prepress_reviews
+from app.services.ocr_engine import extract_text, tesseract_available
 from app.services.production_inspect import (
     inspection_dict,
     run_production_analysis,
@@ -273,6 +275,7 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
         "phase4": {
             "prepress_reviews": prepress_reviews,
             "rule_engine": True,
+            "ocr_available": tesseract_available(),
         },
         "phase5": {
             "production_inspections": production_inspections,
@@ -315,6 +318,7 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
             "phase4_prepress_seeded": biz.get("phase4", {}).get("prepress_reviews", 0) >= 1,
             "phase4_rule_engine": biz.get("phase4", {}).get("rule_engine", False),
+            "phase4_ocr_available": biz.get("phase4", {}).get("ocr_available", False),
             "phase5_inspection_seeded": biz.get("phase5", {}).get("production_inspections", 0) >= 1,
             "phase5_opencv_align": biz.get("phase5", {}).get("opencv_align", False),
         },
@@ -372,6 +376,7 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         "",
         f"- 前稿比对任务: {biz.get('phase4', {}).get('prepress_reviews', 0)}",
         f"- 规则引擎（条码/OCR/图形 diff）: {'✓' if biz.get('phase4', {}).get('rule_engine') else '○'}",
+        f"- Tesseract OCR: {'✓' if biz.get('phase4', {}).get('ocr_available') else '○ (Docker 镜像默认启用)'}",
         "",
         "## Phase 5 大货实拍 AI",
         "",
@@ -756,6 +761,23 @@ async def prepress_barcode_validate(req: BarcodeValidateRequest):
 async def prepress_barcode_generate(req: BarcodeValidateRequest):
     """生成条码 SVG（用于前稿预览）。"""
     return generate_barcode_svg(req.value, req.symbology)
+
+
+@router.get("/prepress/ocr/status")
+async def prepress_ocr_status():
+    """Tesseract OCR 是否可用（Docker 镜像默认已安装）。"""
+    return {"available": tesseract_available(), "engine": "tesseract"}
+
+
+@router.post("/prepress/ocr/extract")
+async def prepress_ocr_extract(req: OcrExtractRequest):
+    """从本地/fixture 图片提取文字（规则引擎辅助，非 LLM）。"""
+    from app.services.prepress import resolve_image_path
+
+    path = resolve_image_path(req.image)
+    if not path:
+        raise HTTPException(404, "Image not found")
+    return extract_text(path)
 
 
 @router.get("/prepress/reviews")

@@ -10,6 +10,7 @@ from app.config import settings
 from app.models.entities import PrepressReview
 from app.services.artwork_diff import combined_verdict, image_diff, text_diff
 from app.services.barcode_engine import validate_barcode
+from app.services.ocr_engine import extract_text, tesseract_available
 
 
 FIXTURE_SCHEME = "fixture://"
@@ -105,6 +106,25 @@ def run_prepress_analysis(review: PrepressReview) -> dict[str, Any]:
     img_check["check"] = "image_diff"
     checks.append(img_check)
 
+    if ref_path and cand_path:
+        ref_ocr = extract_text(ref_path)
+        cand_ocr = extract_text(cand_path)
+        if ref_ocr.get("status") == "pass" and cand_ocr.get("status") == "pass":
+            ocr_check = text_diff(ref_ocr["text"], cand_ocr["text"])
+            ocr_check["check"] = "ocr_diff"
+            ocr_check["reference_ocr"] = ref_ocr["text"][:500]
+            ocr_check["candidate_ocr"] = cand_ocr["text"][:500]
+            checks.append(ocr_check)
+        else:
+            checks.append(
+                {
+                    "check": "ocr_diff",
+                    "status": "skipped",
+                    "detail": ref_ocr.get("detail") or cand_ocr.get("detail") or "OCR skipped",
+                    "engine_available": tesseract_available(),
+                }
+            )
+
     verdict = combined_verdict(checks)
     return {
         "verdict": verdict,
@@ -113,6 +133,7 @@ def run_prepress_analysis(review: PrepressReview) -> dict[str, Any]:
             "barcode_ok": barcode_check.get("valid"),
             "text_similarity": text_check.get("similarity"),
             "pixel_diff_pct": img_check.get("pixel_diff_pct"),
+            "ocr_available": tesseract_available(),
         },
         "engine": "rule_based",
         "note": "规则引擎判定（非 LLM 一票否决）",

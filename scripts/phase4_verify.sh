@@ -50,6 +50,12 @@ else
   fail "POST /api/prepress/barcode/generate"
 fi
 
+if curl -sf "$BASE/api/prepress/ocr/status" | grep -q '"available"'; then
+  ok "GET /api/prepress/ocr/status"
+else
+  fail "GET /api/prepress/ocr/status"
+fi
+
 if curl -sf "$BASE/admin/dashboard" | grep -q '印刷前稿'; then
   ok "GET /admin/dashboard (prepress tab)"
 else
