@@ -1,26 +1,50 @@
 #!/usr/bin/env bash
-# 导出 Phase 1.5 验收报告（Markdown / JSON）
-# 用法: bash scripts/acceptance_report.sh [BASE_URL] [OUTPUT.md]
+# 导出完整验收包 — 试点报告 + 交接报告 + readiness JSON
+# 用法: bash scripts/acceptance_report.sh [BASE_URL] [OUTPUT_PREFIX]
 set -euo pipefail
 
 BASE="${1:-http://127.0.0.1:8000}"
-OUT="${2:-pilot-report-$(date +%Y%m%d-%H%M).md}"
-HANDOFF="${OUT%.md}-handoff.md"
+PREFIX="${2:-acceptance-$(date +%Y%m%d-%H%M)}"
+PILOT="${PREFIX}-pilot.md"
+HANDOFF="${PREFIX}-handoff.md"
+READY="${PREFIX}-readiness.json"
 
 echo "=== SMART CRM 验收报告导出 ==="
 echo "Base: $BASE"
-echo "输出: $OUT + $HANDOFF"
+echo "输出前缀: $PREFIX"
 echo ""
 
-curl -sf "$BASE/api/pilot/export?format=md" -o "$OUT"
-echo "✓ 试点报告: $OUT"
+curl -sf "$BASE/api/pilot/export?format=md" -o "$PILOT"
+echo "✓ 试点报告: $PILOT"
 
 curl -sf "$BASE/api/system/handoff-report" -o "$HANDOFF"
 echo "✓ 交接报告: $HANDOFF"
+
+curl -sf "$BASE/api/system/readiness" -o "$READY"
+echo "✓ 就绪检查: $READY"
+
 echo ""
-head -20 "$OUT"
+python3 -c "
+import json
+with open('$READY') as f:
+    d = json.load(f)
+c = d.get('checklist', {})
+b = d.get('business', {})
+print('版本:', d.get('integrations', {}).get('note', 'ok'))
+print('production_ready:', d.get('production_ready'))
+print('checklist:', json.dumps(c, ensure_ascii=False))
+for k in ('phase1','phase2','phase3','phase4','phase5'):
+    if k in b:
+        print(k + ':', b[k])
+"
+
+echo ""
+echo "文件列表:"
+echo "  $PILOT"
+echo "  $HANDOFF"
+echo "  $READY"
+echo ""
+head -12 "$HANDOFF"
 echo "..."
 echo ""
-head -15 "$HANDOFF"
-echo ""
-echo "JSON 版本: curl -s $BASE/api/pilot/export > pilot-report.json"
+echo "终验收: bash scripts/final_acceptance.sh $BASE"

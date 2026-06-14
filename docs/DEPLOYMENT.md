@@ -109,11 +109,20 @@ git push origin main
 ### 发版打标签（大版本）
 
 ```bash
-git tag v1.5.1
-git push origin v1.5.1
+git tag v2.0.0
+git push origin v2.0.0
 ```
 
-VPS 会按 tag 部署，便于回滚对照。
+VPS 会按 tag 部署，便于回滚对照。当前路线图 MVP 版本为 **2.0.0**。
+
+### 部署后终验收
+
+```bash
+bash scripts/final_acceptance.sh https://crm.yourdomain.com
+bash scripts/acceptance_report.sh https://crm.yourdomain.com
+```
+
+详见 [PRODUCTION_READY.md](PRODUCTION_READY.md)。
 
 ---
 

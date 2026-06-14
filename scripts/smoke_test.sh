@@ -21,10 +21,10 @@ if curl -sf "$BASE/api/health" | grep -q '"status":"ok"'; then
 else
   fail "GET /api/health"
 fi
-if curl -sf "$BASE/api/health" | grep -q '"version"'; then
-  ok "GET /api/health (version)"
+if curl -sf "$BASE/api/health" | grep -q '"version":"2.0'; then
+  ok "GET /api/health (v2.0.x)"
 else
-  fail "GET /api/health (version)"
+  fail "GET /api/health (v2.0.x)"
 fi
 if curl -sf "$BASE/docs/feishu-fields" | grep -q '飞书多维表格'; then
   ok "GET /docs/feishu-fields"

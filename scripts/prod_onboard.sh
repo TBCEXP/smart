@@ -116,11 +116,25 @@ echo " Phase 4 — 印刷前稿 AI"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 bash "$SCRIPT_DIR/phase4_verify.sh" "$BASE"
+if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
+  echo ""
+  bash "$SCRIPT_DIR/phase4_live.sh" "$BASE" || true
+fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo " Phase 5 — 大货实拍 AI"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 bash "$SCRIPT_DIR/phase5_verify.sh" "$BASE"
+if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
+  echo ""
+  bash "$SCRIPT_DIR/phase5_live.sh" "$BASE" || true
+fi
 echo ""
-echo "交接报告: curl -s $BASE/api/system/handoff-report -o handoff.md"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " 路线图终验收"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+bash "$SCRIPT_DIR/final_acceptance.sh" "$BASE" 2>/dev/null | tail -8 || bash "$SCRIPT_DIR/pre_merge_verify.sh" "$BASE" | tail -8
+echo ""
+echo "交接报告: bash scripts/acceptance_report.sh $BASE"

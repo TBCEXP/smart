@@ -112,13 +112,21 @@ async def seed_production_inspections(db: AsyncSession) -> int:
     if existing.scalar_one_or_none():
         return 0
     ensure_inspection_fixtures()
+    from app.models.entities import PrepressReview
+
+    prepress_id = None
+    prepress_row = await db.execute(select(PrepressReview).limit(1))
+    prepress = prepress_row.scalar_one_or_none()
+    if prepress:
+        prepress_id = prepress.id
     db.add(
         ProductionInspection(
             title="大货包装实拍抽检 (演示)",
+            prepress_review_id=prepress_id,
             approved_image="fixture://inspection/approved_box.png",
             photo_image="fixture://inspection/production_photo.png",
             created_by="sales@example.com",
-            notes="Phase 5 演示 — 运行检测后人工终审",
+            notes="Phase 5 演示 — 关联前稿任务后运行检测 + 人工终审",
             status="draft",
             human_review_status="pending",
         )

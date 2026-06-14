@@ -80,6 +80,8 @@ if curl -sf http://127.0.0.1:8000/api/health; then
   else
     echo "⚠ phase5_verify 有失败项"
   fi
+  echo ""
+  echo "完整终验收: bash scripts/final_acceptance.sh http://127.0.0.1:8000"
 else
   echo "✗ 健康检查失败，请执行: docker compose logs smart-crm --tail 50"
   exit 1

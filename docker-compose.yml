@@ -21,6 +21,7 @@ services:
     image: smart-crm:${VERSION:-latest}
     environment:
       DATA_DIR: /app/data
+      VERSION: ${VERSION:-2.0.0}
       DATABASE_URL: postgresql+asyncpg://smartcrm:smartcrm@postgres:5432/smartcrm
       SYNC_DATABASE_URL: postgresql://smartcrm:smartcrm@postgres:5432/smartcrm
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
