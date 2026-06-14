@@ -17,6 +17,8 @@ SENSITIVE_KEYS = {
     "tbcexp_api_token",
     "resend_api_key",
     "apollo_api_key",
+    "r2_access_key_id",
+    "r2_secret_access_key",
     "importgenius_api_key",
     "smtp_password",
 }

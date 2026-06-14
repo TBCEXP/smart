@@ -26,11 +26,18 @@
 
 启动时 `seed_catalog_documents()` 创建 3 份演示目录，`customer@example.com` 可看到其中 2 份。
 
-## 待 R2 对接
+## R2 对接
 
-1. Tab2 或 env 配置 `R2_ACCOUNT_ID` / `R2_ACCESS_KEY` / `R2_BUCKET`
-2. 上传脚本 `scripts/upload_catalog_r2.sh`（后续）
-3. `file_url` 改为公开签名 URL 或 CDN 路径
+1. Tab2 或 env 配置 `r2_account_id` / `r2_access_key_id` / `r2_secret_access_key` / `r2_bucket`
+2. 上传脚本 `bash scripts/upload_catalog_r2.sh BASE_URL DOC_ID file.pdf SESSION_TOKEN`
+3. API 自动解析 `r2://` 为签名下载 URL；门户与分享页显示「下载 PDF」
+
+| API | 说明 |
+|-----|------|
+| `GET /api/catalog/documents/{id}/download-url` | 门户/员工获取签名下载链接 |
+| `POST /api/catalog/documents/{id}/upload-url` | 员工生成预签名上传 URL |
+
+未配置 R2 时 `storage=r2_pending`，`download_url=null`（Mock 验收仍可通过）。
 
 ## 验收
 

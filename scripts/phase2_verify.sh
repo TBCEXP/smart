@@ -14,6 +14,12 @@ echo "=== Phase 2 Verification ==="
 echo "Base: $BASE"
 echo ""
 
+if curl -sf "$BASE/api/catalog/documents" | grep -q 'download_url'; then
+  ok "GET /api/catalog/documents (download_url field)"
+else
+  fail "GET /api/catalog/documents (download_url field)"
+fi
+
 if curl -sf "$BASE/api/catalog/documents" | grep -q '商用锅具'; then
   ok "GET /api/catalog/documents (seed)"
 else

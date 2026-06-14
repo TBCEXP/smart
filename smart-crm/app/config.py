@@ -52,6 +52,11 @@ class ConfigPayload(BaseModel):
     resend_from_email: str = ""
     scheduler_enabled: bool = False
     apollo_api_key: str = ""
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket: str = "smart-crm"
+    r2_public_base_url: str = ""
     importgenius_api_key: str = ""
     smtp_host: str = ""
     smtp_port: int = 587
@@ -207,6 +212,13 @@ class ShareLinkRequest(BaseModel):
     resource_id: str
     customer_email: str = ""
     ttl_days: int = 14
+
+
+class CatalogUploadUrlRequest(BaseModel):
+    key: str = ""
+    content_type: str = "application/pdf"
+    ttl_seconds: int = 900
+    update_file_url: bool = True
 
 
 class CatalogDocumentRequest(BaseModel):

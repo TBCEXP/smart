@@ -78,7 +78,8 @@ sudo bash scripts/setup_backup_cron.sh
 |------|------|
 | `/portal/dashboard` | ✅ 客户只读订单 |
 | `/s/{token}` | ✅ 订单/工厂分享外链 |
-| Phase 2 目录元数据 | ✅ | `CatalogDocument` + 门户授权目录 + R2 占位 |
+| Phase 2 目录元数据 | ✅ | `CatalogDocument` + 门户授权目录 + R2 签名 URL |
+| Cloudflare R2 对接 | ✅ | `r2_client.py` + 下载/上传 API + `upload_catalog_r2.sh` |
 | Apollo 联系人补充 | ✅ | `POST /api/leads/{id}/enrich-contact`（Mock/Live） |
 
 ## Phase 1+（ERP 深度对接）

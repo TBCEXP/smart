@@ -29,6 +29,7 @@ class IntegrationsProbeService:
             await self._probe_feishu(),
             await self._probe_tbcexp(),
             await self._probe_apollo(),
+            await self._probe_r2(),
         ]
         live_ok = sum(1 for p in probes if p.get("status") == "ok" and not p.get("mock"))
         live_fail = sum(1 for p in probes if p.get("status") == "error")
@@ -175,6 +176,11 @@ class IntegrationsProbeService:
         from app.services.apollo_client import ApolloClient
 
         return await ApolloClient(self.config).probe()
+
+    async def _probe_r2(self) -> dict[str, Any]:
+        from app.services.r2_client import R2Client
+
+        return await R2Client(self.config).probe()
 
     async def probe_resend(self) -> dict[str, Any]:
         key = self.config.get("resend_api_key")

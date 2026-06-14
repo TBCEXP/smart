@@ -6,9 +6,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entities import CatalogDocument, Factory
+from app.services.r2_client import R2Client
 
 
-def catalog_dict(doc: CatalogDocument, factory: Factory | None = None) -> dict[str, Any]:
+def catalog_dict(
+    doc: CatalogDocument,
+    factory: Factory | None = None,
+    r2: R2Client | None = None,
+) -> dict[str, Any]:
+    resolved = (r2 or R2Client()).resolve_download_url(doc.file_url)
     return {
         "id": doc.id,
         "factory_id": doc.factory_id,
@@ -18,11 +24,14 @@ def catalog_dict(doc: CatalogDocument, factory: Factory | None = None) -> dict[s
         "title_en": doc.title_en,
         "category_l3": doc.category_l3,
         "file_url": doc.file_url,
+        "download_url": resolved.get("download_url"),
+        "download_mode": resolved.get("mode"),
         "file_size_mb": doc.file_size_mb,
         "pages": doc.pages,
         "authorized_emails": doc.authorized_emails or [],
         "notes": doc.notes,
-        "storage": "r2_pending" if doc.file_url.startswith("r2://") else "url",
+        "storage": resolved.get("storage"),
+        "storage_detail": resolved.get("detail"),
         "created_at": doc.created_at.isoformat() if doc.created_at else None,
     }
 

@@ -239,6 +239,11 @@ const CONFIG_FIELDS = [
   ['resend_api_key', 'Resend API Key'],
   ['resend_from_email', 'Resend From Email'],
   ['apollo_api_key', 'Apollo API Key (可选)'],
+  ['r2_account_id', 'R2 Account ID'],
+  ['r2_access_key_id', 'R2 Access Key ID'],
+  ['r2_secret_access_key', 'R2 Secret Access Key'],
+  ['r2_bucket', 'R2 Bucket (默认 smart-crm)'],
+  ['r2_public_base_url', 'R2 公开 CDN 前缀 (可选)'],
   ['importgenius_api_key', 'ImportGenius API Key (可选)'],
   ['scheduler_enabled', '定时任务 (true/false)'],
 ];

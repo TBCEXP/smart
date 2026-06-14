@@ -21,6 +21,7 @@ from app.config import (
     BrainstormRequest,
     ConfigPayload,
     CatalogDocumentRequest,
+    CatalogUploadUrlRequest,
     ContentBatchGenerateRequest,
     ContentGenerateRequest,
     ContentUpdateRequest,
@@ -88,6 +89,7 @@ from app.services.phase1 import (
 )
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 from app.config import settings
+from app.services.r2_client import R2Client
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
 from app.services.feishu_client import FeishuClient
@@ -108,6 +110,7 @@ probe_svc = IntegrationsProbeService()
 tbcexp_svc = TbcexpClient()
 feishu_svc = FeishuClient()
 apollo_svc = ApolloClient()
+r2_svc = R2Client()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -140,6 +143,7 @@ async def integrations_status():
         ("feishu", "feishu_app_id", "飞书入库"),
         ("resend", "resend_api_key", "邮件 OTP/通知"),
         ("apollo", "apollo_api_key", "Apollo 联系人补充"),
+        ("r2", "r2_account_id", "Cloudflare R2 目录存储"),
         ("importgenius", "importgenius_api_key", "海关数据"),
         ("tbcexp", "tbcexp_api_url", "TBCEXP ERP"),
     ]
@@ -352,7 +356,7 @@ async def list_catalog_documents(db: AsyncSession = Depends(get_db)):
     out = []
     for doc in result.scalars().all():
         factory = await db.get(Factory, doc.factory_id)
-        out.append(catalog_dict(doc, factory))
+        out.append(catalog_dict(doc, factory, r2_svc))
     return out
 
 
@@ -377,7 +381,64 @@ async def create_catalog_document(
     db.add(doc)
     await db.commit()
     await db.refresh(doc)
-    return catalog_dict(doc, factory)
+    return catalog_dict(doc, factory, r2_svc)
+
+
+@router.get("/catalog/documents/{doc_id}/download-url")
+async def catalog_download_url(
+    doc_id: str, request: Request, db: AsyncSession = Depends(get_db)
+):
+    """获取目录 PDF 签名下载链接（门户客户或员工）。"""
+    doc = await db.get(CatalogDocument, doc_id)
+    if not doc or not doc.active:
+        raise HTTPException(404, "Catalog not found")
+    session = await session_from_request(request, db)
+    if not session:
+        raise HTTPException(401, "Session required")
+    if session.portal == "portal" and not customer_can_view(doc, session.email):
+        raise HTTPException(403, "Not authorized for this catalog")
+    factory = await db.get(Factory, doc.factory_id)
+    resolved = r2_svc.resolve_download_url(doc.file_url)
+    return {
+        "id": doc.id,
+        "title": doc.title,
+        "file_url": doc.file_url,
+        "factory_code": factory.code if factory else "",
+        **resolved,
+    }
+
+
+@router.post("/catalog/documents/{doc_id}/upload-url")
+async def catalog_upload_url(
+    doc_id: str,
+    req: CatalogUploadUrlRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """生成 R2 预签名上传 URL（员工后台）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    doc = await db.get(CatalogDocument, doc_id)
+    if not doc or not doc.active:
+        raise HTTPException(404, "Catalog not found")
+    key = req.key.strip()
+    if not key:
+        parsed = R2Client.parse_r2_url(doc.file_url)
+        if parsed:
+            key = parsed[1]
+        else:
+            safe_title = "".join(c if c.isalnum() else "-" for c in doc.title[:32]).strip("-")
+            key = f"catalogs/{safe_title or doc.id}.pdf"
+    result = r2_svc.presign_put(
+        key=key,
+        ttl_seconds=max(60, min(req.ttl_seconds, 3600)),
+        content_type=req.content_type,
+    )
+    if req.update_file_url and result.get("file_url"):
+        doc.file_url = result["file_url"]
+        await db.commit()
+    return {"document_id": doc.id, **result}
 
 
 @router.post("/leads/{lead_id}/enrich-contact")
@@ -1740,7 +1801,7 @@ async def portal_catalogs(request: Request, db: AsyncSession = Depends(get_db)):
     for doc in result.scalars().all():
         if customer_can_view(doc, session.email):
             factory = await db.get(Factory, doc.factory_id)
-            out.append(catalog_dict(doc, factory))
+            out.append(catalog_dict(doc, factory, r2_svc))
     return out
 
 
