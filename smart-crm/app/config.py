@@ -200,3 +200,36 @@ class OutreachLogRequest(BaseModel):
 class OutreachReplyRequest(BaseModel):
     replied: bool = True
     reply_notes: str = ""
+
+
+class FactoryRequest(BaseModel):
+    code: str
+    name_zh: str = ""
+    name_en: str = ""
+    country: str = "CN"
+    city: str = ""
+    contact_name: str = ""
+    contact_email: str = ""
+    category_focus: str = ""
+    moq_default: str = "500 pcs"
+    notes: str = ""
+
+
+class OrderCreateRequest(BaseModel):
+    customer_name: str
+    country_iso: str = ""
+    currency: str = "USD"
+    factory_id: str = ""
+    lead_id: str = ""
+    notes: str = ""
+    assigned_to: str = ""
+
+
+class OrderLineRequest(BaseModel):
+    sku: str = ""
+    product_name: str
+    category_l3: str = ""
+    qty: int = 1
+    unit_price: float = 0.0
+    factory_id: str = ""
+    notes: str = ""

@@ -23,7 +23,10 @@ from app.config import (
     ContentBatchGenerateRequest,
     ContentGenerateRequest,
     ContentUpdateRequest,
+    FactoryRequest,
     FeishuWebhookRequest,
+    OrderCreateRequest,
+    OrderLineRequest,
     OutreachLogRequest,
     OutreachReplyRequest,
     PilotRequest,
@@ -37,11 +40,14 @@ from app.models.entities import (
     Batch,
     ContentDraft,
     CountryAnchor,
+    Factory,
     ImportLead,
     Lead,
     MarketProductIntel,
     OutreachLog,
     Schedule,
+    SalesOrder,
+    SalesOrderLine,
     StrategyAction,
     StrategySession,
     TradeShow,
@@ -61,6 +67,15 @@ from app.services.integrations_probe import IntegrationsProbeService
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
 from app.services.latam_pilot import LatamPilotService
+from app.services.phase1 import (
+    catalog_tree,
+    factory_dict,
+    next_order_no,
+    order_dict,
+    order_line_dict,
+    recalc_order_total,
+    seed_factories,
+)
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 
 router = APIRouter()
@@ -219,16 +234,26 @@ async def preview_exa_query(
 
 @router.get("/leads")
 async def list_leads(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     country_iso: str = "",
     status: str = "",
     track: str = "",
     lead_score: str = "",
+    mine: int = 0,
     limit: int = 50,
     offset: int = 0,
 ):
-    """Phase 1 线索查询 — 只读列表，支持国家/状态/赛道筛选。"""
+    """Phase 1 线索查询 — 只读列表，支持国家/状态/赛道筛选；mine=1 需登录。"""
     q = select(Lead).order_by(Lead.created_at.desc())
+    if mine:
+        token = request.headers.get("X-Session-Token", "")
+        if not token:
+            raise HTTPException(401, "mine=1 requires session")
+        session = await auth_svc.get_session(db, token)
+        if not session:
+            raise HTTPException(401, "Invalid session")
+        q = q.where(Lead.assigned_to == session.email)
     if country_iso:
         q = q.where(Lead.country_iso == country_iso.upper())
     if status:
@@ -244,8 +269,138 @@ async def list_leads(
         "total_returned": len(rows),
         "offset": offset,
         "limit": limit,
-        "leads": [pipeline._lead_dict(l) for l in rows],
+        "leads": [_lead_public_dict(l) for l in rows],
     }
+
+
+def _lead_public_dict(lead: Lead) -> dict[str, Any]:
+    data = pipeline._lead_dict(lead)
+    data["feishu_record_id"] = lead.feishu_record_id
+    data["assigned_to"] = lead.assigned_to
+    data["confirmed_by"] = lead.confirmed_by
+    return data
+
+
+@router.get("/catalog/tree")
+async def get_catalog_tree():
+    """Phase 1 三级品类树（只读，源自 geo_config）。"""
+    return catalog_tree()
+
+
+@router.get("/factories")
+async def list_factories(db: AsyncSession = Depends(get_db), active_only: bool = True):
+    q = select(Factory).order_by(Factory.code)
+    if active_only:
+        q = q.where(Factory.active.is_(True))
+    result = await db.execute(q)
+    return [factory_dict(f) for f in result.scalars().all()]
+
+
+@router.post("/factories")
+async def create_factory(req: FactoryRequest, db: AsyncSession = Depends(get_db)):
+    existing = await db.execute(select(Factory).where(Factory.code == req.code))
+    if existing.scalar_one_or_none():
+        raise HTTPException(409, "Factory code already exists")
+    factory = Factory(
+        code=req.code,
+        name_zh=req.name_zh,
+        name_en=req.name_en,
+        country=req.country,
+        city=req.city,
+        contact_name=req.contact_name,
+        contact_email=req.contact_email,
+        category_focus=req.category_focus,
+        moq_default=req.moq_default,
+        notes=req.notes,
+    )
+    db.add(factory)
+    await db.commit()
+    await db.refresh(factory)
+    return factory_dict(factory)
+
+
+@router.get("/orders")
+async def list_orders(
+    db: AsyncSession = Depends(get_db),
+    status: str = "",
+    assigned_to: str = "",
+    limit: int = 50,
+):
+    q = select(SalesOrder).order_by(SalesOrder.created_at.desc())
+    if status:
+        q = q.where(SalesOrder.status == status)
+    if assigned_to:
+        q = q.where(SalesOrder.assigned_to == assigned_to)
+    result = await db.execute(q.limit(min(limit, 100)))
+    orders = result.scalars().all()
+    out = []
+    for order in orders:
+        lines = await db.execute(
+            select(SalesOrderLine).where(SalesOrderLine.order_id == order.id)
+        )
+        out.append(order_dict(order, list(lines.scalars().all())))
+    return out
+
+
+@router.post("/orders")
+async def create_order(
+    req: OrderCreateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    assigned = req.assigned_to
+    if not assigned and hasattr(request.state, "user_email"):
+        assigned = request.state.user_email
+    order = SalesOrder(
+        order_no=next_order_no(),
+        customer_name=req.customer_name,
+        country_iso=req.country_iso.upper(),
+        currency=req.currency,
+        factory_id=req.factory_id or None,
+        lead_id=req.lead_id or None,
+        notes=req.notes,
+        assigned_to=assigned,
+        status="draft",
+    )
+    db.add(order)
+    await db.commit()
+    await db.refresh(order)
+    return order_dict(order, [])
+
+
+@router.get("/orders/{order_id}")
+async def get_order(order_id: str, db: AsyncSession = Depends(get_db)):
+    order = await db.get(SalesOrder, order_id)
+    if not order:
+        raise HTTPException(404, "Order not found")
+    lines = await db.execute(select(SalesOrderLine).where(SalesOrderLine.order_id == order_id))
+    return order_dict(order, list(lines.scalars().all()))
+
+
+@router.post("/orders/{order_id}/lines")
+async def add_order_line(
+    order_id: str,
+    req: OrderLineRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    order = await db.get(SalesOrder, order_id)
+    if not order:
+        raise HTTPException(404, "Order not found")
+    line = SalesOrderLine(
+        order_id=order_id,
+        sku=req.sku,
+        product_name=req.product_name,
+        category_l3=req.category_l3,
+        qty=max(1, req.qty),
+        unit_price=req.unit_price,
+        factory_id=req.factory_id or order.factory_id,
+        notes=req.notes,
+    )
+    db.add(line)
+    await db.commit()
+    await db.refresh(line)
+    total = await recalc_order_total(db, order_id)
+    return {"line": order_line_dict(line), "order_total": total}
 
 
 @router.post("/run")
@@ -381,11 +536,14 @@ async def export_csv(batch_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/confirm/{lead_id}")
-async def confirm_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
+async def confirm_lead(lead_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     lead = await db.get(Lead, lead_id)
     if not lead:
         raise HTTPException(404, "Lead not found")
     lead.status = "待联系"
+    if hasattr(request.state, "user_email"):
+        lead.assigned_to = request.state.user_email
+        lead.confirmed_by = request.state.user_email
     from app.services.feishu_client import FeishuClient
 
     feishu = FeishuClient()

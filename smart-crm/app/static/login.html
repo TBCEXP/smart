@@ -55,7 +55,7 @@
       const res = await post('/api/auth/otp/verify', { email, code, portal: p });
       if (res.session_token) {
         localStorage.setItem('session_token', res.session_token);
-        location.href = p === 'admin' ? '/admin/leads' : '/';
+        location.href = p === 'admin' ? '/admin/dashboard' : '/';
       } else {
         document.getElementById('login-msg').textContent = JSON.stringify(res);
       }

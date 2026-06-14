@@ -62,10 +62,20 @@ if curl -sf "$BASE/api/leads?limit=5" | grep -q '"leads"'; then
 else
   fail "GET /api/leads"
 fi
-if curl -sf "$BASE/admin/leads" | grep -q '员工线索查询'; then
-  ok "GET /admin/leads"
+if curl -sf "$BASE/admin/leads" | grep -q '员工后台'; then
+  ok "GET /admin/leads (dashboard)"
 else
-  fail "GET /admin/leads"
+  fail "GET /admin/leads (dashboard)"
+fi
+if curl -sf "$BASE/api/catalog/tree" | grep -q 'bakeware'; then
+  ok "GET /api/catalog/tree"
+else
+  fail "GET /api/catalog/tree"
+fi
+if curl -sf "$BASE/api/factories" | grep -q 'F-SD-01'; then
+  ok "GET /api/factories"
+else
+  fail "GET /api/factories"
 fi
 
 # 5. Brainstorm generate

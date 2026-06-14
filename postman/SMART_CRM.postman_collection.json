@@ -9,7 +9,8 @@
     { "key": "session_token", "value": "" },
     { "key": "batch_id", "value": "" },
     { "key": "session_id", "value": "" },
-    { "key": "lead_id", "value": "" }
+    { "key": "lead_id", "value": "" },
+    { "key": "order_id", "value": "" }
   ],
   "item": [
     {
@@ -307,6 +308,80 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/kb/search?q=bakeware%20MX&limit=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Phase 1 Employee",
+      "item": [
+        {
+          "name": "List Leads",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leads?limit=20"
+          }
+        },
+        {
+          "name": "Catalog Tree",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/catalog/tree"
+          }
+        },
+        {
+          "name": "List Factories",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/factories"
+          }
+        },
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j.id) pm.collectionVariables.set('order_id', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"customer_name\":\"Demo Hotel Supplies\",\"country_iso\":\"MX\"}"
+            },
+            "url": "{{base_url}}/api/orders"
+          }
+        },
+        {
+          "name": "Add Order Line",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"product_name\":\"Bakeware mould set\",\"sku\":\"BK-001\",\"qty\":100,\"unit_price\":2.5,\"category_l3\":\"bakeware\"}"
+            },
+            "url": "{{base_url}}/api/orders/{{order_id}}/lines"
+          }
+        },
+        {
+          "name": "Exa Preview Query",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/exa/preview-query?category_l3=bakeware&country_iso=CO&city=Bogotá"
           }
         }
       ]

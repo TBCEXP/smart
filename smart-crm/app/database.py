@@ -68,6 +68,23 @@ async def init_db() -> None:
                 )
         except Exception:
             pass
+        # Lead assignment columns (Phase 1)
+        for col, ddl_sqlite, ddl_pg in (
+            ("assigned_to", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+            ("confirmed_by", "VARCHAR(256) DEFAULT ''", "VARCHAR(256) DEFAULT ''"),
+        ):
+            try:
+                if "sqlite" in ASYNC_DB_URL:
+                    cols = await conn.execute(text("PRAGMA table_info(leads)"))
+                    names = {row[1] for row in cols.fetchall()}
+                    if col not in names:
+                        await conn.execute(text(f"ALTER TABLE leads ADD COLUMN {col} {ddl_sqlite}"))
+                elif "postgresql" in ASYNC_DB_URL:
+                    await conn.execute(
+                        text(f"ALTER TABLE leads ADD COLUMN IF NOT EXISTS {col} {ddl_pg}")
+                    )
+            except Exception:
+                pass
 
 
 @asynccontextmanager

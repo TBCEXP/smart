@@ -56,6 +56,8 @@ class Lead(Base):
     source: Mapped[str] = mapped_column(String(64), default="exa")
     hs_code: Mapped[str] = mapped_column(String(16), default="")
     feishu_record_id: Mapped[str] = mapped_column(String(64), default="")
+    assigned_to: Mapped[str] = mapped_column(String(256), default="", index=True)
+    confirmed_by: Mapped[str] = mapped_column(String(256), default="")
     tbcexp_synced: Mapped[bool] = mapped_column(Boolean, default=False)
     informed_by_intel_id: Mapped[Optional[str]] = mapped_column(String(36))
     embedding: Mapped[Optional[str]] = mapped_column(Text)
@@ -249,6 +251,63 @@ class ContentDraft(Base):
     created_by: Mapped[str] = mapped_column(String(256), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Factory(Base):
+    """Phase 1 工厂主数据（无 ERP 前的本地维护）。"""
+
+    __tablename__ = "factories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name_zh: Mapped[str] = mapped_column(String(256), default="")
+    name_en: Mapped[str] = mapped_column(String(256), default="")
+    country: Mapped[str] = mapped_column(String(8), default="CN")
+    city: Mapped[str] = mapped_column(String(128), default="")
+    contact_name: Mapped[str] = mapped_column(String(128), default="")
+    contact_email: Mapped[str] = mapped_column(String(256), default="")
+    category_focus: Mapped[str] = mapped_column(String(256), default="")
+    moq_default: Mapped[str] = mapped_column(String(64), default="500 pcs")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SalesOrder(Base):
+    """Phase 1 订单主表（样机，待 ERP 对接）。"""
+
+    __tablename__ = "sales_orders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    order_no: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    customer_name: Mapped[str] = mapped_column(String(512), default="")
+    country_iso: Mapped[str] = mapped_column(String(8), default="")
+    status: Mapped[str] = mapped_column(String(32), default="draft")
+    currency: Mapped[str] = mapped_column(String(8), default="USD")
+    total_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    assigned_to: Mapped[str] = mapped_column(String(256), default="", index=True)
+    factory_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("factories.id"))
+    lead_id: Mapped[Optional[str]] = mapped_column(String(36))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    lines: Mapped[list["SalesOrderLine"]] = relationship(back_populates="order")
+
+
+class SalesOrderLine(Base):
+    """Phase 1 订单货号子表。"""
+
+    __tablename__ = "sales_order_lines"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    order_id: Mapped[str] = mapped_column(String(36), ForeignKey("sales_orders.id"), index=True)
+    sku: Mapped[str] = mapped_column(String(64), default="")
+    product_name: Mapped[str] = mapped_column(String(512), default="")
+    category_l3: Mapped[str] = mapped_column(String(64), default="")
+    qty: Mapped[int] = mapped_column(Integer, default=1)
+    unit_price: Mapped[float] = mapped_column(Float, default=0.0)
+    factory_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("factories.id"))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    order: Mapped["SalesOrder"] = relationship(back_populates="lines")
 
 
 class OutreachLog(Base):

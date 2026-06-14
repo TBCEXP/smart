@@ -15,7 +15,7 @@
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
 | 验收脚本 | ✅ | smoke 32+、phase15、latam_full_pilot |
-| Phase 1 起步 | ✅ | `GET /api/leads` + `/admin/leads` 员工只读线索查询 |
+| Phase 1 起步 | ✅ | 线索查询、`/admin/dashboard`、工厂/订单/品类树 API |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图 |
 
 ## 本地 / Mock 验收
@@ -61,8 +61,11 @@ sudo bash scripts/setup_backup_cron.sh
 | `GET /api/pilot/export?format=md` | 验收报告 Markdown |
 | `GET /docs/feishu-fields` | 飞书列名对照（Tab2） |
 | `GET /api/exa/preview-query` | Tab1 Exa 查询预览（L3 西语模板） |
-| `GET /api/leads` | 线索只读列表（Phase 1） |
-| `GET /admin/leads` | 员工线索查询页 |
+| `GET /api/leads` | 线索只读列表（`mine=1` 需登录） |
+| `GET /admin/dashboard` | 员工后台（线索/工厂/订单/品类） |
+| `GET /api/catalog/tree` | L1/L2/L3 品类树 |
+| `GET /api/factories` | 工厂主数据 |
+| `GET/POST /api/orders` | 订单主表 + 货号行 |
 
 ## Phase 1+（未开始）
 

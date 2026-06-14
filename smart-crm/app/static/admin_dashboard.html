@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 员工后台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-900/80">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h1 class="text-xl font-bold text-emerald-400">SMART CRM 员工后台</h1>
+        <p id="user-info" class="text-xs text-slate-400">Phase 1 · 线索 / 工厂 / 订单 / 品类</p>
+      </div>
+      <div class="flex gap-2 text-sm">
+        <a href="/" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">获客面板</a>
+        <button id="btn-logout" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">退出</button>
+      </div>
+    </div>
+    <nav class="max-w-7xl mx-auto px-4 flex gap-1 pb-2 overflow-x-auto">
+      <button data-panel="leads" class="tab-btn active">线索</button>
+      <button data-panel="factories" class="tab-btn">工厂</button>
+      <button data-panel="orders" class="tab-btn">订单</button>
+      <button data-panel="catalog" class="tab-btn">品类树</button>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Leads -->
+    <section id="panel-leads" class="panel">
+      <div class="card mb-4">
+        <div class="grid md:grid-cols-6 gap-3">
+          <input id="filter-country" class="input" placeholder="国家 ISO" />
+          <input id="filter-status" class="input" placeholder="状态" />
+          <select id="filter-score" class="input">
+            <option value="">全部评分</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
+          <label class="flex items-center gap-2 text-sm text-slate-400">
+            <input id="filter-mine" type="checkbox" /> 仅我的线索
+          </label>
+          <button id="btn-refresh-leads" class="btn-primary">刷新</button>
+        </div>
+        <p id="leads-summary" class="text-sm text-slate-400 mt-3"></p>
+      </div>
+      <div class="overflow-x-auto card">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-700">
+              <th class="py-2 pr-3">公司</th>
+              <th class="py-2 pr-3">国家</th>
+              <th class="py-2 pr-3">L3</th>
+              <th class="py-2 pr-3">评分</th>
+              <th class="py-2 pr-3">飞书</th>
+              <th class="py-2 pr-3">负责人</th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Factories -->
+    <section id="panel-factories" class="panel hidden">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card">
+          <h2 class="font-semibold mb-3">工厂列表</h2>
+          <div id="factories-list" class="space-y-2 text-sm"></div>
+        </div>
+        <div class="card">
+          <h2 class="font-semibold mb-3">新增工厂</h2>
+          <div class="space-y-2">
+            <input id="f-code" class="input" placeholder="编码 F-XX-01" />
+            <input id="f-name-zh" class="input" placeholder="中文名" />
+            <input id="f-name-en" class="input" placeholder="英文名" />
+            <input id="f-focus" class="input" placeholder="品类 focus (bakeware,...)" />
+            <button id="btn-add-factory" class="btn-primary w-full">保存</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section id="panel-orders" class="panel hidden">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card">
+          <h2 class="font-semibold mb-3">订单列表</h2>
+          <div id="orders-list" class="space-y-3 text-sm"></div>
+        </div>
+        <div class="card">
+          <h2 class="font-semibold mb-3">新建订单</h2>
+          <div class="space-y-2">
+            <input id="o-customer" class="input" placeholder="客户名称" />
+            <input id="o-country" class="input" placeholder="国家 ISO" value="MX" />
+            <select id="o-factory" class="input"></select>
+            <button id="btn-create-order" class="btn-primary w-full">创建草稿订单</button>
+          </div>
+          <div id="order-lines-form" class="hidden mt-4 pt-4 border-t border-slate-700">
+            <p class="text-sm text-emerald-400 mb-2" id="active-order-label"></p>
+            <input id="line-product" class="input mb-2" placeholder="产品名称" />
+            <input id="line-sku" class="input mb-2" placeholder="SKU" />
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <input id="line-qty" type="number" class="input" value="100" />
+              <input id="line-price" type="number" class="input" value="0" step="0.01" />
+            </div>
+            <button id="btn-add-line" class="btn-secondary w-full">添加货号行</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Catalog -->
+    <section id="panel-catalog" class="panel hidden">
+      <div class="card">
+        <h2 class="font-semibold mb-3">三级品类树</h2>
+        <pre id="catalog-tree" class="text-xs font-mono bg-slate-900 p-4 rounded overflow-auto"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('session_token');
+    if (!token) location.href = '/admin';
+
+    const headers = () => ({
+      'Content-Type': 'application/json',
+      'X-Session-Token': token,
+    });
+
+    async function api(path, opts = {}) {
+      const r = await fetch('/api' + path, {
+        ...opts,
+        headers: { ...headers(), ...(opts.headers || {}) },
+      });
+      if (r.status === 401) {
+        localStorage.removeItem('session_token');
+        location.href = '/admin';
+        return {};
+      }
+      return r.json();
+    }
+
+    let activeOrderId = '';
+
+    document.querySelectorAll('[data-panel]').forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll('[data-panel]').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach((p) => p.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.panel).classList.remove('hidden');
+        if (btn.dataset.panel === 'factories') loadFactories();
+        if (btn.dataset.panel === 'orders') loadOrders();
+        if (btn.dataset.panel === 'catalog') loadCatalog();
+      };
+    });
+
+    async function loadSession() {
+      const s = await api('/auth/session');
+      if (s.email) {
+        document.getElementById('user-info').textContent =
+          `${s.email} · ${s.role} · Phase 1 员工后台`;
+      }
+    }
+
+    async function loadLeads() {
+      const params = new URLSearchParams({ limit: '50' });
+      const country = document.getElementById('filter-country').value.trim();
+      const status = document.getElementById('filter-status').value.trim();
+      const score = document.getElementById('filter-score').value;
+      if (country) params.set('country_iso', country);
+      if (status) params.set('status', status);
+      if (score) params.set('lead_score', score);
+      if (document.getElementById('filter-mine').checked) params.set('mine', '1');
+      const data = await api('/leads?' + params);
+      document.getElementById('leads-summary').textContent = `返回 ${data.total_returned || 0} 条`;
+      const tbody = document.getElementById('leads-tbody');
+      tbody.innerHTML = '';
+      for (const lead of data.leads || []) {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800';
+        tr.innerHTML = `
+          <td class="py-2 pr-3"><a href="${lead.website_url}" target="_blank" class="text-emerald-400">${lead.company_name}</a></td>
+          <td class="py-2 pr-3">${lead.country_iso || '-'} · ${lead.city || '-'}</td>
+          <td class="py-2 pr-3">${lead.category_l3 || '-'}</td>
+          <td class="py-2 pr-3">${lead.lead_score || '-'}</td>
+          <td class="py-2 pr-3">${lead.feishu_record_id ? '✓' : '○'}</td>
+          <td class="py-2 pr-3">${lead.assigned_to || '-'}</td>`;
+        tbody.appendChild(tr);
+      }
+      if (!data.leads?.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">暂无线索</td></tr>';
+      }
+    }
+
+    async function loadFactories() {
+      const list = await api('/factories');
+      const el = document.getElementById('factories-list');
+      el.innerHTML = (list || []).map((f) =>
+        `<div class="p-2 rounded bg-slate-900/50"><strong>${f.code}</strong> ${f.name_zh}<br>
+         <span class="text-slate-500">${f.category_focus} · MOQ ${f.moq_default}</span></div>`
+      ).join('') || '<p class="text-slate-500">暂无工厂</p>';
+      const sel = document.getElementById('o-factory');
+      sel.innerHTML = '<option value="">选择工厂（可选）</option>' +
+        (list || []).map((f) => `<option value="${f.id}">${f.code} ${f.name_zh}</option>`).join('');
+    }
+
+    async function loadOrders() {
+      const orders = await api('/orders');
+      const el = document.getElementById('orders-list');
+      el.innerHTML = (orders || []).map((o) =>
+        `<div class="p-3 rounded bg-slate-900/50 cursor-pointer" data-oid="${o.id}">
+           <div class="flex justify-between"><strong>${o.order_no}</strong><span>${o.status}</span></div>
+           <div>${o.customer_name} · ${o.country_iso} · ${o.currency} ${o.total_amount}</div>
+           <div class="text-slate-500">${(o.lines || []).length} 行 · ${o.assigned_to || '未分配'}</div>
+         </div>`
+      ).join('') || '<p class="text-slate-500">暂无订单</p>';
+      el.querySelectorAll('[data-oid]').forEach((node) => {
+        node.onclick = () => selectOrder(node.dataset.oid, node.querySelector('strong').textContent);
+      });
+    }
+
+    function selectOrder(id, label) {
+      activeOrderId = id;
+      document.getElementById('order-lines-form').classList.remove('hidden');
+      document.getElementById('active-order-label').textContent = '当前订单: ' + label;
+    }
+
+    async function loadCatalog() {
+      const tree = await fetch('/api/catalog/tree').then((r) => r.json());
+      document.getElementById('catalog-tree').textContent = JSON.stringify(tree, null, 2);
+    }
+
+    document.getElementById('btn-refresh-leads').onclick = loadLeads;
+    document.getElementById('btn-logout').onclick = () => {
+      localStorage.removeItem('session_token');
+      location.href = '/admin';
+    };
+
+    document.getElementById('btn-add-factory').onclick = async () => {
+      await api('/factories', {
+        method: 'POST',
+        body: JSON.stringify({
+          code: document.getElementById('f-code').value,
+          name_zh: document.getElementById('f-name-zh').value,
+          name_en: document.getElementById('f-name-en').value,
+          category_focus: document.getElementById('f-focus').value,
+        }),
+      });
+      loadFactories();
+    };
+
+    document.getElementById('btn-create-order').onclick = async () => {
+      const res = await api('/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          customer_name: document.getElementById('o-customer').value,
+          country_iso: document.getElementById('o-country').value,
+          factory_id: document.getElementById('o-factory').value,
+        }),
+      });
+      activeOrderId = res.id;
+      document.getElementById('order-lines-form').classList.remove('hidden');
+      document.getElementById('active-order-label').textContent = '当前订单: ' + res.order_no;
+      loadOrders();
+    };
+
+    document.getElementById('btn-add-line').onclick = async () => {
+      if (!activeOrderId) return alert('请先选择或创建订单');
+      await api(`/orders/${activeOrderId}/lines`, {
+        method: 'POST',
+        body: JSON.stringify({
+          product_name: document.getElementById('line-product').value,
+          sku: document.getElementById('line-sku').value,
+          qty: parseInt(document.getElementById('line-qty').value) || 1,
+          unit_price: parseFloat(document.getElementById('line-price').value) || 0,
+        }),
+      });
+      loadOrders();
+    };
+
+    loadSession();
+    loadLeads();
+  </script>
+</body>
+</html>

@@ -171,7 +171,9 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 7. ✅ Phase 1.5 MX 试点向导 — `POST /api/pilot/mx/start` + Tab5 UI + `scripts/mx_pilot.sh`
 8. ✅ Exa L3 西语模板 + `resolve_exa_query` + Tab1 查询预览
 9. ✅ `scripts/latam_full_pilot.sh` — MX+CO 联合验收
-10. ✅ Phase 1 起步 — `GET /api/leads` + `/admin/leads` 员工线索查询
+10. ✅ Phase 1 起步 — `GET /api/leads` + `/admin/dashboard` 员工线索查询
+11. ✅ 工厂主数据 + 订单主表/货号子表 API（待 ERP 对接）
+12. ✅ 三级品类树 `GET /api/catalog/tree`
 
 **用户需配合（阻塞项）：**
 - [ ] RackNerd `df -h` / `free -h` 输出
