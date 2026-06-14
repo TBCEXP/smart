@@ -145,3 +145,23 @@ VPS 升级失败需要回滚：
 | 测 API | Postman 集合 |
 | 上线 | DEPLOYMENT.md + preflight.sh |
 | 数据库 | Supabase postgres skill |
+| **SEO/产品文案** | Tab8 内容工坊 或下方提示词 |
+
+---
+
+## 九、AI 内容工坊（Tab8）
+
+### 生成西语产品 SEO 套装
+```
+在 Tab8 内容工坊为产品「不锈钢烘焙模具 12连」生成西语 SEO：
+- content_type: seo_pack
+- category_l3: bakeware, country MX
+- 检查 prompts.yaml content_studio 提示词
+- 确认输出含 slug, meta_title, meta_description, meta_keywords
+```
+
+### 批量生成多语言产品描述
+```
+扩展 content_studio 服务：同一产品生成 es/en/pt 三份 product_description，
+存入 content_drafts 表，支持导出 .md 给工厂目录用。
+```

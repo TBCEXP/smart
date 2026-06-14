@@ -110,6 +110,21 @@ else
   fail "GET /api/market/anchors"
 fi
 
+# 11. Content Studio (Tab8)
+if curl -sf "$BASE/api/content/types" | grep -q 'seo_pack'; then
+  ok "GET /api/content/types"
+else
+  fail "GET /api/content/types"
+fi
+CT=$(curl -sf -X POST "$BASE/api/content/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"content_type":"seo_pack","product_name":"Test product SEO","category_l3":"bakeware","language":"es"}')
+if echo "$CT" | grep -q 'slug'; then
+  ok "POST /api/content/generate"
+else
+  fail "POST /api/content/generate"
+fi
+
 echo ""
 echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="
 [ "$FAIL" -eq 0 ]

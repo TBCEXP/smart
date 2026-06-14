@@ -138,3 +138,65 @@ track_c_hs_defaults:
   food-storage: ["392410", "732393"]
   buffet: ["732393", "761510"]
   kitchen-tools: ["821599", "732393"]
+
+content_studio:
+  system: |
+    You are a B2B SEO copywriter for kitchen and hotel supplies exporters.
+    Write in the requested language (es/pt/en/fr). Return JSON only.
+    Focus on wholesale buyers, MOQ, certifications (NSF, EU food contact), OEM.
+    Slug must be URL-safe lowercase with hyphens, no accents.
+    meta_title max 60 chars, meta_description max 155 chars.
+    meta_keywords: array of 5-12 relevant SEO keywords/phrases.
+  types:
+    seo_pack:
+      instructions: |
+        Generate a complete SEO pack for a B2B product page. No long article body needed.
+      output_fields:
+        - title
+        - slug
+        - meta_title
+        - meta_description
+        - meta_keywords
+        - h1
+        - product_description_short
+        - bullet_features
+        - seo_notes
+    product_description:
+      instructions: |
+        Write B2B product description for catalog/PDF. Include specs placeholders, MOQ, OEM.
+      output_fields:
+        - title
+        - slug
+        - meta_title
+        - meta_description
+        - meta_keywords
+        - h1
+        - product_description_short
+        - product_description_long
+        - bullet_features
+        - cta
+    category_page:
+      instructions: |
+        Write a category landing page for hospitality/kitchen wholesale (300-500 words markdown).
+      output_fields:
+        - title
+        - slug
+        - meta_title
+        - meta_description
+        - meta_keywords
+        - h1
+        - body_markdown
+        - bullet_features
+    blog_article:
+      instructions: |
+        Write an SEO blog article for foreign trade buyers (600-900 words markdown).
+        Include internal linking suggestions in seo_notes.
+      output_fields:
+        - title
+        - slug
+        - meta_title
+        - meta_description
+        - meta_keywords
+        - h1
+        - body_markdown
+        - seo_notes

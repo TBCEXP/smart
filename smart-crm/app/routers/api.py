@@ -18,6 +18,8 @@ from app.config import (
     BrainstormActionRequest,
     BrainstormRequest,
     ConfigPayload,
+    ContentGenerateRequest,
+    ContentUpdateRequest,
     FeishuWebhookRequest,
     ImportCsvRequest,
     RunRequest,
@@ -28,6 +30,7 @@ from app.config import (
 from app.database import get_session
 from app.models.entities import (
     Batch,
+    ContentDraft,
     CountryAnchor,
     ImportLead,
     Lead,
@@ -40,6 +43,7 @@ from app.models.entities import (
 from app.services.auth import AuthService
 from app.services.brainstorm import BrainstormService
 from app.services.config_store import ConfigStore
+from app.services.content_studio import CONTENT_TYPES, ContentStudioService
 from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
@@ -55,6 +59,7 @@ track_c = TrackCService()
 tradeshow_svc = TradeShowService()
 auth_svc = AuthService()
 kb_svc = KnowledgeBaseService()
+content_svc = ContentStudioService()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -606,6 +611,117 @@ async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     text = f"{lead.company_name} {lead.exa_summary} {lead.firecrawl_summary} {lead.keyword}"
     await kb_svc.index_lead(lead_id, text, db)
     return {"status": "indexed", "lead_id": lead_id}
+
+
+# --- Tab8 Content Studio (AI 内容工坊) ---
+
+@router.get("/content/types")
+async def content_types():
+    return [{"id": k, "label": v} for k, v in CONTENT_TYPES.items()]
+
+
+@router.post("/content/generate")
+async def content_generate(req: ContentGenerateRequest, db: AsyncSession = Depends(get_db)):
+    draft = await content_svc.generate(
+        db,
+        content_type=req.content_type,
+        product_name=req.product_name,
+        category_l3=req.category_l3,
+        language=req.language,
+        country_iso=req.country_iso,
+        input_notes=req.input_notes,
+        tone=req.tone,
+        target_audience=req.target_audience,
+    )
+    return content_svc.to_dict(draft)
+
+
+@router.get("/content/drafts")
+async def list_content_drafts(
+    content_type: str = "",
+    language: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    q = select(ContentDraft).order_by(ContentDraft.created_at.desc())
+    if content_type:
+        q = q.where(ContentDraft.content_type == content_type)
+    if language:
+        q = q.where(ContentDraft.language == language)
+    result = await db.execute(q.limit(50))
+    return [content_svc.to_dict(d) for d in result.scalars().all()]
+
+
+@router.get("/content/drafts/{draft_id}")
+async def get_content_draft(draft_id: str, db: AsyncSession = Depends(get_db)):
+    draft = await db.get(ContentDraft, draft_id)
+    if not draft:
+        raise HTTPException(404, "Draft not found")
+    return content_svc.to_dict(draft)
+
+
+@router.put("/content/drafts/{draft_id}")
+async def update_content_draft(
+    draft_id: str, req: ContentUpdateRequest, db: AsyncSession = Depends(get_db)
+):
+    draft = await db.get(ContentDraft, draft_id)
+    if not draft:
+        raise HTTPException(404, "Draft not found")
+    for field in (
+        "title", "slug", "meta_title", "meta_description", "h1",
+        "body_markdown", "body_html", "status",
+    ):
+        val = getattr(req, field, None)
+        if val:
+            setattr(draft, field, val)
+    if req.meta_keywords:
+        draft.meta_keywords = req.meta_keywords
+    if req.bullet_features:
+        draft.bullet_features = req.bullet_features
+    draft.updated_at = datetime.utcnow()
+    await db.commit()
+    return content_svc.to_dict(draft)
+
+
+@router.post("/content/drafts/{draft_id}/regenerate")
+async def regenerate_content(draft_id: str, db: AsyncSession = Depends(get_db)):
+    draft = await db.get(ContentDraft, draft_id)
+    if not draft:
+        raise HTTPException(404, "Draft not found")
+    new_draft = await content_svc.generate(
+        db,
+        content_type=draft.content_type,
+        product_name=draft.product_name,
+        category_l3=draft.category_l3,
+        language=draft.language,
+        country_iso=draft.country_iso,
+        input_notes=draft.input_notes,
+    )
+    return content_svc.to_dict(new_draft)
+
+
+@router.get("/content/drafts/{draft_id}/export.md")
+async def export_content_md(draft_id: str, db: AsyncSession = Depends(get_db)):
+    draft = await db.get(ContentDraft, draft_id)
+    if not draft:
+        raise HTTPException(404, "Draft not found")
+    md = f"""---
+title: {draft.title}
+slug: {draft.slug}
+meta_title: {draft.meta_title}
+meta_description: {draft.meta_description}
+keywords: {', '.join(draft.meta_keywords or [])}
+language: {draft.language}
+---
+
+# {draft.h1 or draft.title}
+
+{draft.body_markdown}
+"""
+    return StreamingResponse(
+        iter([md]),
+        media_type="text/markdown",
+        headers={"Content-Disposition": f"attachment; filename={draft.slug or draft.id}.md"},
+    )
 
 
 # --- Auth ---

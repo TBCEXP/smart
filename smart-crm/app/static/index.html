@@ -27,6 +27,7 @@
       <button data-tab="market" class="tab-btn">Tab5 市场情报</button>
       <button data-tab="brainstorm" class="tab-btn">Tab6 Brainstorm</button>
       <button data-tab="import" class="tab-btn">Tab7 海关导入</button>
+      <button data-tab="content" class="tab-btn">Tab8 内容工坊</button>
     </nav>
   </header>
 
@@ -159,6 +160,48 @@
           <div id="tradeshow-list" class="space-y-2 mb-4"></div>
           <h3 class="font-medium mb-2">导入线索池</h3>
           <div id="import-lead-list" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab8 Content Studio -->
+    <section id="tab-content" class="tab-panel hidden">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card md:col-span-1">
+          <h2 class="text-lg font-semibold mb-2">AI 内容工坊</h2>
+          <p class="text-sm text-slate-400 mb-4">直接调用 OpenAI 生成 KEYWORD、SEO META、SLUG、产品描述、文章</p>
+          <div class="space-y-3">
+            <select id="ct-type" class="input">
+              <option value="seo_pack">SEO 套装 (Meta+Keywords+Slug)</option>
+              <option value="product_description">B2B 产品描述</option>
+              <option value="category_page">品类落地页</option>
+              <option value="blog_article">SEO 博客文章</option>
+            </select>
+            <input id="ct-product" class="input" placeholder="产品/主题名称 *" />
+            <select id="ct-l3" class="input"></select>
+            <select id="ct-lang" class="input">
+              <option value="es">西班牙语</option>
+              <option value="en">英语</option>
+              <option value="pt">葡萄牙语</option>
+              <option value="fr">法语</option>
+            </select>
+            <input id="ct-country" class="input" placeholder="目标国家 ISO (MX)" value="MX" />
+            <textarea id="ct-notes" class="input h-24" placeholder="补充：材质、MOQ、认证、卖点…"></textarea>
+            <button id="btn-content-gen" class="btn-primary w-full">AI 生成内容</button>
+          </div>
+          <div id="ct-history" class="mt-4 text-xs space-y-1 max-h-40 overflow-y-auto"></div>
+        </div>
+        <div class="md:col-span-2 card">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold text-emerald-400">生成结果（可编辑）</h3>
+            <div class="flex gap-2">
+              <button id="btn-content-save" class="btn-secondary text-sm hidden">保存修改</button>
+              <button id="btn-content-export" class="btn-secondary text-sm hidden">导出 .md</button>
+            </div>
+          </div>
+          <div id="ct-result" class="space-y-3 text-sm">
+            <p class="text-slate-500">填写左侧表单后点击「AI 生成内容」</p>
+          </div>
         </div>
       </div>
     </section>

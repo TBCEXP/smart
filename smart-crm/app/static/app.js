@@ -35,7 +35,7 @@ function log(msg) {
 }
 
 function fillL3Selects() {
-  ['search-l3', 'bs-l3'].forEach((id) => {
+  ['search-l3', 'bs-l3', 'ct-l3'].forEach((id) => {
     const sel = document.getElementById(id);
     if (!sel) return;
     sel.innerHTML = L3_DEFAULTS.map(
@@ -55,8 +55,89 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'import') loadImport();
     if (btn.dataset.tab === 'history') loadBatches();
     if (btn.dataset.tab === 'brainstorm') loadBrainstormSessions();
+    if (btn.dataset.tab === 'content') loadContentHistory();
   });
 });
+
+let currentDraftId = null;
+
+// Tab8 Content Studio
+document.getElementById('btn-content-gen').onclick = async () => {
+  const product = document.getElementById('ct-product').value.trim();
+  if (!product) return alert('请填写产品/主题名称');
+  document.getElementById('ct-result').innerHTML = '<p class="text-amber-400">AI 生成中…</p>';
+  const res = await api('/content/generate', {
+    method: 'POST',
+    body: {
+      content_type: document.getElementById('ct-type').value,
+      product_name: product,
+      category_l3: document.getElementById('ct-l3').value,
+      language: document.getElementById('ct-lang').value,
+      country_iso: document.getElementById('ct-country').value,
+      input_notes: document.getElementById('ct-notes').value,
+    },
+  });
+  renderContentDraft(res);
+  loadContentHistory();
+};
+
+function renderContentDraft(d) {
+  currentDraftId = d.id;
+  document.getElementById('btn-content-save').classList.remove('hidden');
+  document.getElementById('btn-content-export').classList.remove('hidden');
+  const kw = (d.meta_keywords || []).join(', ');
+  document.getElementById('ct-result').innerHTML = `
+    <div class="grid gap-2">
+      <label class="text-slate-400">Title <input id="ed-title" class="input mt-1" value="${esc(d.title)}" /></label>
+      <label class="text-slate-400">Slug <input id="ed-slug" class="input mt-1" value="${esc(d.slug)}" /></label>
+      <label class="text-slate-400">Meta Title (≤60) <input id="ed-meta-title" class="input mt-1" value="${esc(d.meta_title)}" /></label>
+      <label class="text-slate-400">Meta Description (≤155) <textarea id="ed-meta-desc" class="input mt-1 h-16">${esc(d.meta_description)}</textarea></label>
+      <label class="text-slate-400">Keywords <input id="ed-keywords" class="input mt-1" value="${esc(kw)}" /></label>
+      <label class="text-slate-400">H1 <input id="ed-h1" class="input mt-1" value="${esc(d.h1)}" /></label>
+      <label class="text-slate-400">正文 Markdown <textarea id="ed-body" class="input mt-1 h-48 font-mono text-xs">${esc(d.body_markdown || (d.extra?.product_description_short || ''))}</textarea></label>
+      ${(d.bullet_features || []).length ? `<div><span class="text-slate-400">要点</span><ul class="list-disc ml-5 mt-1">${d.bullet_features.map(b=>`<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
+      ${d.extra?.seo_notes ? `<p class="text-xs text-slate-500">SEO 提示: ${esc(d.extra.seo_notes)}</p>` : ''}
+    </div>`;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+document.getElementById('btn-content-save').onclick = async () => {
+  if (!currentDraftId) return;
+  await api(`/content/drafts/${currentDraftId}`, {
+    method: 'PUT',
+    body: {
+      title: document.getElementById('ed-title').value,
+      slug: document.getElementById('ed-slug').value,
+      meta_title: document.getElementById('ed-meta-title').value,
+      meta_description: document.getElementById('ed-meta-desc').value,
+      meta_keywords: document.getElementById('ed-keywords').value.split(',').map(s=>s.trim()).filter(Boolean),
+      h1: document.getElementById('ed-h1').value,
+      body_markdown: document.getElementById('ed-body').value,
+      status: 'approved',
+    },
+  });
+  alert('已保存');
+};
+
+document.getElementById('btn-content-export').onclick = () => {
+  if (!currentDraftId) return;
+  window.open(`${API}/content/drafts/${currentDraftId}/export.md`);
+};
+
+async function loadContentHistory() {
+  const drafts = await api('/content/drafts');
+  document.getElementById('ct-history').innerHTML = drafts
+    .map(d => `<div class="cursor-pointer hover:text-emerald-400 truncate" onclick="loadDraft('${d.id}')">${d.content_type_label}: ${d.product_name?.slice(0,30)}</div>`)
+    .join('') || '<span class="text-slate-500">暂无历史</span>';
+}
+
+window.loadDraft = async (id) => {
+  const d = await api(`/content/drafts/${id}`);
+  renderContentDraft(d);
+};
 
 // Config form
 const CONFIG_FIELDS = [

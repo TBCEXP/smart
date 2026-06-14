@@ -134,3 +134,27 @@ class FeishuWebhookRequest(BaseModel):
     lead_index: int
     status: str
     record_id: str = ""
+
+
+class ContentGenerateRequest(BaseModel):
+    content_type: str = "seo_pack"
+    product_name: str
+    category_l3: str = ""
+    language: str = "es"
+    country_iso: str = ""
+    input_notes: str = ""
+    tone: str = "professional_b2b"
+    target_audience: str = "hospitality_wholesaler"
+
+
+class ContentUpdateRequest(BaseModel):
+    title: str = ""
+    slug: str = ""
+    meta_title: str = ""
+    meta_description: str = ""
+    meta_keywords: list[str] = Field(default_factory=list)
+    h1: str = ""
+    body_markdown: str = ""
+    body_html: str = ""
+    bullet_features: list[str] = Field(default_factory=list)
+    status: str = "draft"

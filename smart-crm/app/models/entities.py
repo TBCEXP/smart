@@ -220,3 +220,31 @@ class UserSession(Base):
     session_token: Mapped[str] = mapped_column(String(256), unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ContentDraft(Base):
+    """AI 内容工坊产出：SEO、产品描述、文章等。"""
+
+    __tablename__ = "content_drafts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    content_type: Mapped[str] = mapped_column(String(32), index=True)
+    language: Mapped[str] = mapped_column(String(8), default="es")
+    country_iso: Mapped[str] = mapped_column(String(8), default="")
+    category_l3: Mapped[str] = mapped_column(String(64), default="")
+    product_name: Mapped[str] = mapped_column(String(512), default="")
+    input_notes: Mapped[str] = mapped_column(Text, default="")
+    title: Mapped[str] = mapped_column(String(256), default="")
+    slug: Mapped[str] = mapped_column(String(256), default="", index=True)
+    meta_title: Mapped[str] = mapped_column(String(70), default="")
+    meta_description: Mapped[str] = mapped_column(String(320), default="")
+    meta_keywords: Mapped[dict] = mapped_column(JSON, default=list)
+    h1: Mapped[str] = mapped_column(String(256), default="")
+    body_html: Mapped[str] = mapped_column(Text, default="")
+    body_markdown: Mapped[str] = mapped_column(Text, default="")
+    bullet_features: Mapped[dict] = mapped_column(JSON, default=list)
+    extra_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(16), default="draft")
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
