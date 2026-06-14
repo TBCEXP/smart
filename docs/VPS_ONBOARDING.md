@@ -23,6 +23,8 @@ bash scripts/upgrade.sh
 
 # 3. 本地验收
 bash scripts/vps_verify.sh http://127.0.0.1:8000
+bash scripts/deploy_verify.sh http://127.0.0.1:8000
+bash scripts/go_live.sh http://127.0.0.1:8000
 bash scripts/prod_onboard.sh http://127.0.0.1:8000
 
 # 4. Tab2 配置 API Key 后全量验收

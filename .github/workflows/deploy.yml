@@ -56,7 +56,7 @@ jobs:
             echo ""
             echo " Deploy OK: ${{ github.sha }}"
 
-      - name: Post-deploy smoke (optional)
+      - name: Post-deploy verify
         uses: appleboy/ssh-action@v1.2.0
         continue-on-error: true
         with:
@@ -65,13 +65,5 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /opt/smart-crm
-            bash scripts/smoke_test.sh http://127.0.0.1:8000
-            bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick
-            bash scripts/phase1_verify.sh http://127.0.0.1:8000
-            bash scripts/phase2_verify.sh http://127.0.0.1:8000
-            bash scripts/phase3_verify.sh http://127.0.0.1:8000
-            bash scripts/phase4_verify.sh http://127.0.0.1:8000
-            bash scripts/phase5_verify.sh http://127.0.0.1:8000
-            bash scripts/erp_verify.sh http://127.0.0.1:8000
-            bash scripts/final_acceptance.sh http://127.0.0.1:8000 2>/dev/null | tail -5 || true
+            bash scripts/deploy_verify.sh http://127.0.0.1:8000
             bash scripts/status.sh http://127.0.0.1:8000

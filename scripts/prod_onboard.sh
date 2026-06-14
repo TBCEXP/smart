@@ -144,3 +144,4 @@ echo ""
 bash "$SCRIPT_DIR/final_acceptance.sh" "$BASE" 2>/dev/null | tail -8 || bash "$SCRIPT_DIR/pre_merge_verify.sh" "$BASE" | tail -8
 echo ""
 echo "交接报告: bash scripts/acceptance_report.sh $BASE"
+echo "代码终检: bash scripts/go_live.sh $BASE"

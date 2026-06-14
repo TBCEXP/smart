@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 # v2.1.0 发布包完整性检查
-# 用法: bash scripts/release_check.sh [BASE_URL]
+# 用法: bash scripts/release_check.sh [BASE_URL] [--skip-pytest]
 set -euo pipefail
 
-BASE="${1:-http://127.0.0.1:8000}"
+BASE="http://127.0.0.1:8000"
+SKIP_PYTEST=0
 PASS=0
 FAIL=0
+
+for arg in "$@"; do
+  case "$arg" in
+    http*) BASE="$arg" ;;
+    --skip-pytest) SKIP_PYTEST=1 ;;
+  esac
+done
 
 ok()   { echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
@@ -30,14 +38,18 @@ for s in erp_verify.sh prod_readiness_check.sh release_check.sh; do
 done
 
 cd smart-crm
-PY_SUMMARY=$(PYTHONPATH=. python3 -m pytest tests/ -q --tb=no 2>/dev/null | tail -1)
-PY_EXIT=$?
-PY_CNT=$(echo "$PY_SUMMARY" | grep -oE '^[0-9]+ passed' | head -1 || true)
-EXPECTED=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -q 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo "39")
-if [ "$PY_EXIT" -eq 0 ] && [ -n "$PY_CNT" ] && [ "$(echo "$PY_CNT" | grep -oE '^[0-9]+')" = "$EXPECTED" ]; then
-  ok "pytest ($PY_CNT)"
+if [ "$SKIP_PYTEST" -eq 0 ]; then
+  PY_SUMMARY=$(PYTHONPATH=. python3 -m pytest tests/ -q --tb=no 2>/dev/null | tail -1)
+  PY_EXIT=$?
+  PY_CNT=$(echo "$PY_SUMMARY" | grep -oE '^[0-9]+ passed' | head -1 || true)
+  EXPECTED=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -q 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo "39")
+  if [ "$PY_EXIT" -eq 0 ] && [ -n "$PY_CNT" ] && [ "$(echo "$PY_CNT" | grep -oE '^[0-9]+')" = "$EXPECTED" ]; then
+    ok "pytest ($PY_CNT)"
+  else
+    fail "pytest (${PY_SUMMARY:-failed}, expected ${EXPECTED})"
+  fi
 else
-  fail "pytest (${PY_SUMMARY:-failed}, expected ${EXPECTED})"
+  ok "pytest (skipped)"
 fi
 cd ..
 

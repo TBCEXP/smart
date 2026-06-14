@@ -60,6 +60,12 @@ jobs:
       - name: ERP bridge verify
         run: bash scripts/erp_verify.sh http://127.0.0.1:8000
 
+      - name: Release check (skip pytest)
+        run: bash scripts/release_check.sh http://127.0.0.1:8000 --skip-pytest
+
+      - name: Deploy verify
+        run: bash scripts/deploy_verify.sh http://127.0.0.1:8000
+
   postgres-smoke:
     runs-on: ubuntu-latest
     steps:

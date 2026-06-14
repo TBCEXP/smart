@@ -150,6 +150,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |
 | 生产上线引导 | [docs/PRODUCTION_ONBOARDING.md](docs/PRODUCTION_ONBOARDING.md) |
+| 部署验收 | `bash scripts/deploy_verify.sh [URL]` |
 | 代码终检 | `bash scripts/go_live.sh [URL]` |
 | 发布完整性 | `bash scripts/release_check.sh [URL]` |
 | 项目交接 | [docs/HANDOFF.md](docs/HANDOFF.md) |

@@ -28,6 +28,12 @@
 - 应用版本号统一 **2.1.0**
 - Postman ERP + v2.1 端点
 
+### Added (deploy pipeline)
+
+- `deploy_verify.sh` — VPS/CI 部署后快速验收（phase15 quick + phase3–5 + erp）
+- `upgrade.sh` / GitHub Actions 部署后自动跑 `deploy_verify`
+- `release_check.sh --skip-pytest` — CI 复用发布检查
+
 ### Fixed (handoff)
 
 - `release_check.sh` pytest 计数解析（动态 collect-only 预期值）

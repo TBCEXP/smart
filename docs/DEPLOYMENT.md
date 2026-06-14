@@ -118,7 +118,8 @@ VPS 会按 tag 部署，便于回滚对照。当前版本为 **2.1.0**（含 OCR
 ### 部署后终验收
 
 ```bash
-bash scripts/final_acceptance.sh https://crm.yourdomain.com
+bash scripts/deploy_verify.sh https://crm.yourdomain.com
+bash scripts/go_live.sh https://crm.yourdomain.com
 bash scripts/acceptance_report.sh https://crm.yourdomain.com
 ```
 
@@ -204,7 +205,8 @@ sudo crontab -e
 - [ ] GitHub Secrets 已配置（VPS_HOST / VPS_USER / VPS_SSH_KEY）
 - [ ] push 到 main 后 Actions 显示绿色 ✓
 - [ ] `https://你的域名/api/health` 返回 `{"status":"ok"}`
-- [ ] `bash scripts/vps_verify.sh https://你的域名` 验收通过
+- [ ] `bash scripts/deploy_verify.sh https://你的域名` 验收通过
+- [ ] `bash scripts/go_live.sh https://你的域名` 代码终检通过
 - [ ] Tab2 配置 API Key 后 `POST /api/integrations/probe` 四项 live 通过
 - [ ] `sudo bash scripts/backup_daily.sh` 可生成 tar 备份
 

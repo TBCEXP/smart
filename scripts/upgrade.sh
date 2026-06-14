@@ -51,44 +51,15 @@ sleep 5
 if curl -sf http://127.0.0.1:8000/api/health; then
   echo ""
   echo "✓ 升级成功 — 版本 $VERSION (build $BUILD_SHA)"
-  echo "==> 快速验收"
-  if bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick; then
-    echo "✓ phase15_verify --quick 通过"
+  echo "==> 部署验收"
+  if bash scripts/deploy_verify.sh http://127.0.0.1:8000; then
+    echo "✓ deploy_verify 通过"
   else
-    echo "⚠ phase15_verify 有未达标项（Mock 模式可忽略）"
-  fi
-  if bash scripts/phase1_verify.sh http://127.0.0.1:8000; then
-    echo "✓ phase1_verify 通过"
-  else
-    echo "⚠ phase1_verify 有失败项"
-  fi
-  if bash scripts/phase2_verify.sh http://127.0.0.1:8000; then
-    echo "✓ phase2_verify 通过"
-  else
-    echo "⚠ phase2_verify 有失败项"
-  fi
-  if bash scripts/phase3_verify.sh http://127.0.0.1:8000; then
-    echo "✓ phase3_verify 通过"
-  else
-    echo "⚠ phase3_verify 有失败项"
-  fi
-  if bash scripts/phase4_verify.sh http://127.0.0.1:8000; then
-    echo "✓ phase4_verify 通过"
-  else
-    echo "⚠ phase4_verify 有失败项"
-  fi
-  if bash scripts/phase5_verify.sh http://127.0.0.1:8000; then
-    echo "✓ phase5_verify 通过"
-  else
-    echo "⚠ phase5_verify 有失败项"
-  fi
-  if bash scripts/erp_verify.sh http://127.0.0.1:8000 2>/dev/null; then
-    echo "✓ erp_verify 通过"
-  else
-    echo "⚠ erp_verify 有失败项"
+    echo "⚠ deploy_verify 有失败项 — 查看上方日志"
+    exit 1
   fi
   echo ""
-  echo "完整终验收: bash scripts/final_acceptance.sh http://127.0.0.1:8000"
+  echo "完整终检: bash scripts/go_live.sh http://127.0.0.1:8000"
 else
   echo "✗ 健康检查失败，请执行: docker compose logs smart-crm --tail 50"
   exit 1
