@@ -307,14 +307,30 @@ async def confirm_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     from app.services.feishu_client import FeishuClient
 
     feishu = FeishuClient()
-    try:
-        record_id = await feishu.create_record(lead, lead.batch_id or "")
-        if record_id:
+    feishu_mode = "mock"
+    if feishu._configured():
+        feishu_mode = "live"
+        try:
+            record_id = await feishu.create_record(lead, lead.batch_id or "")
+            if not record_id:
+                raise HTTPException(502, "Feishu write returned empty record_id")
             lead.feishu_record_id = record_id
-    except Exception as exc:
-        raise HTTPException(502, f"Feishu write failed: {exc}") from exc
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(502, f"Feishu write failed: {exc}") from exc
+    text = f"{lead.company_name} {lead.exa_summary} {lead.firecrawl_summary} {lead.keyword}"
+    try:
+        await kb_svc.index_lead(lead_id, text, db)
+    except Exception:
+        pass
     await db.commit()
-    return {"status": "confirmed", "lead_id": lead_id, "feishu_record_id": lead.feishu_record_id}
+    return {
+        "status": "confirmed",
+        "lead_id": lead_id,
+        "feishu_record_id": lead.feishu_record_id,
+        "feishu_mode": feishu_mode,
+    }
 
 
 @router.post("/regenerate/{lead_id}")
@@ -731,6 +747,9 @@ async def stats_overview(db: AsyncSession = Depends(get_db)):
     matched = sum(1 for i in import_list if i.domain)
     mx = await pilot_svc.status(db, "MX")
     co = await pilot_svc.status(db, "CO")
+    kb_sample = await kb_svc.search(db, "bakeware distributor Colombia", limit=3)
+    import_count = len(import_list)
+    match_rate = round(matched / import_count, 2) if import_count else 0
     return {
         "leads": {
             "total": len(lead_list),
@@ -745,14 +764,25 @@ async def stats_overview(db: AsyncSession = Depends(get_db)):
             "target_1_5_5": "≥5 家 WhatsApp 手动发送",
         },
         "track_c": {
-            "imported": len(import_list),
+            "imported": import_count,
             "domain_matched": matched,
-            "match_rate": round(matched / len(import_list), 2) if import_list else 0,
+            "match_rate": match_rate,
             "target_1_5_6": "CSV 50 条域名匹配率 >60%",
         },
         "pilot": {
             "MX": mx.get("latest_run", {}).get("acceptance") if mx.get("latest_run") else None,
             "CO": co.get("latest_run", {}).get("acceptance") if co.get("latest_run") else None,
+        },
+        "milestones": {
+            "1_5_4_feishu_30": feishu_synced >= 30,
+            "1_5_5_whatsapp_5": wa_sent >= 5,
+            "1_5_6_track_c": import_count >= 50 and match_rate > 0.6,
+            "1_5_7_kb_recall": len(kb_sample) > 0,
+            "feishu_synced": feishu_synced,
+            "whatsapp_sent": wa_sent,
+            "track_c_imported": import_count,
+            "track_c_match_rate": match_rate,
+            "kb_results": len(kb_sample),
         },
     }
 
@@ -915,6 +945,18 @@ async def pilot_report(db: AsyncSession = Depends(get_db)):
     mx = await pilot_svc.status(db, "MX")
     co = await pilot_svc.status(db, "CO")
     runs = pilot_svc.list_runs()
+    leads = await db.execute(select(Lead))
+    lead_list = leads.scalars().all()
+    feishu_synced = sum(1 for l in lead_list if l.feishu_record_id)
+    outreach = await db.execute(select(OutreachLog))
+    logs = outreach.scalars().all()
+    wa_sent = sum(1 for o in logs if o.channel == "whatsapp")
+    imports = await db.execute(select(ImportLead))
+    import_list = imports.scalars().all()
+    matched = sum(1 for i in import_list if i.domain)
+    import_count = len(import_list)
+    match_rate = round(matched / import_count, 2) if import_count else 0
+    kb_sample = await kb_svc.search(db, "bakeware distributor Colombia", limit=3)
     return {
         "phase": "1.5",
         "generated_at": datetime.utcnow().isoformat(),
@@ -936,6 +978,17 @@ async def pilot_report(db: AsyncSession = Depends(get_db)):
             "mx_brainstorm": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("brainstorm_cards")),
             "mx_queued": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("track_a_queued")),
             "co_started": co.get("latest_run") is not None,
+            "1_5_4_feishu_30": feishu_synced >= 30,
+            "1_5_5_whatsapp_5": wa_sent >= 5,
+            "1_5_6_track_c": import_count >= 50 and match_rate > 0.6,
+            "1_5_7_kb_recall": len(kb_sample) > 0,
+        },
+        "acceptance_counts": {
+            "feishu_synced": feishu_synced,
+            "whatsapp_sent": wa_sent,
+            "track_c_imported": import_count,
+            "track_c_match_rate": match_rate,
+            "kb_results": len(kb_sample),
         },
     }
 

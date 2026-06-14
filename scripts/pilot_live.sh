@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # 真实 API 环境下跑 Phase 1.5 试点（MX 默认，CO 加 --co）
 # 用法: bash scripts/pilot_live.sh [BASE_URL] [--co]
+# 环境变量:
+#   SESSION_TOKEN  — 已有管理会话（跳过 OTP）
+#   AUTH_EMAIL     — OTP 登录邮箱（默认 admin@example.com）
+#   AUTH_LOG       — OTP 日志路径（默认 /var/lib/smart-crm/auth_emails.log 或 smart-crm/data/auth_emails.log）
 set -euo pipefail
 
 BASE="http://127.0.0.1:8000"
 COUNTRY="MX"
 PILOT_PATH="mx"
+AUTH_EMAIL="${AUTH_EMAIL:-admin@example.com}"
 
 for arg in "$@"; do
   case "$arg" in
@@ -13,6 +18,35 @@ for arg in "$@"; do
     http*) BASE="$arg" ;;
   esac
 done
+
+get_session_token() {
+  if [ -n "${SESSION_TOKEN:-}" ]; then
+    echo "$SESSION_TOKEN"
+    return
+  fi
+  local log="${AUTH_LOG:-}"
+  if [ -z "$log" ]; then
+    for p in /var/lib/smart-crm/auth_emails.log /workspace/smart-crm/data/auth_emails.log ./smart-crm/data/auth_emails.log; do
+      [ -f "$p" ] && log="$p" && break
+    done
+  fi
+  curl -sf -X POST "$BASE/api/auth/otp/send" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$AUTH_EMAIL\",\"portal\":\"admin\"}" > /dev/null || true
+  sleep 1
+  local code=""
+  if [ -n "$log" ] && [ -f "$log" ]; then
+    code=$(grep -oE '[0-9]{6}' "$log" | tail -1 || true)
+  fi
+  if [ -z "$code" ]; then
+    echo ""
+    return
+  fi
+  VERIFY=$(curl -sf -X POST "$BASE/api/auth/otp/verify" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$AUTH_EMAIL\",\"code\":\"$code\",\"portal\":\"admin\"}" || echo '{}')
+  echo "$VERIFY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_token',''))" 2>/dev/null || echo ""
+}
 
 echo "=== SMART CRM Live Pilot ($COUNTRY) ==="
 echo "Base: $BASE"
@@ -55,8 +89,15 @@ if [ -n "$BATCH_ID" ]; then
   if [ -n "$LEAD_ID" ]; then
     echo ""
     echo "[5] 确认 1 条线索入库飞书 (review→confirm)"
-    CONF=$(curl -sf -X POST "$BASE/api/confirm/$LEAD_ID" || echo '{"error":"confirm failed"}')
-    echo "$CONF" | python3 -m json.tool 2>/dev/null || echo "$CONF"
+    TOKEN=$(get_session_token)
+    if [ -z "$TOKEN" ]; then
+      echo "  ⚠ 无 SESSION_TOKEN 且无法从 OTP 日志获取验证码 — 跳过 confirm"
+      echo "    请: export SESSION_TOKEN=<token> 或在 /admin 登录后重试"
+    else
+      CONF=$(curl -sf -X POST "$BASE/api/confirm/$LEAD_ID" \
+        -H "X-Session-Token: $TOKEN" || echo '{"error":"confirm failed"}')
+      echo "$CONF" | python3 -m json.tool 2>/dev/null || echo "$CONF"
+    fi
   fi
 else
   echo "  无到期任务（请 Tab4 查看定时任务）"
@@ -66,3 +107,8 @@ echo ""
 echo "=== Live Pilot ($COUNTRY) 完成 ==="
 echo "  session_id: $SESSION_ID"
 echo "  batch_id:   $BATCH_ID"
+echo ""
+echo "验收脚本:"
+echo "  bash scripts/outreach_pilot.sh $BASE"
+echo "  bash scripts/trackc_pilot.sh $BASE 50 --no-website"
+echo "  bash scripts/kb_pilot.sh $BASE"

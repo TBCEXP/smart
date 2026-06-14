@@ -20,6 +20,11 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A6 | 获客批次 | `POST /api/run` count=2 → batch 完成 |
 | A7 | MX/CO 试点 | `POST /api/pilot/mx/start` → session_id |
 | A8 | 定时入队 | `POST /api/schedules/run-due` → queued |
+| A9 | Tab9 看板 | `GET /api/stats/overview` → milestones |
+| A10 | WhatsApp 触达 | `POST/GET/PATCH /api/outreach/*` |
+| A11 | Track C 试点 | `bash scripts/trackc_pilot.sh` |
+| A12 | KB 检索 | `bash scripts/kb_pilot.sh` |
+| A13 | WhatsApp 里程碑 | `bash scripts/outreach_pilot.sh` |
 
 ## B. 浏览器手动
 
@@ -41,6 +46,7 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | C3 | `bash scripts/pilot_live.sh` 或 `--co` |
 | C4 | `sudo bash scripts/setup_https.sh crm.domain.com` |
 | C5 | GitHub Actions CI + Deploy 绿色 |
+| C6 | `sudo bash scripts/backup_daily.sh` + cron 每日备份 |
 
 ## D. 1.5 期验收（MX → CO）
 
@@ -51,6 +57,9 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | D3 | ≥10 条西语开发信可发 |
 | D4 | 飞书累计 ≥30 条（MX+CO） |
 | D5 | Tab8 热点产品 es/en/pt SEO 包 |
+| D6 | 1.5.5 WhatsApp ≥5 家（`outreach_pilot.sh`） |
+| D7 | 1.5.6 Track C 50 条匹配 >60%（`trackc_pilot.sh --no-website`） |
+| D8 | 1.5.7 KB 语义召回（`kb_pilot.sh`） |
 
 ## 失败排查
 

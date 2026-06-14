@@ -158,7 +158,25 @@ sudo tar xzf /var/lib/smart-crm/backups/pre-upgrade-XXXX.tar.gz -C /
 
 ---
 
-## 八、分支建议
+## 八、每日数据备份（第零期 0.7）
+
+数据目录 `/var/lib/smart-crm` 含数据库、配置、OTP 日志，**升级脚本不会覆盖**，但需防磁盘故障：
+
+```bash
+# 手动备份
+sudo bash /opt/smart-crm/scripts/backup_daily.sh
+
+# 每日 03:00 自动备份（cron）
+sudo crontab -e
+# 添加:
+0 3 * * * /opt/smart-crm/scripts/backup_daily.sh >> /var/log/smart-crm-backup.log 2>&1
+```
+
+备份文件默认保存在 `/var/backups/smart-crm/`，保留 14 天（`KEEP_DAYS` 可改）。
+
+---
+
+## 九、分支建议
 
 | 分支 | 用途 |
 |------|------|
@@ -170,7 +188,7 @@ sudo tar xzf /var/lib/smart-crm/backups/pre-upgrade-XXXX.tar.gz -C /
 
 ---
 
-## 九、检查清单
+## 十、检查清单
 
 - [ ] VPS 已 `git clone` 到 `/opt/smart-crm`
 - [ ] 数据在 `/var/lib/smart-crm/`，与程序分离
@@ -179,6 +197,6 @@ sudo tar xzf /var/lib/smart-crm/backups/pre-upgrade-XXXX.tar.gz -C /
 - [ ] `https://你的域名/api/health` 返回 `{"status":"ok"}`
 - [ ] `bash scripts/vps_verify.sh https://你的域名` 验收通过
 - [ ] Tab2 配置 API Key 后 `POST /api/integrations/probe` 四项 live 通过
-- [ ] `bash scripts/pilot_live.sh https://你的域名` 跑通 MX 试点 + 飞书写入
+- [ ] `sudo bash scripts/backup_daily.sh` 可生成 tar 备份
 
 完成以上后，你以后在 Cursor 改软件 → **Push 一下就能更新网页**。

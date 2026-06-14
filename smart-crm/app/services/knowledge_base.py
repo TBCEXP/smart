@@ -49,16 +49,7 @@ class KnowledgeBaseService:
 
         query_vec = await self.embed_text(query)
         if not query_vec:
-            # 文本回退：按国家/品类/关键词模糊匹配
-            result = await db.execute(
-                select(Lead)
-                .where(
-                    Lead.company_name.contains(query[:20])
-                    | Lead.keyword.contains(query[:30])
-                )
-                .limit(limit)
-            )
-            return [self._lead_brief(l) for l in result.scalars().all()]
+            return await self._text_search(db, query, limit)
 
         # 余弦相似度（存储为 JSON，兼容 SQLite 开发环境）
         result = await db.execute(select(Lead).where(Lead.embedding.isnot(None)))
@@ -77,6 +68,31 @@ class KnowledgeBaseService:
             {**self._lead_brief(lead), "score": round(sim, 4)}
             for sim, lead in scored[:limit]
         ]
+
+    async def _text_search(self, db, query: str, limit: int) -> list[dict[str, Any]]:
+        from sqlalchemy import or_, select
+
+        from app.models.entities import Lead
+
+        tokens = [t.strip() for t in query.replace("，", " ").split() if t.strip()]
+        if not tokens:
+            tokens = [query[:20]]
+        clauses = []
+        for tok in tokens[:6]:
+            pat = f"%{tok}%"
+            clauses.extend(
+                [
+                    Lead.company_name.ilike(pat),
+                    Lead.keyword.ilike(pat),
+                    Lead.country_iso.ilike(pat),
+                    Lead.category_l3.ilike(pat),
+                    Lead.city.ilike(pat),
+                    Lead.firecrawl_summary.ilike(pat),
+                    Lead.exa_summary.ilike(pat),
+                ]
+            )
+        result = await db.execute(select(Lead).where(or_(*clauses)).limit(limit))
+        return [self._lead_brief(l) for l in result.scalars().all()]
 
     def _lead_brief(self, lead) -> dict[str, Any]:
         return {

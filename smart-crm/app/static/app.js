@@ -742,7 +742,7 @@ async function loadDashboard() {
       : '<p class="text-slate-500">暂无触达记录 — 在 Tab3 线索卡片点击「记录 WhatsApp」</p>';
 
     document.getElementById('dash-milestones').textContent = JSON.stringify(
-      { milestones: report.milestones, countries: report.countries },
+      { milestones: { ...report.milestones, ...overview.milestones }, countries: report.countries },
       null,
       2
     );

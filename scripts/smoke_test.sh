@@ -187,10 +187,10 @@ else
 fi
 
 # 16. Stats overview + outreach (Tab9 / 1.5.5)
-if curl -sf "$BASE/api/stats/overview" | grep -q 'track_c'; then
-  ok "GET /api/stats/overview"
+if curl -sf "$BASE/api/stats/overview" | grep -q '1_5_5_whatsapp_5'; then
+  ok "GET /api/stats/overview (milestones)"
 else
-  fail "GET /api/stats/overview"
+  fail "GET /api/stats/overview (milestones)"
 fi
 OUT=$(curl -sf -X POST "$BASE/api/outreach/log" \
   -H "Content-Type: application/json" \

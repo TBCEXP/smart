@@ -21,5 +21,25 @@ REPORT=$(curl -sf "$BASE/api/pilot/report" 2>/dev/null || echo '{}')
 echo "Pilot MX intel: $(echo "$REPORT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('countries',{}).get('MX',{}).get('totals',{}).get('intel_reports',0))" 2>/dev/null || echo 0)"
 echo "Pilot CO intel: $(echo "$REPORT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('countries',{}).get('CO',{}).get('totals',{}).get('intel_reports',0))" 2>/dev/null || echo 0)"
 
+STATS=$(curl -sf "$BASE/api/stats/overview" 2>/dev/null || echo '{}')
+echo "Feishu synced: $(echo "$STATS" | python3 -c "import sys,json; print(json.load(sys.stdin).get('leads',{}).get('feishu_synced',0))" 2>/dev/null || echo 0)"
+echo "WhatsApp sent: $(echo "$STATS" | python3 -c "import sys,json; print(json.load(sys.stdin).get('outreach',{}).get('whatsapp_sent',0))" 2>/dev/null || echo 0)"
+echo "Track C match: $(echo "$STATS" | python3 -c "import sys,json; d=json.load(sys.stdin).get('track_c',{}); print(f\"{d.get('domain_matched',0)}/{d.get('imported',0)} ({int(d.get('match_rate',0)*100)}%)\")" 2>/dev/null || echo N/A)"
+
+MILE=$(echo "$STATS" | python3 -c "
+import sys, json
+m = json.load(sys.stdin).get('milestones', {})
+flags = []
+for k, label in [
+    ('1_5_4_feishu_30', '1.5.4'),
+    ('1_5_5_whatsapp_5', '1.5.5'),
+    ('1_5_6_track_c', '1.5.6'),
+    ('1_5_7_kb_recall', '1.5.7'),
+]:
+    flags.append(f\"{label}:{'✓' if m.get(k) else '○'}\")
+print(' | '.join(flags))
+" 2>/dev/null || echo "milestones: N/A")
+echo "Milestones: $MILE"
+
 echo ""
-echo "详细: curl -s $BASE/api/system/readiness | python3 -m json.tool"
+echo "详细: curl -s $BASE/api/stats/overview | python3 -m json.tool"
