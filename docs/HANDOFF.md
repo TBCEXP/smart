@@ -1,6 +1,6 @@
 # SMART CRM — 项目交接（Agent → 团队）
 
-> 版本 **v2.1.0** · `main` @ `4557413` · 代码侧 **100% 完成**
+> 版本 **v2.1.0** · `main` @ `1b9d7f6` · 代码侧 **100% 完成** · tag `v2.1.0`
 
 ## 交付范围
 
@@ -58,6 +58,7 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 | `final_acceptance.sh` | 路线图终验收 |
 | `acceptance_report.sh` | 导出试点+交接+阻塞 JSON |
 | `export_blockers.sh` | 单独导出 `production_blockers` |
+| `delivery_complete.sh` | 代码交付确认（Agent 完结检查） |
 
 ## 仓库
 

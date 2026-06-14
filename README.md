@@ -160,6 +160,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 上线待办 | `bash scripts/onboard_checklist.sh [URL]` |
 | 代码终检 | `bash scripts/go_live.sh [URL]` |
 | 发布完整性 | `bash scripts/release_check.sh [URL]` |
+| 代码交付确认 | `bash scripts/delivery_complete.sh [URL]` |
 | 项目交接 | [docs/HANDOFF.md](docs/HANDOFF.md) |
 | VPS 上线 | [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |

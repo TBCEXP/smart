@@ -70,5 +70,5 @@ fi
 echo ""
 echo "建议操作:"
 echo "  1. VPS: cd /opt/smart-crm && bash scripts/upgrade.sh"
-echo "  2. 终验收: bash scripts/final_acceptance.sh $BASE"
+echo "  2. 终验收: bash scripts/go_live.sh $BASE"
 echo "  3. 生产: bash scripts/prod_onboard.sh https://crm.domain.com --full"

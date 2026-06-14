@@ -138,5 +138,6 @@ sudo bash scripts/setup_backup_cron.sh
 ## 仓库
 
 - GitHub: `https://github.com/TBCEXP/smart`
-- 主分支: `main`（已含 Phase 1.5 + Phase 1–5）
-- 原功能分支: `cursor/exa-query-latam-pilot-c2f3`（已 fast-forward 合并）
+- 主分支: `main` @ **v2.1.0**（Phase 0–5 + 增量全部完成）
+- 代码交付确认: `bash scripts/delivery_complete.sh`
+- 生产阻塞: `bash scripts/onboard_checklist.sh`

@@ -38,6 +38,12 @@
 - `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
 - `prod_onboard.sh` 首步跑 `deploy_preflight`
 
+### Added (delivery close)
+
+- `delivery_complete.sh` — Agent 代码交付确认脚本
+- 重打 tag **v2.1.0** → 最新 `main`
+- `pre_merge_verify` 推荐 `go_live.sh` 替代 `final_acceptance`
+
 ### Added (final polish)
 
 - `deploy.yml` — Secrets 未配置时跑 `preflight-only` + 上线提示
