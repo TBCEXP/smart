@@ -15,6 +15,14 @@ echo ""
 bash "$SCRIPT_DIR/pre_merge_verify.sh" "$BASE"
 
 echo ""
+echo ">>> ERP 桥接"
+bash "$SCRIPT_DIR/erp_verify.sh" "$BASE"
+
+echo ""
+echo ">>> 生产就绪诊断"
+bash "$SCRIPT_DIR/prod_readiness_check.sh" "$BASE" || true
+
+echo ""
 echo ">>> 业务快照"
 bash "$SCRIPT_DIR/status.sh" "$BASE"
 

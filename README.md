@@ -135,7 +135,9 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | PR 合并清单 | [docs/MERGE_CHECKLIST.md](docs/MERGE_CHECKLIST.md) |
 | 生产就绪 | [docs/PRODUCTION_READY.md](docs/PRODUCTION_READY.md) |
 | 路线图终验收 | `bash scripts/final_acceptance.sh [URL]` |
-| 合并前验收 | `bash scripts/pre_merge_verify.sh [URL]` |
+| 合并前验收 | `bash scripts/pre_merge_verify.sh [URL]`（10 项） |
+| ERP 桥接验收 | `bash scripts/erp_verify.sh [URL]` |
+| 生产就绪诊断 | `bash scripts/prod_readiness_check.sh [URL]` |
 | 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | TBCEXP 桥接文档 | [docs/TBCEXP_BRIDGE.md](docs/TBCEXP_BRIDGE.md) |
 | Phase 2 验收 | `bash scripts/phase2_verify.sh [URL]` |

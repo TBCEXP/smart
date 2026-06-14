@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 43+、phase15、phase1–**phase5**、`final_acceptance` |
+| 验收脚本 | ✅ | smoke 47+、phase15、phase1–**phase5**、`erp_verify`、`final_acceptance` |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | 字段映射 + 线索推送 + 订单 sync |
 | 文档 | ✅ | 部署、上线引导、**PRODUCTION_READY**、Phase 3–5 专篇 |

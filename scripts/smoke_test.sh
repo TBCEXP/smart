@@ -255,10 +255,30 @@ if curl -sf "$BASE/api/files/transfers" | grep -q 'download_url'; then
 else
   fail "GET /api/files/transfers"
 fi
+if curl -sf "$BASE/api/files/tus/status" | grep -q '"protocol"'; then
+  ok "GET /api/files/tus/status"
+else
+  fail "GET /api/files/tus/status"
+fi
+if curl -sf "$BASE/api/bridge/tbcexp/field-map" | grep -q '"version"'; then
+  ok "GET /api/bridge/tbcexp/field-map"
+else
+  fail "GET /api/bridge/tbcexp/field-map"
+fi
 if curl -sf "$BASE/api/prepress/reviews" | grep -q 'barcode_expected'; then
   ok "GET /api/prepress/reviews"
 else
   fail "GET /api/prepress/reviews"
+fi
+if curl -sf "$BASE/api/prepress/ocr/status" | grep -q '"available"'; then
+  ok "GET /api/prepress/ocr/status"
+else
+  fail "GET /api/prepress/ocr/status"
+fi
+if curl -sf "$BASE/api/prepress/barcode/scan/status" | grep -q '"available"'; then
+  ok "GET /api/prepress/barcode/scan/status"
+else
+  fail "GET /api/prepress/barcode/scan/status"
 fi
 if curl -sf "$BASE/api/inspections/production" | grep -q 'approved_image'; then
   ok "GET /api/inspections/production"

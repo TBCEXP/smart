@@ -57,6 +57,9 @@ jobs:
       - name: Phase 5 verify
         run: bash scripts/phase5_verify.sh http://127.0.0.1:8000
 
+      - name: ERP bridge verify
+        run: bash scripts/erp_verify.sh http://127.0.0.1:8000
+
   postgres-smoke:
     runs-on: ubuntu-latest
     steps:

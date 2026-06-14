@@ -72,5 +72,6 @@ jobs:
             bash scripts/phase3_verify.sh http://127.0.0.1:8000
             bash scripts/phase4_verify.sh http://127.0.0.1:8000
             bash scripts/phase5_verify.sh http://127.0.0.1:8000
+            bash scripts/erp_verify.sh http://127.0.0.1:8000
             bash scripts/final_acceptance.sh http://127.0.0.1:8000 2>/dev/null | tail -5 || true
             bash scripts/status.sh http://127.0.0.1:8000

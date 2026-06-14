@@ -9,7 +9,7 @@ cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
 bash scripts/final_acceptance.sh http://127.0.0.1:8000
 ```
 
-期望：**pytest 27/27 · smoke 43+ · phase1–5 全通过 · pre_merge 9/9**
+期望：**pytest 39/39 · smoke 47+ · phase1–5 全通过 · erp_verify · pre_merge 10/10**
 
 ## 功能范围（main）
 
@@ -18,8 +18,9 @@ bash scripts/final_acceptance.sh http://127.0.0.1:8000
 | Phase 0 / 1.5 | 获客引擎、西语试点、验收脚本 |
 | Phase 1 | 工厂/订单/品类、ERP 桥接、员工后台 |
 | Phase 2 | 客户门户、分享、目录/报价 R2、Apollo |
-| Phase 3 | 大文件中转、分享邮件通知 |
-| Phase 4 | 印刷前稿 AI（条码 + diff 规则引擎） |
+| Phase 3 | 大文件中转、Tus 断点续传、分享邮件通知 |
+| Phase 4 | 印刷前稿 AI（条码 + OCR + ZBar + diff） |
+| ERP | 字段映射 25+、订单 sync |
 | Phase 5 | 大货实拍 AI（OpenCV + 人工终审） |
 
 ## VPS 部署
