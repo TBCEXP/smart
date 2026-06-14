@@ -1,6 +1,6 @@
 # SMART CRM
 
-B2B 智能获客面板 — Exa + Firecrawl + LLM + 飞书，扩展 §0G Brainstorm Lab、双线获客、Track C 海关导入、邮箱认证。
+B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md)** 分期验收，勿跳步堆功能。
 
 ## 功能
 

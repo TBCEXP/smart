@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
 from app.database import get_session, init_db
+from app.middleware.auth import AuthMiddleware
 from app.models.entities import Schedule
 from app.routers.api import router as api_router
 from app.services.config_store import ConfigStore
@@ -78,6 +79,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="SMART CRM", version="1.5.0", lifespan=lifespan)
+app.add_middleware(AuthMiddleware)
 app.include_router(api_router, prefix="/api")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 

@@ -42,6 +42,7 @@ from app.services.brainstorm import BrainstormService
 from app.services.config_store import ConfigStore
 from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
+from app.services.knowledge_base import KnowledgeBaseService
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 
 router = APIRouter()
@@ -53,6 +54,7 @@ geo_scheduler = GeoSchedulerService()
 track_c = TrackCService()
 tradeshow_svc = TradeShowService()
 auth_svc = AuthService()
+kb_svc = KnowledgeBaseService()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -217,8 +219,17 @@ async def confirm_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     if not lead:
         raise HTTPException(404, "Lead not found")
     lead.status = "待联系"
+    from app.services.feishu_client import FeishuClient
+
+    feishu = FeishuClient()
+    try:
+        record_id = await feishu.create_record(lead, lead.batch_id or "")
+        if record_id:
+            lead.feishu_record_id = record_id
+    except Exception as exc:
+        raise HTTPException(502, f"Feishu write failed: {exc}") from exc
     await db.commit()
-    return {"status": "confirmed", "lead_id": lead_id}
+    return {"status": "confirmed", "lead_id": lead_id, "feishu_record_id": lead.feishu_record_id}
 
 
 @router.post("/regenerate/{lead_id}")
@@ -548,6 +559,22 @@ async def generate_country_schedules(
 @router.get("/geo/queue/{country_iso}")
 async def country_queue(country_iso: str):
     return geo_scheduler.generate_country_queue(country_iso)
+
+
+@router.get("/kb/search")
+async def kb_search(q: str, limit: int = 10, db: AsyncSession = Depends(get_db)):
+    results = await kb_svc.search(db, q, limit)
+    return {"query": q, "results": results}
+
+
+@router.post("/kb/index/{lead_id}")
+async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    text = f"{lead.company_name} {lead.exa_summary} {lead.firecrawl_summary} {lead.keyword}"
+    await kb_svc.index_lead(lead_id, text, db)
+    return {"status": "indexed", "lead_id": lead_id}
 
 
 # --- Auth ---

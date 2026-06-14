@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.entities import Batch, CountryAnchor, Lead, MarketProductIntel
 from app.services.clients import ExaClient, FirecrawlClient, LLMClient, extract_domain
 from app.services.config_store import ConfigStore
+from app.services.feishu_client import FeishuClient
+from app.services.knowledge_base import KnowledgeBaseService
 from app.services.data_loader import (
     build_exa_query,
     load_geo_config,
@@ -25,6 +27,8 @@ class PipelineService:
         self.exa = ExaClient(self.config_store)
         self.firecrawl = FirecrawlClient(self.config_store)
         self.llm = LLMClient(self.config_store)
+        self.feishu = FeishuClient(self.config_store)
+        self.kb = KnowledgeBaseService(self.config_store)
 
     async def run_batch(
         self,
@@ -131,6 +135,20 @@ class PipelineService:
                     ingest_mode = self.config_store.get("ingest_mode", "review")
                     if ingest_mode == "auto":
                         lead.status = "待联系"
+                        try:
+                            record_id = await self.feishu.create_record(lead, batch.id)
+                            if record_id:
+                                lead.feishu_record_id = record_id
+                        except Exception:
+                            pass
+                    try:
+                        await self.kb.index_lead(
+                            lead.id,
+                            f"{lead.company_name} {lead.firecrawl_summary} {lead.keyword}",
+                            db,
+                        )
+                    except Exception:
+                        pass
 
                     return {
                         "event": "lead",
