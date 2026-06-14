@@ -33,6 +33,10 @@ bash scripts/smoke_test.sh http://127.0.0.1:8000
 | A19 | Phase 1 工厂/品类 | `GET /api/factories` + `/api/catalog/tree` |
 | A21 | 客户门户 | `GET /portal/dashboard` |
 | A22 | 分享链接 | `GET /api/share/{token}` · `POST /api/share/links` |
+| A23 | Phase 3 大文件 | `bash scripts/phase3_verify.sh` |
+| A24 | Phase 4 前稿 AI | `bash scripts/phase4_verify.sh` |
+| A25 | Phase 5 实拍 AI | `bash scripts/phase5_verify.sh` |
+| A26 | 路线图终验收 | `bash scripts/final_acceptance.sh` |
 
 ## B. 浏览器手动
 

@@ -61,6 +61,18 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | `bash scripts/phase5_verify.sh` | 实拍 AI 验收 |
 | `docs/PHASE5_PRODUCTION.md` | Phase 5 功能说明 |
 
+## 路线图终验收（Phase 0–5）
+
+```bash
+bash scripts/final_acceptance.sh http://127.0.0.1:8000
+```
+
+| 文档 / 脚本 | 说明 |
+|-------------|------|
+| [docs/PRODUCTION_READY.md](docs/PRODUCTION_READY.md) | VPS + API Key 上线清单 |
+| `bash scripts/final_acceptance.sh` | pytest + smoke + phase1–5 + pre_merge |
+| 应用版本 | **2.0.0**（路线图 MVP 完成） |
+
 ## Phase 1.5 西语试点
 
 | 脚本 | 说明 |
@@ -121,6 +133,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 飞书字段对照 | [docs/FEISHU_FIELDS.md](docs/FEISHU_FIELDS.md) · 面板 `GET /docs/feishu-fields` |
 | 项目交接状态 | [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) |
 | PR 合并清单 | [docs/MERGE_CHECKLIST.md](docs/MERGE_CHECKLIST.md) |
+| 生产就绪 | [docs/PRODUCTION_READY.md](docs/PRODUCTION_READY.md) |
+| 路线图终验收 | `bash scripts/final_acceptance.sh [URL]` |
 | 合并前验收 | `bash scripts/pre_merge_verify.sh [URL]` |
 | 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | TBCEXP 桥接文档 | [docs/TBCEXP_BRIDGE.md](docs/TBCEXP_BRIDGE.md) |

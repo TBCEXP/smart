@@ -1,6 +1,6 @@
 # SMART CRM — 项目状态（交接）
 
-> 最后更新：**Phase 5 已合并 main**（大货实拍 OpenCV + 人工终审），待 VPS + API Key 生产验收。
+> 最后更新：**路线图 Phase 0–5 完成**（v2.0.0），待 VPS + API Key 生产验收。
 
 ## 已完成
 
@@ -17,7 +17,7 @@
 | 验收脚本 | ✅ | smoke 42+、phase15、phase1–**phase5** |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
-| 文档 | ✅ | 部署、上线引导、飞书字段、路线图、**合并清单** |
+| 文档 | ✅ | 部署、上线引导、**PRODUCTION_READY**、Phase 3–5 专篇 |
 
 ## 本地 / Mock 验收
 
