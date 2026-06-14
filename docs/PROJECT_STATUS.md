@@ -14,15 +14,16 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 47+、phase15、phase1–**phase5**、`erp_verify`、`final_acceptance` |
+| 验收脚本 | ✅ | smoke 47+、phase15、phase1–**phase5**、`erp_verify`、`go_live`、`final_acceptance` |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | 字段映射 + 线索推送 + 订单 sync |
-| 文档 | ✅ | 部署、上线引导、**PRODUCTION_READY**、Phase 3–5 专篇 |
+| 文档 | ✅ | 部署、上线引导、**HANDOFF**、**PRODUCTION_READY**、Phase 3–5 专篇 |
 
 ## 本地 / Mock 验收
 
 ```bash
 cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
+bash scripts/go_live.sh http://127.0.0.1:8000
 bash scripts/run_all_tests.sh http://127.0.0.1:8000
 bash scripts/latam_full_pilot.sh http://127.0.0.1:8000 --run-due=2
 ```

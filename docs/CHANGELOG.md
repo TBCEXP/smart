@@ -28,6 +28,10 @@
 - 应用版本号统一 **2.1.0**
 - Postman ERP + v2.1 端点
 
+### Fixed (handoff)
+
+- `release_check.sh` pytest 计数解析（动态 collect-only 预期值）
+
 ### Tests
 
 - pytest **39/39**
