@@ -55,6 +55,16 @@ if curl -sf http://127.0.0.1:8000/api/health; then
   else
     echo "⚠ phase15_verify 有未达标项（Mock 模式可忽略）"
   fi
+  if bash scripts/phase1_verify.sh http://127.0.0.1:8000; then
+    echo "✓ phase1_verify 通过"
+  else
+    echo "⚠ phase1_verify 有失败项"
+  fi
+  if bash scripts/phase2_verify.sh http://127.0.0.1:8000; then
+    echo "✓ phase2_verify 通过"
+  else
+    echo "⚠ phase2_verify 有失败项"
+  fi
 else
   echo "✗ 健康检查失败，请执行: docker compose logs smart-crm --tail 50"
   exit 1

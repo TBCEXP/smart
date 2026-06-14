@@ -52,14 +52,34 @@ bash scripts/prod_onboard.sh http://127.0.0.1:8000 --full
 # 分项脚本
 bash scripts/vps_verify.sh http://127.0.0.1:8000
 bash scripts/phase15_verify.sh http://127.0.0.1:8000
+bash scripts/phase1_verify.sh http://127.0.0.1:8000
+bash scripts/phase2_verify.sh http://127.0.0.1:8000
+bash scripts/phase2_live.sh http://127.0.0.1:8000
+bash scripts/pre_merge_verify.sh http://127.0.0.1:8000
 bash scripts/pilot_live.sh http://127.0.0.1:8000        # MX
 bash scripts/pilot_live.sh http://127.0.0.1:8000 --co   # CO
 bash scripts/status.sh http://127.0.0.1:8000
+bash scripts/acceptance_report.sh http://127.0.0.1:8000
 ```
 
 ---
 
-## 五、HTTPS
+## 五、Phase 1 员工业务
+
+1. `/admin` 登录 → `/admin/dashboard`
+2. 验证线索 / 工厂 / 订单 / 工厂目录 Tab
+3. `bash scripts/phase1_live.sh` — OTP 创建订单 + 分享 + 确认
+
+## 六、Phase 2 门户 / 报价
+
+1. `/portal` 登录 `customer@example.com`
+2. 授权目录 + 报价单 Tab
+3. `bash scripts/phase2_live.sh`
+4. R2 配置后: `bash scripts/upload_catalog_r2.sh BASE DOC_ID file.pdf TOKEN`
+
+---
+
+## 七、HTTPS
 
 ```bash
 sudo bash scripts/setup_https.sh crm.yourdomain.com
@@ -69,7 +89,7 @@ cd /opt/smart-crm && docker compose up -d smart-crm
 
 ---
 
-## 六、GitHub 自动部署
+## 八、GitHub 自动部署
 
 1. VPS 生成部署密钥并加入 `authorized_keys`
 2. GitHub → Settings → Secrets → Actions 添加三个 Secret
@@ -77,7 +97,7 @@ cd /opt/smart-crm && docker compose up -d smart-crm
 
 ---
 
-## 七、Phase 1.5 里程碑
+## 九、Phase 1.5 里程碑
 
 | 步骤 | 脚本 / 操作 | 达标标准 |
 |------|-------------|----------|
@@ -92,7 +112,7 @@ cd /opt/smart-crm && docker compose up -d smart-crm
 
 ---
 
-## 八、运维
+## 十、运维
 
 ```bash
 # 每日备份（cron 03:00）
@@ -108,7 +128,7 @@ docker compose -f /opt/smart-crm/docker-compose.yml logs smart-crm --tail 100
 
 ---
 
-## 九、故障排查
+## 十一、故障排查
 
 | 症状 | 处理 |
 |------|------|

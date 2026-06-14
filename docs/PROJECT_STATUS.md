@@ -17,7 +17,7 @@
 | 验收脚本 | ✅ | smoke 39+、phase15、phase1、phase2 |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
-| 文档 | ✅ | 部署、上线引导、飞书字段、路线图 |
+| 文档 | ✅ | 部署、上线引导、飞书字段、路线图、**合并清单** |
 
 ## 本地 / Mock 验收
 

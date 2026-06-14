@@ -65,4 +65,6 @@ jobs:
             cd /opt/smart-crm
             bash scripts/smoke_test.sh http://127.0.0.1:8000
             bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick
+            bash scripts/phase1_verify.sh http://127.0.0.1:8000
+            bash scripts/phase2_verify.sh http://127.0.0.1:8000
             bash scripts/status.sh http://127.0.0.1:8000

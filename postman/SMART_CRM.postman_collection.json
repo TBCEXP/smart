@@ -416,6 +416,93 @@
           }
         }
       ]
+    },
+    {
+      "name": "09 Phase 2 Portal & Catalog",
+      "item": [
+        {
+          "name": "Handoff Report",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/system/handoff-report"
+          }
+        },
+        {
+          "name": "List Catalog Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/catalog/documents"
+          }
+        },
+        {
+          "name": "List Quote Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/catalog/documents?doc_type=quote"
+          }
+        },
+        {
+          "name": "Portal Catalogs (auth)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/portal/catalogs?doc_type=catalog"
+          }
+        },
+        {
+          "name": "Portal Quotes (auth)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/portal/quotes"
+          }
+        },
+        {
+          "name": "Create Share Link (catalog)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resource_type\":\"catalog\",\"resource_id\":\"REPLACE_DOC_ID\",\"ttl_days\":7}"
+            },
+            "url": "{{base_url}}/api/share/links"
+          }
+        },
+        {
+          "name": "Apollo Enrich Lead",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/leads/{{lead_id}}/enrich-contact"
+          }
+        },
+        {
+          "name": "TBCEXP List Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/bridge/tbcexp/orders"
+          }
+        },
+        {
+          "name": "Confirm Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"confirmed\"}"
+            },
+            "url": "{{base_url}}/api/orders/{{order_id}}"
+          }
+        }
+      ]
     }
   ]
 }

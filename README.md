@@ -94,6 +94,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 改完自动验收 | `bash scripts/smoke_test.sh` 或 `bash scripts/run_all_tests.sh` |
 | 飞书字段对照 | [docs/FEISHU_FIELDS.md](docs/FEISHU_FIELDS.md) · 面板 `GET /docs/feishu-fields` |
 | 项目交接状态 | [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) |
+| PR 合并清单 | [docs/MERGE_CHECKLIST.md](docs/MERGE_CHECKLIST.md) |
+| 合并前验收 | `bash scripts/pre_merge_verify.sh [URL]` |
 | 验收报告导出 | `bash scripts/acceptance_report.sh [URL]` |
 | TBCEXP 桥接文档 | [docs/TBCEXP_BRIDGE.md](docs/TBCEXP_BRIDGE.md) |
 | Phase 2 验收 | `bash scripts/phase2_verify.sh [URL]` |
