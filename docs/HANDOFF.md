@@ -59,6 +59,7 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 | `acceptance_report.sh` | 导出试点+交接+阻塞 JSON |
 | `export_blockers.sh` | 单独导出 `production_blockers` |
 | `delivery_complete.sh` | 代码交付确认（Agent 完结检查） |
+| `setup_github_deploy.sh` | GitHub Secrets 配置步骤 + 链接 |
 
 ## 仓库
 

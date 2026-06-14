@@ -46,6 +46,8 @@
 - 重打 tag **v2.1.0** → 最新 `main`
 - `pre_merge_verify` 推荐 `go_live.sh` 替代 `final_acceptance`
 
+- `setup_github_deploy.sh` — GitHub Actions Secrets 配置助手（含仓库链接）
+
 ### Added (final polish)
 
 - `onboard_checklist.sh` — 从 `production_blockers` API 动态显示阻塞项

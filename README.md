@@ -161,6 +161,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 代码终检 | `bash scripts/go_live.sh [URL]` |
 | 发布完整性 | `bash scripts/release_check.sh [URL]` |
 | 代码交付确认 | `bash scripts/delivery_complete.sh [URL]` |
+| GitHub 部署配置 | `bash scripts/setup_github_deploy.sh [VPS_IP]` |
 | 项目交接 | [docs/HANDOFF.md](docs/HANDOFF.md) |
 | VPS 上线 | [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |

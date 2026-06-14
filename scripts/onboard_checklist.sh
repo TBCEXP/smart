@@ -54,6 +54,9 @@ bash scripts/ready.sh http://127.0.0.1:8000
 
 ### 2. GitHub Secrets
 `VPS_HOST` · `VPS_USER` · `VPS_SSH_KEY` → 仓库 Settings → Actions
+```bash
+bash scripts/setup_github_deploy.sh [VPS_IP]
+```
 
 ### 3. HTTPS
 ```bash
