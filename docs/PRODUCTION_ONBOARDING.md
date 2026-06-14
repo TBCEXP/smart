@@ -43,18 +43,24 @@ sudo bash scripts/bootstrap_vps.sh
 ## 四、验收命令
 
 ```bash
+# 一站式就绪（推荐）
+bash scripts/ready.sh http://127.0.0.1:8000
+
+# 生产待办清单
+bash scripts/onboard_checklist.sh http://127.0.0.1:8000
+
 # 快速验收（Mock 或生产均可）
 bash scripts/prod_onboard.sh http://127.0.0.1:8000
 
 # 配置 Key 后全量验收
 bash scripts/prod_onboard.sh http://127.0.0.1:8000 --full
+bash scripts/go_live.sh http://127.0.0.1:8000
 
 # 分项脚本
+bash scripts/deploy_preflight.sh
+bash scripts/deploy_verify.sh http://127.0.0.1:8000
 bash scripts/vps_verify.sh http://127.0.0.1:8000
 bash scripts/phase15_verify.sh http://127.0.0.1:8000
-bash scripts/phase1_verify.sh http://127.0.0.1:8000
-bash scripts/phase2_verify.sh http://127.0.0.1:8000
-bash scripts/phase2_live.sh http://127.0.0.1:8000
 bash scripts/pre_merge_verify.sh http://127.0.0.1:8000
 bash scripts/pilot_live.sh http://127.0.0.1:8000        # MX
 bash scripts/pilot_live.sh http://127.0.0.1:8000 --co   # CO

@@ -29,11 +29,11 @@ else
   fail "health version ($VER)"
 fi
 
-for f in docs/CHANGELOG.md docs/VPS_ONBOARDING.md docs/PRODUCTION_READY.md; do
+for f in docs/CHANGELOG.md docs/VPS_ONBOARDING.md docs/PRODUCTION_READY.md docs/HANDOFF.md; do
   if [ -f "$f" ]; then ok "$f"; else fail "missing $f"; fi
 done
 
-for s in erp_verify.sh prod_readiness_check.sh release_check.sh; do
+for s in erp_verify.sh prod_readiness_check.sh release_check.sh deploy_verify.sh deploy_preflight.sh onboard_checklist.sh ready.sh go_live.sh; do
   if [ -x "scripts/$s" ]; then ok "scripts/$s"; else fail "scripts/$s"; fi
 done
 

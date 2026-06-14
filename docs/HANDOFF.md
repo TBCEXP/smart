@@ -50,6 +50,7 @@ bash scripts/acceptance_report.sh https://crm.yourdomain.com
 | `deploy_verify.sh` | VPS/CI 部署后快速验收 |
 | `deploy_preflight.sh` | 部署前静态检查（无需启动服务） |
 | `onboard_checklist.sh` | 生产阻塞待办 + 可复制命令 |
+| `ready.sh` | 一站式就绪（preflight + status + deploy_verify） |
 | `release_check.sh` | v2.1.0 发布完整性 |
 | `prod_readiness_check.sh` | 生产阻塞诊断 |
 | `final_acceptance.sh` | 路线图终验收 |

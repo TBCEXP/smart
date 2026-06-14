@@ -5,11 +5,13 @@
 ## 发布前自动验收
 
 ```bash
+bash scripts/deploy_preflight.sh
 cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
-bash scripts/final_acceptance.sh http://127.0.0.1:8000
+bash scripts/ready.sh http://127.0.0.1:8000
+bash scripts/go_live.sh http://127.0.0.1:8000
 ```
 
-期望：**pytest 39/39 · smoke 47+ · phase1–5 全通过 · erp_verify · pre_merge 10/10**
+期望：**pytest 39/39 · smoke 47+ · deploy_verify 7/7 · pre_merge 10/10**
 
 ## 功能范围（main）
 
@@ -28,10 +30,12 @@ bash scripts/final_acceptance.sh http://127.0.0.1:8000
 ```bash
 cd /opt/smart-crm
 git pull origin main
-bash scripts/upgrade.sh
-bash scripts/final_acceptance.sh http://127.0.0.1:8000
+bash scripts/upgrade.sh                    # 含 deploy_verify
+bash scripts/ready.sh http://127.0.0.1:8000
+bash scripts/go_live.sh http://127.0.0.1:8000
 bash scripts/prod_onboard.sh http://127.0.0.1:8000
 # 配置 Key 后
+bash scripts/onboard_checklist.sh https://crm.domain.com
 bash scripts/prod_onboard.sh https://crm.domain.com --full
 ```
 

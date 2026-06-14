@@ -35,6 +35,9 @@
 - `vps_verify.sh` 精简为 deploy_verify + phase1/2
 - `go_live.sh` 首步跑 deploy_preflight
 
+- `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
+- `prod_onboard.sh` 首步跑 `deploy_preflight`
+
 ### Added (deploy pipeline, prior)
 
 - `deploy_verify.sh` — VPS/CI 部署后快速验收（phase15 quick + phase3–5 + erp）
