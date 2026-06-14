@@ -48,6 +48,9 @@ jobs:
       - name: Release check (skip pytest)
         run: bash scripts/release_check.sh http://127.0.0.1:8000 --skip-pytest
 
+      - name: Delivery complete
+        run: bash scripts/delivery_complete.sh http://127.0.0.1:8000 --skip-preflight
+
   postgres-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -82,7 +85,10 @@ jobs:
       - name: Integrations probe
         run: |
           curl -sf -X POST http://127.0.0.1:8000/api/integrations/probe | grep -q probes
-          curl -sf http://127.0.0.1:8000/api/system/readiness | grep -q checklist
+          curl -sf http://127.0.0.1:8000/api/system/readiness | grep -q production_blockers
+
+      - name: Delivery complete (Postgres)
+        run: bash scripts/delivery_complete.sh http://127.0.0.1:8000 --skip-preflight
 
   docker-build:
     runs-on: ubuntu-latest

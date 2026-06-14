@@ -34,7 +34,8 @@ jobs:
       - name: Production onboarding hint
         run: |
           echo "::notice::VPS 未配置 — 请配置 GitHub Secrets 后 push 将自动部署"
-          bash scripts/onboard_checklist.sh 2>/dev/null | head -40 || true
+          bash scripts/delivery_complete.sh --static-only
+          bash scripts/onboard_checklist.sh 2>/dev/null | head -25 || true
 
   deploy:
     needs: check-secrets

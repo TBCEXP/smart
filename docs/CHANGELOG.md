@@ -38,6 +38,8 @@
 - `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
 - `prod_onboard.sh` 首步跑 `deploy_preflight`
 
+- `delivery_complete.sh` — 支持 `--skip-preflight` / `--static-only`；接入 CI + deploy
+
 ### Added (delivery close)
 
 - `delivery_complete.sh` — Agent 代码交付确认脚本
