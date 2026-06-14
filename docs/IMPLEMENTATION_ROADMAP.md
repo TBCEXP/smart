@@ -191,7 +191,7 @@ bash scripts/acceptance_report.sh http://127.0.0.1:8000
 - [ ] Cloudflare R2（目录 PDF + 大文件）
 - [ ] TBCEXP ERP URL（可选）
 
-**增量迭代（不阻塞上线）：** tus 断点续传、ERP 深度字段映射。
+**增量迭代（不阻塞上线）：** ERP 深度字段映射。
 
 ---
 

@@ -14,7 +14,7 @@ bash scripts/final_acceptance.sh http://127.0.0.1:8000
 
 | 项 | 标准 |
 |----|------|
-| pytest | 33/33 |
+| pytest | 36/36 |
 | smoke | 43+ |
 | phase1–5 verify | 全部通过 |
 | pre_merge_verify | 9/9 |
@@ -59,4 +59,4 @@ bash scripts/acceptance_report.sh https://crm.domain.com report.md
 
 ## API 版本
 
-应用版本 **2.0.0** — 标志路线图 Phase 0–5 MVP 完成。Phase 4 已含 Tesseract OCR + ZBar 条码识图（Docker 默认启用）。后续扩展（tus 断点续传等）为增量迭代，不阻塞上线。
+应用版本 **2.0.0** — 标志路线图 Phase 0–5 MVP 完成。Phase 3 已含 Tus 断点续传；Phase 4 已含 OCR + ZBar（Docker 默认启用）。后续扩展（ERP 深度对接等）为增量迭代，不阻塞上线。

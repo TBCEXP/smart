@@ -9,8 +9,8 @@ import zipfile
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, Response, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,6 +40,7 @@ from app.config import (
     ShareLinkRequest,
     FileTransferRequest,
     FileUploadUrlRequest,
+    TusCreateRequest,
     BarcodeValidateRequest,
     OcrExtractRequest,
     PrepressReviewRequest,
@@ -104,6 +105,14 @@ from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 from app.config import settings
 from app.services.r2_client import R2Client
 from app.services.files import file_dict
+from app.services.tus_upload import (
+    append_chunk,
+    create_session,
+    load_session,
+    resolve_tus_download,
+    tus_available,
+    tus_status,
+)
 from app.services.notify import notify_share_link
 from app.services.prepress import review_dict, run_prepress_analysis, seed_prepress_reviews
 from app.services.ocr_engine import extract_text, tesseract_available
@@ -272,6 +281,7 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
         "phase3": {
             "file_transfers": file_transfers,
             "notify_service": True,
+            "tus_resumable": tus_available(),
         },
         "phase4": {
             "prepress_reviews": prepress_reviews,
@@ -318,6 +328,7 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase2_r2_optional": biz["phase2"]["r2_configured"],
             "phase3_files_seeded": biz.get("phase3", {}).get("file_transfers", 0) >= 1,
             "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
+            "phase3_tus_resumable": biz.get("phase3", {}).get("tus_resumable", False),
             "phase4_prepress_seeded": biz.get("phase4", {}).get("prepress_reviews", 0) >= 1,
             "phase4_rule_engine": biz.get("phase4", {}).get("rule_engine", False),
             "phase4_ocr_available": biz.get("phase4", {}).get("ocr_available", False),
@@ -374,6 +385,7 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         "",
         f"- 大文件元数据: {biz.get('phase3', {}).get('file_transfers', 0)}",
         f"- 分享邮件通知: {'✓' if biz.get('phase3', {}).get('notify_service') else '○'}",
+        f"- Tus 断点续传: {'✓' if biz.get('phase3', {}).get('tus_resumable') else '○'}",
         "",
         "## Phase 4 印刷前稿 AI",
         "",
@@ -753,6 +765,129 @@ async def file_upload_url(
         transfer.file_url = result["file_url"]
         await db.commit()
     return {"transfer_id": transfer.id, **result}
+
+
+@router.get("/files/tus/status")
+async def files_tus_status():
+    """Tus 断点续传是否可用。"""
+    return tus_status()
+
+
+@router.post("/files/transfers/{transfer_id}/tus")
+async def tus_create_upload(
+    transfer_id: str,
+    request: Request,
+    req: TusCreateRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """创建 Tus 上传会话（支持 JSON 或 Tus 头）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    transfer = await db.get(FileTransfer, transfer_id)
+    if not transfer or not transfer.active:
+        raise HTTPException(404, "File transfer not found")
+
+    upload_length = None
+    filename = "upload.bin"
+    content_type = "application/octet-stream"
+    if req:
+        upload_length = req.upload_length
+        filename = req.filename or filename
+        content_type = req.content_type or content_type
+    hdr_len = request.headers.get("Upload-Length")
+    if hdr_len:
+        upload_length = int(hdr_len)
+    meta_hdr = request.headers.get("Upload-Metadata", "")
+    if meta_hdr and "filename" in meta_hdr:
+        for part in meta_hdr.split(","):
+            if part.strip().startswith("filename "):
+                import base64
+
+                filename = base64.b64decode(part.split(" ", 1)[1]).decode("utf-8")
+
+    tus_session = create_session(
+        transfer_id,
+        upload_length=upload_length,
+        filename=filename,
+        content_type=content_type or transfer.content_type,
+    )
+    base = settings.app_base_url.rstrip("/")
+    location = f"{base}/api/files/tus/{tus_session.upload_id}"
+    return JSONResponse(
+        status_code=201,
+        content={
+            "upload_id": tus_session.upload_id,
+            "location": location,
+            "offset": 0,
+            "upload_length": upload_length,
+            "transfer_id": transfer_id,
+        },
+        headers={"Location": location, "Upload-Offset": "0"},
+    )
+
+
+@router.head("/files/tus/{upload_id}")
+async def tus_head_upload(upload_id: str, response: Response):
+    """查询当前上传偏移（断点续传）。"""
+    tus_session = load_session(upload_id)
+    if not tus_session:
+        raise HTTPException(404, "Upload not found")
+    response.headers["Upload-Offset"] = str(tus_session.offset)
+    if tus_session.length is not None:
+        response.headers["Upload-Length"] = str(tus_session.length)
+    response.headers["Cache-Control"] = "no-store"
+    response.status_code = 200
+    return response
+
+
+@router.patch("/files/tus/{upload_id}")
+async def tus_patch_upload(
+    upload_id: str,
+    request: Request,
+    upload_offset: int | None = Header(None, alias="Upload-Offset"),
+    db: AsyncSession = Depends(get_db),
+):
+    """追加数据块（Tus PATCH）。"""
+    admin = await session_from_request(request, db)
+    if not admin or admin.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    if upload_offset is None:
+        raise HTTPException(400, "Upload-Offset header required")
+    body = await request.body()
+    result = append_chunk(upload_id, upload_offset, body)
+    if not result.get("ok"):
+        raise HTTPException(result.get("status", 400), result.get("detail", "upload failed"))
+
+    if result.get("completed"):
+        tus_session = load_session(upload_id)
+        if tus_session:
+            transfer = await db.get(FileTransfer, tus_session.transfer_id)
+            if transfer and transfer.active:
+                transfer.file_url = result["file_url"]
+                if tus_session.length:
+                    transfer.file_size_mb = round(tus_session.length / (1024 * 1024), 2)
+                transfer.content_type = tus_session.content_type
+                await db.commit()
+
+    return Response(
+        status_code=204,
+        headers={"Upload-Offset": str(result["offset"])},
+    )
+
+
+@router.get("/files/tus/{upload_id}/content")
+async def tus_download_content(upload_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """下载已完成的 Tus 上传文件（需 admin 登录）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    path = resolve_tus_download(upload_id)
+    if not path:
+        raise HTTPException(404, "Upload not completed or file missing")
+    tus_session = load_session(upload_id)
+    filename = tus_session.filename if tus_session else path.name
+    return FileResponse(path, filename=filename, media_type=tus_session.content_type if tus_session else "application/octet-stream")
 
 
 @router.post("/prepress/barcode/validate")

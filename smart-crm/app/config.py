@@ -233,6 +233,12 @@ class FileUploadUrlRequest(BaseModel):
     update_file_url: bool = True
 
 
+class TusCreateRequest(BaseModel):
+    upload_length: int | None = None
+    filename: str = "upload.bin"
+    content_type: str = "application/octet-stream"
+
+
 class CatalogUploadUrlRequest(BaseModel):
     key: str = ""
     content_type: str = "application/pdf"

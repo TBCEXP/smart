@@ -26,6 +26,12 @@ else
   fail "GET /api/files/transfers (seed)"
 fi
 
+if curl -sf "$BASE/api/files/tus/status" | grep -q '"protocol"'; then
+  ok "GET /api/files/tus/status"
+else
+  fail "GET /api/files/tus/status"
+fi
+
 if curl -sf "$BASE/admin/dashboard" | grep -q '大文件'; then
   ok "GET /admin/dashboard (files tab)"
 else
@@ -66,6 +72,31 @@ if [ -n "$FILE_ID" ]; then
       | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_token',''))" 2>/dev/null || echo "")
   fi
   if [ -n "$TOKEN" ]; then
+    TUS=$(curl -sf -X POST "$BASE/api/files/transfers/$FILE_ID/tus" \
+      -H "X-Session-Token: $TOKEN" \
+      -H 'Content-Type: application/json' \
+      -d '{"upload_length":10,"filename":"verify.bin","content_type":"application/octet-stream"}' || echo '{}')
+    UPLOAD_ID=$(echo "$TUS" | python3 -c "import sys,json; print(json.load(sys.stdin).get('upload_id',''))" 2>/dev/null || echo "")
+    if [ -n "$UPLOAD_ID" ]; then
+      curl -sf -X PATCH "$BASE/api/files/tus/$UPLOAD_ID" \
+        -H "X-Session-Token: $TOKEN" \
+        -H "Upload-Offset: 0" \
+        -H "Content-Type: application/offset+octet-stream" \
+        --data-binary 'hello' >/dev/null || true
+      curl -sf -X PATCH "$BASE/api/files/tus/$UPLOAD_ID" \
+        -H "X-Session-Token: $TOKEN" \
+        -H "Upload-Offset: 5" \
+        -H "Content-Type: application/offset+octet-stream" \
+        --data-binary 'world' >/dev/null || true
+      OFFSET=$(curl -sI -X HEAD "$BASE/api/files/tus/$UPLOAD_ID" 2>/dev/null | tr -d '\r' | grep -i '^Upload-Offset:' | awk '{print $2}')
+      if [ "$OFFSET" = "10" ]; then
+        ok "PATCH /api/files/tus/{id} (resumable chunks)"
+      else
+        fail "PATCH /api/files/tus/{id} (offset=$OFFSET)"
+      fi
+    else
+      fail "POST /api/files/transfers/{id}/tus"
+    fi
     SHARE=$(curl -sf -X POST "$BASE/api/share/links" \
       -H "X-Session-Token: $TOKEN" \
       -H 'Content-Type: application/json' \

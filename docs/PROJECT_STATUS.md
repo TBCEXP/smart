@@ -94,6 +94,7 @@ sudo bash scripts/setup_backup_cron.sh
 |------|------|
 | `FileTransfer` 元数据 | ✅ 大文件中转记录 + R2 上传 URL |
 | 分享邮件通知 | ✅ Resend 或 `auth_emails.log` 回退 |
+| Tus 断点续传 | ✅ 本地分块上传 + `tus://` 存储 URL |
 | 员工后台大文件 Tab | ✅ `/admin/dashboard` → 大文件 |
 | 分享 `resource_type=file` | ✅ `/s/{token}` 公开下载 |
 | 验收脚本 | ✅ `phase3_verify.sh` |

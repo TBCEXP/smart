@@ -7,6 +7,10 @@
 | `FileTransfer` 元数据 | 大文件信息存 DB，实体文件存 R2 |
 | `GET/POST /api/files/transfers` | 列表与创建 |
 | `POST /api/files/transfers/{id}/upload-url` | R2 预签名上传 |
+| `GET /api/files/tus/status` | Tus 断点续传状态 |
+| `POST /api/files/transfers/{id}/tus` | 创建 Tus 上传会话 |
+| `PATCH /api/files/tus/{id}` | 追加数据块（断点续传） |
+| `HEAD /api/files/tus/{id}` | 查询当前偏移 |
 | 分享 `resource_type=file` | `/s/{token}` 公开查看下载 |
 | 分享邮件通知 | `POST /api/share/links` + `notify_email: true` |
 
