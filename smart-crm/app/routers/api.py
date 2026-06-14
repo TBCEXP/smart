@@ -782,6 +782,37 @@ async def co_pilot_runs():
     return pilot_svc.list_runs("CO")
 
 
+@router.get("/pilot/report")
+async def pilot_report(db: AsyncSession = Depends(get_db)):
+    """Phase 1.5 试点进度汇总（MX + CO）。"""
+    mx = await pilot_svc.status(db, "MX")
+    co = await pilot_svc.status(db, "CO")
+    runs = pilot_svc.list_runs()
+    return {
+        "phase": "1.5",
+        "generated_at": datetime.utcnow().isoformat(),
+        "countries": {
+            "MX": {
+                "totals": mx["totals"],
+                "latest_run": mx.get("latest_run"),
+                "acceptance": (mx.get("latest_run") or {}).get("acceptance"),
+            },
+            "CO": {
+                "totals": co["totals"],
+                "latest_run": co.get("latest_run"),
+                "acceptance": (co.get("latest_run") or {}).get("acceptance"),
+            },
+        },
+        "recent_runs": runs[:10],
+        "milestones": {
+            "mx_track_b": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("track_b_intel")),
+            "mx_brainstorm": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("brainstorm_cards")),
+            "mx_queued": bool((mx.get("latest_run") or {}).get("acceptance", {}).get("track_a_queued")),
+            "co_started": co.get("latest_run") is not None,
+        },
+    }
+
+
 # --- Tab8 Content Studio (AI 内容工坊) ---
 
 @router.get("/content/types")

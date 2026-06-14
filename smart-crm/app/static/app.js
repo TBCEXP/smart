@@ -663,6 +663,28 @@ document.getElementById('btn-match-domains').onclick = async () => {
   loadImport();
 };
 
+async function loadReadinessBadge() {
+  const el = document.getElementById('readiness-badge');
+  if (!el) return;
+  try {
+    const r = await api('/system/readiness');
+    const live = r.integrations?.production_ready;
+    const mx = r.mx_pilot || {};
+    const due = r.due_schedules || 0;
+    el.classList.remove('hidden');
+    if (live) {
+      el.className = 'px-2 py-1 rounded bg-emerald-900 text-emerald-300 text-xs';
+      el.textContent = `生产就绪 · 任务${due}`;
+    } else {
+      el.className = 'px-2 py-1 rounded bg-amber-900 text-amber-300 text-xs';
+      el.textContent = `Mock 模式 · 任务${due}`;
+    }
+    el.title = `MX 情报${mx.intel_reports || 0} · 定时${mx.active_schedules || 0}`;
+  } catch {
+    el.classList.add('hidden');
+  }
+}
+
 // Init
 async function init() {
   fillL3Selects();
@@ -675,6 +697,7 @@ async function init() {
   }
   await loadConfig();
   loadIntegrationStatus();
+  loadReadinessBadge();
   geoConfig = await api('/geo/config');
   await api('/geo/seed', { method: 'POST' });
 }

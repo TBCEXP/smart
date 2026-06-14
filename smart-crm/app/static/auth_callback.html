@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMART CRM — 登录中</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
+  <div class="card w-full max-w-md text-center">
+    <h1 class="text-lg font-semibold text-emerald-400 mb-2">正在登录…</h1>
+    <p id="msg" class="text-sm text-slate-400">验证魔法链接</p>
+  </div>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+      const portal = params.get('portal') || 'admin';
+      const msg = document.getElementById('msg');
+      if (!token) {
+        msg.textContent = '无效链接：缺少 token';
+        return;
+      }
+      try {
+        const r = await fetch(`/api/auth/magic?token=${encodeURIComponent(token)}&portal=${encodeURIComponent(portal)}`);
+        const res = await r.json();
+        if (res.session_token) {
+          localStorage.setItem('session_token', res.session_token);
+          msg.textContent = '登录成功，跳转中…';
+          location.href = '/';
+        } else {
+          msg.textContent = JSON.stringify(res);
+        }
+      } catch (e) {
+        msg.textContent = '登录失败: ' + e;
+      }
+    })();
+  </script>
+</body>
+</html>

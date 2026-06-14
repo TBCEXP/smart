@@ -97,3 +97,8 @@ async def admin_portal():
 @app.get("/portal")
 async def customer_portal():
     return FileResponse(STATIC_DIR / "login.html")
+
+
+@app.get("/auth/callback")
+async def auth_callback():
+    return FileResponse(STATIC_DIR / "auth_callback.html")

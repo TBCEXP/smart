@@ -180,6 +180,11 @@ if curl -sf "$BASE/api/system/readiness" | grep -q 'checklist'; then
 else
   fail "GET /api/system/readiness"
 fi
+if curl -sf "$BASE/api/pilot/report" | grep -q 'milestones'; then
+  ok "GET /api/pilot/report"
+else
+  fail "GET /api/pilot/report"
+fi
 
 echo ""
 echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="

@@ -77,7 +77,7 @@ class AuthService:
         )
         db.add(token)
         await db.commit()
-        link = f"{settings.app_base_url}/api/auth/magic?token={token_value}&portal={portal}"
+        link = f"{settings.app_base_url}/auth/callback?token={token_value}&portal={portal}"
         await self._send_email(
             email,
             "SMART CRM Login Link",

@@ -67,7 +67,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | VPS 一键引导 | `sudo bash scripts/bootstrap_vps.sh` |
 | VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
 | HTTPS 配置 | `sudo bash scripts/setup_https.sh crm.domain.com` |
-| 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或加 `--co` |
+| 快速状态 | `bash scripts/status.sh [URL]` |
+| 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |
 | 手动验收清单 | [docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
 | API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |

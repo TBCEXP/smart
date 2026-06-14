@@ -35,6 +35,27 @@
             "method": "GET",
             "url": "{{base_url}}/api/config"
           }
+        },
+        {
+          "name": "Integrations Probe",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/integrations/probe"
+          }
+        },
+        {
+          "name": "System Readiness",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/system/readiness"
+          }
+        },
+        {
+          "name": "Pilot Report",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/pilot/report"
+          }
         }
       ]
     },
@@ -183,6 +204,50 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/kb/search?q=bakeware Mexico&limit=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Pilot & Content",
+      "item": [
+        {
+          "name": "MX Pilot Start",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"country_iso\":\"MX\",\"category_l3\":\"bakeware\",\"enqueue_track_a\":true}"
+            },
+            "url": "{{base_url}}/api/pilot/mx/start"
+          }
+        },
+        {
+          "name": "Run Due Schedules",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/schedules/run-due?limit=1&count_per_task=5"
+          }
+        },
+        {
+          "name": "Content Generate Batch",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content_type\":\"seo_pack\",\"product_name\":\"Bakeware Set\",\"languages\":[\"es\",\"en\",\"pt\"]}"
+            },
+            "url": "{{base_url}}/api/content/generate-batch"
+          }
+        },
+        {
+          "name": "Feishu Test Write",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/integrations/feishu/test-write"
           }
         }
       ]
