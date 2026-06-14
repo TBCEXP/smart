@@ -280,6 +280,7 @@
             ${storage}
             <button class="text-amber-400" data-upload="${d.id}">上传 URL</button>
             <button class="text-emerald-400" data-share-doc="${d.id}">分享</button>
+            <button class="text-slate-400" data-auth-doc="${d.id}" data-emails="${(d.authorized_emails || []).join(',')}">授权</button>
           </div>
         </div>`;
       }).join('') || '<p class="text-slate-500">暂无目录，请右侧新增</p>';
@@ -289,6 +290,9 @@
       el.querySelectorAll('[data-share-doc]').forEach((btn) => {
         btn.onclick = () => shareCatalog(btn.dataset.shareDoc);
       });
+      el.querySelectorAll('[data-auth-doc]').forEach((btn) => {
+        btn.onclick = () => editCatalogAuth(btn.dataset.authDoc, btn.dataset.emails || '');
+      });
       const sel = document.getElementById('doc-factory');
       if (!sel.options.length) {
         const factories = await api('/factories');
@@ -296,6 +300,17 @@
           `<option value="${f.id}">${f.code} ${f.name_zh}</option>`
         ).join('');
       }
+    }
+
+    async function editCatalogAuth(docId, current) {
+      const emails = prompt('授权邮箱（逗号分隔，留空=全部门户客户）', current);
+      if (emails === null) return;
+      const list = emails.split(',').map((e) => e.trim()).filter(Boolean);
+      await api(`/catalog/documents/${docId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ authorized_emails: list }),
+      });
+      loadDocuments();
     }
 
     async function loadErpOrders() {

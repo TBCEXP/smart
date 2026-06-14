@@ -51,6 +51,12 @@ else
   fail "GET /admin/dashboard (catalog documents tab)"
 fi
 
+if curl -sf "$BASE/portal/dashboard" | grep -q 'order-detail'; then
+  ok "GET /portal/dashboard (order detail panel)"
+else
+  fail "GET /portal/dashboard (order detail panel)"
+fi
+
 if curl -sf "$BASE/portal/dashboard" | grep -q '报价单'; then
   ok "GET /portal/dashboard (quotes tab)"
 else

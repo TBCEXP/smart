@@ -25,6 +25,7 @@
   <main class="max-w-5xl mx-auto px-4 py-6">
     <section id="tab-orders">
       <div id="summary" class="card mb-4 text-sm text-slate-400"></div>
+      <div id="order-detail" class="card mb-4 hidden text-sm"></div>
       <div id="orders-list" class="space-y-3"></div>
     </section>
     <section id="tab-catalogs" class="hidden">
@@ -59,7 +60,7 @@
       document.getElementById('user-info').textContent = data.email;
       document.getElementById('summary').textContent = `${data.orders_count} 个订单`;
       document.getElementById('orders-list').innerHTML = (data.orders || []).map((o) => `
-        <div class="card text-sm cursor-pointer" onclick="viewOrder('${o.id}')">
+        <div class="card text-sm cursor-pointer hover:border-emerald-700" data-oid="${o.id}" onclick="viewOrder('${o.id}')">
           <div class="flex justify-between"><strong class="text-emerald-400">${o.order_no}</strong><span>${o.status}</span></div>
           <div>${o.customer_name} · ${o.currency} ${o.total_amount}</div>
         </div>`).join('') || '<p class="text-slate-500">暂无订单</p>';
@@ -67,8 +68,33 @@
 
     async function viewOrder(id) {
       const o = await fetch('/api/portal/orders/' + id, { headers: headers() }).then((r) => r.json());
-      const lines = (o.lines || []).map((l) => `${l.sku} ${l.product_name} x${l.qty}`).join('\n');
-      alert(`${o.order_no}\n${o.customer_name}\n合计 ${o.currency} ${o.total_amount}\n\n${lines}`);
+      const el = document.getElementById('order-detail');
+      el.classList.remove('hidden');
+      el.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h2 class="text-lg font-bold text-emerald-400">${o.order_no}</h2>
+            <p class="text-slate-400">${o.customer_name} · ${o.country_iso || '-'}</p>
+          </div>
+          <span class="px-2 py-1 rounded bg-slate-800 text-xs">${o.status}</span>
+        </div>
+        <p class="mb-3">合计 <strong>${o.currency} ${o.total_amount}</strong></p>
+        <table class="w-full text-xs">
+          <tr class="text-slate-500 border-b border-slate-700">
+            <th class="text-left py-2">SKU</th><th class="text-left">产品</th><th>数量</th><th>单价</th>
+          </tr>
+          ${(o.lines || []).map((l) => `
+            <tr class="border-b border-slate-800">
+              <td class="py-2">${l.sku || '-'}</td>
+              <td>${l.product_name}</td>
+              <td class="text-center">${l.qty}</td>
+              <td class="text-right">${l.unit_price}</td>
+            </tr>`).join('') || '<tr><td colspan="4" class="py-4 text-slate-500">暂无货号行</td></tr>'}
+        </table>
+        <button class="text-xs text-slate-500 mt-3" onclick="document.getElementById('order-detail').classList.add('hidden')">收起</button>`;
+      document.querySelectorAll('[data-oid]').forEach((n) => n.classList.remove('ring-2', 'ring-emerald-600'));
+      const card = document.querySelector('[data-oid="' + id + '"]');
+      if (card) card.classList.add('ring-2', 'ring-emerald-600');
     }
 
     async function loadCatalogs() {
