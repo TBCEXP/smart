@@ -162,6 +162,7 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 发布完整性 | `bash scripts/release_check.sh [URL]` |
 | 代码交付确认 | `bash scripts/delivery_complete.sh [URL]` |
 | 生产上线入口 | `bash scripts/production_start.sh [URL] [VPS_IP]` |
+| VPS 部署包 | `bash scripts/print_vps_deploy.sh <VPS_IP>` |
 | Tab2 Key 配置 | `bash scripts/setup_tab2_keys.sh [URL]` |
 | GitHub 部署配置 | `bash scripts/setup_github_deploy.sh [VPS_IP]` |
 | 项目交接 | [docs/HANDOFF.md](docs/HANDOFF.md) |

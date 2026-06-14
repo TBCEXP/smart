@@ -26,7 +26,7 @@ done
 
 echo ""
 echo "[2] 验收脚本"
-for s in go_live.sh deploy_verify.sh release_check.sh upgrade.sh bootstrap_vps.sh prod_onboard.sh ready.sh onboard_checklist.sh export_blockers.sh delivery_complete.sh setup_github_deploy.sh setup_tab2_keys.sh production_start.sh; do
+for s in go_live.sh deploy_verify.sh release_check.sh upgrade.sh bootstrap_vps.sh prod_onboard.sh ready.sh onboard_checklist.sh export_blockers.sh delivery_complete.sh setup_github_deploy.sh setup_tab2_keys.sh production_start.sh print_vps_deploy.sh; do
   if [ -x "scripts/$s" ]; then ok "scripts/$s"; else fail "scripts/$s (not executable)"; fi
 done
 
