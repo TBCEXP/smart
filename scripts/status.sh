@@ -9,7 +9,8 @@ echo "SMART CRM Status — $BASE"
 echo ""
 
 HEALTH=$(curl -sf "$BASE/api/health" 2>/dev/null || echo '{"status":"down"}')
-echo "Health: $(echo "$HEALTH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','down'))" 2>/dev/null || echo down)"
+echo "Health: $(echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','down'))" 2>/dev/null || echo down)"
+echo "Version: $(echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d.get('version','?'); b=d.get('build'); print(f\"{v}\" + (f\" ({b[:7]})\" if b else ''))" 2>/dev/null || echo N/A)"
 
 INT=$(curl -sf "$BASE/api/integrations/status" 2>/dev/null || echo '{}')
 echo "API Keys: $(echo "$INT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"{d.get('configured_count',0)}/{d.get('total',8)} live-ready={d.get('production_ready',False)}\")" 2>/dev/null || echo N/A)"

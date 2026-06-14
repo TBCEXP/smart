@@ -39,7 +39,9 @@ jobs:
             set -euo pipefail
             cd /opt/smart-crm
             export DEPLOY_BRANCH=main
-            export VERSION=${{ github.sha }}
+            export IMAGE_TAG=${{ github.sha }}
+            export VERSION=2.0.0
+            export BUILD_SHA=${{ github.sha }}
             bash scripts/upgrade.sh
 
       - name: Verify health

@@ -145,12 +145,16 @@ async def get_db():
 
 @router.get("/health")
 async def health():
-    return {
+    payload = {
         "status": "ok",
         "time": datetime.utcnow().isoformat(),
         "version": os.getenv("VERSION", "2.0.0"),
         "db": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
     }
+    build = os.getenv("BUILD_SHA", "").strip()
+    if build:
+        payload["build"] = build
+    return payload
 
 
 @router.get("/integrations/status")

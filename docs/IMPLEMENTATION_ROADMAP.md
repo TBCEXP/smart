@@ -162,35 +162,42 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 
 ---
 
-## 六、立即执行清单（第零期代码补齐）
+## 六、v2.0.0 完成清单（Phase 0–5）
 
-当前分支 `main` 下一步可做（1.5 生产验收前）：
+当前分支 `main` @ **v2.0.0** — 路线图 MVP 代码已闭环：
 
-1. ✅ 本路线图文档
-2. ✅ `feishu_client.py` — 真实写入 10+ 扩展字段（含首选渠道、L3、国家）
-3. ✅ Pipeline `confirm` / `auto` 模式对接飞书
-4. ✅ Auth 中间件保护 `/api/config`、`/api/confirm` 等管理接口
-5. ✅ `scripts/preflight.sh` — 部署前检查清单
-6. ✅ embedding 写入 + `GET /api/kb/search` 语义检索（1.5.7 提前打底）
-7. ✅ Phase 1.5 MX 试点向导 — `POST /api/pilot/mx/start` + Tab5 UI + `scripts/mx_pilot.sh`
-8. ✅ Exa L3 西语模板 + `resolve_exa_query` + Tab1 查询预览
-9. ✅ `scripts/latam_full_pilot.sh` — MX+CO 联合验收
-10. ✅ Phase 1 起步 — `GET /api/leads` + `/admin/dashboard` 员工线索查询
-11. ✅ 工厂主数据 + 订单主表/货号子表 API（待 ERP 对接）
-12. ✅ 三级品类树 `GET /api/catalog/tree`
+| 阶段 | 状态 | 验收 |
+|------|------|------|
+| Phase 0 基础设施 | ✅ | Docker、Nginx、CI/CD、备份 |
+| Phase 1.5 拉美试点 | ✅ | MX/CO 向导、里程碑、KB、Track C |
+| Phase 1 员工业务 | ✅ | 工厂/订单/品类、ERP 桥接 |
+| Phase 2 目录门户 | ✅ | R2、分享、客户门户 |
+| Phase 3 大文件/通知 | ✅ | 上传 URL、邮件通知 |
+| Phase 4 印刷前稿 AI | ✅ | 条码、文本/图形 diff |
+| Phase 5 大货实拍 AI | ✅ | OpenCV 对齐、人工终审 |
 
-**用户需配合（阻塞项）：**
-- [ ] RackNerd `df -h` / `free -h` 输出
+**本地终验收：**
+
+```bash
+bash scripts/final_acceptance.sh http://127.0.0.1:8000
+bash scripts/acceptance_report.sh http://127.0.0.1:8000
+```
+
+**用户需配合（生产阻塞项）：**
+- [ ] RackNerd VPS + `df -h` / `free -h` 输出
 - [ ] 域名 + DNS 指向 VPS
+- [ ] GitHub Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`
 - [ ] Exa / Firecrawl / OpenAI / 飞书 凭据
+- [ ] Cloudflare R2（目录 PDF + 大文件）
 - [ ] TBCEXP ERP URL（可选）
-- [ ] 是否可访问 `TBCEXP/ERP` 私有仓库（对照 PDF 原版）
+
+**增量迭代（不阻塞上线）：** Tesseract OCR、tus 断点续传、ERP 深度字段映射。
 
 ---
 
 ## 七、与上期实现的差异说明
 
 上期一次性实现了 Tab1–7 全部 UI 和数据模型，**跳过了第零期验收**。  
-本期按本路线图 **回填生产必需项**，而不是继续堆新模块。
+本期已按路线图 **回填生产必需项并完成 Phase 0–5**，版本 **2.0.0**。
 
-确认第零期验收通过后，回复「**继续 1.5 期墨西哥试点**」进入下一执行波次。
+VPS + 真实 API Key 就绪后，执行 `scripts/prod_onboard.sh --full` 完成生产验收。

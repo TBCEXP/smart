@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 42+、phase15、phase1–**phase5** |
+| 验收脚本 | ✅ | smoke 43+、phase15、phase1–**phase5**、`final_acceptance` |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、**PRODUCTION_READY**、Phase 3–5 专篇 |
@@ -56,9 +56,9 @@ sudo bash scripts/setup_backup_cron.sh
 
 | 端点 | 说明 |
 |------|------|
-| `GET /api/health` | 版本、数据库模式 |
+| `GET /api/health` | 版本 `2.0.0`、build SHA、数据库模式 |
 | `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2/3 checklist |
-| `GET /api/system/handoff-report` | Phase 0–3 交接 Markdown |
+| `GET /api/system/handoff-report` | Phase 0–5 交接 Markdown |
 | `PATCH /api/orders/{id}` | 确认/取消订单（需登录） |
 | `GET /api/pilot/report` | MX/CO 试点 + 里程碑 |
 | `GET /api/pilot/export?format=md` | 验收报告 Markdown |

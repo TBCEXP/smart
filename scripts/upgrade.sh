@@ -36,7 +36,9 @@ fi
 
 # 3. 重建镜像
 echo "==> [3/5] docker compose build smart-crm"
-export VERSION="${VERSION:-$GIT_SHA}"
+export IMAGE_TAG="${IMAGE_TAG:-$GIT_SHA}"
+export VERSION="${VERSION:-2.0.0}"
+export BUILD_SHA="${BUILD_SHA:-$GIT_SHA}"
 docker compose build smart-crm
 
 # 4. 滚动重启（仅 smart-crm 服务，postgres/nginx 不动）
@@ -48,7 +50,7 @@ echo "==> [5/5] 健康检查"
 sleep 5
 if curl -sf http://127.0.0.1:8000/api/health; then
   echo ""
-  echo "✓ 升级成功 — 版本 $VERSION"
+  echo "✓ 升级成功 — 版本 $VERSION (build $BUILD_SHA)"
   echo "==> 快速验收"
   if bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick; then
     echo "✓ phase15_verify --quick 通过"
