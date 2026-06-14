@@ -23,7 +23,7 @@ from app.config import (
     ContentGenerateRequest,
     ContentUpdateRequest,
     FeishuWebhookRequest,
-    MxPilotRequest,
+    PilotRequest,
     RunRequest,
     ScheduleRequest,
     SendEmailRequest,
@@ -49,7 +49,7 @@ from app.services.content_studio import CONTENT_TYPES, ContentStudioService
 from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
-from app.services.mx_pilot import MxPilotService
+from app.services.latam_pilot import LatamPilotService
 from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 
 router = APIRouter()
@@ -63,7 +63,7 @@ tradeshow_svc = TradeShowService()
 auth_svc = AuthService()
 kb_svc = KnowledgeBaseService()
 content_svc = ContentStudioService()
-mx_pilot_svc = MxPilotService()
+pilot_svc = LatamPilotService()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -371,6 +371,60 @@ async def add_schedule(req: ScheduleRequest, db: AsyncSession = Depends(get_db))
     return {"id": schedule.id, "status": "created"}
 
 
+@router.post("/schedules/run-due")
+async def run_due_schedules(
+    limit: int = 3,
+    count_per_task: int = 5,
+    db: AsyncSession = Depends(get_db),
+):
+    """触发到期定时任务（后台执行，不阻塞请求）。"""
+    due = await geo_scheduler.get_due_schedules(db)
+    if not due:
+        return {"queued": 0, "jobs": [], "message": "无到期任务"}
+
+    jobs: list[dict[str, Any]] = []
+    now = datetime.utcnow()
+    for schedule in due[: max(1, limit)]:
+        batch_id, stream = await pipeline.run_batch(
+            db,
+            keyword=schedule.keyword,
+            industry=schedule.industry,
+            count=count_per_task,
+            country_iso=schedule.country_iso,
+            city=schedule.city,
+            category_l3=schedule.category_l3,
+            language=schedule.language,
+            track=schedule.track,
+        )
+        schedule.last_run_at = now
+        schedule.next_run_at = now + timedelta(hours=schedule.interval_hours)
+        await db.commit()
+
+        async def _pump(batch_stream, sched_id: str, bid: str) -> None:
+            success = 0
+            failed = 0
+            try:
+                async for event in batch_stream:
+                    if event.get("event") == "complete":
+                        success = event.get("success", 0)
+                        failed = event.get("failed", 0)
+            except Exception:
+                pass
+
+        asyncio.create_task(_pump(stream, schedule.id, batch_id))
+        jobs.append(
+            {
+                "schedule_id": schedule.id,
+                "batch_id": batch_id,
+                "keyword": schedule.keyword[:80],
+                "city": schedule.city,
+                "category_l3": schedule.category_l3,
+                "stream_url": f"/api/stream/{batch_id}",
+            }
+        )
+    return {"queued": len(jobs), "jobs": jobs}
+
+
 # --- Brainstorm Lab (Tab6) ---
 
 @router.post("/brainstorm/generate")
@@ -617,20 +671,18 @@ async def kb_index_lead(lead_id: str, db: AsyncSession = Depends(get_db)):
     return {"status": "indexed", "lead_id": lead_id}
 
 
-# --- Phase 1.5 MX Pilot ---
+# --- Phase 1.5 Latam Pilot (MX / CO) ---
 
-@router.get("/pilot/mx/status")
-async def mx_pilot_status(db: AsyncSession = Depends(get_db)):
-    return await mx_pilot_svc.status(db)
-
-
-@router.post("/pilot/mx/start")
-async def mx_pilot_start(req: MxPilotRequest, db: AsyncSession = Depends(get_db)):
-    return await mx_pilot_svc.run(
+async def _pilot_start(req: PilotRequest, db: AsyncSession) -> dict[str, Any]:
+    cfg = LatamPilotService()._country_defaults(req.country_iso)
+    cities = req.cities or cfg["cities"]
+    city = req.city or cfg["primary_city"]
+    return await pilot_svc.run(
         db,
-        city=req.city,
+        country_iso=req.country_iso,
+        city=city,
         category_l3=req.category_l3,
-        cities=req.cities,
+        cities=cities,
         l3_codes=req.l3_codes,
         anchor_limit=req.anchor_limit,
         leads_per_task=req.leads_per_task,
@@ -638,9 +690,54 @@ async def mx_pilot_start(req: MxPilotRequest, db: AsyncSession = Depends(get_db)
     )
 
 
+@router.get("/pilot/{country_iso}/status")
+async def pilot_status(country_iso: str, db: AsyncSession = Depends(get_db)):
+    return await pilot_svc.status(db, country_iso)
+
+
+@router.post("/pilot/{country_iso}/start")
+async def pilot_start(
+    country_iso: str, req: PilotRequest, db: AsyncSession = Depends(get_db)
+):
+    req.country_iso = country_iso.upper()
+    return await _pilot_start(req, db)
+
+
+@router.get("/pilot/{country_iso}/runs")
+async def pilot_runs(country_iso: str):
+    return pilot_svc.list_runs(country_iso)
+
+
+@router.get("/pilot/mx/status")
+async def mx_pilot_status(db: AsyncSession = Depends(get_db)):
+    return await pilot_svc.status(db, "MX")
+
+
+@router.post("/pilot/mx/start")
+async def mx_pilot_start(req: PilotRequest, db: AsyncSession = Depends(get_db)):
+    req.country_iso = "MX"
+    return await _pilot_start(req, db)
+
+
 @router.get("/pilot/mx/runs")
 async def mx_pilot_runs():
-    return mx_pilot_svc.list_runs()
+    return pilot_svc.list_runs("MX")
+
+
+@router.get("/pilot/co/status")
+async def co_pilot_status(db: AsyncSession = Depends(get_db)):
+    return await pilot_svc.status(db, "CO")
+
+
+@router.post("/pilot/co/start")
+async def co_pilot_start(req: PilotRequest, db: AsyncSession = Depends(get_db)):
+    req.country_iso = "CO"
+    return await _pilot_start(req, db)
+
+
+@router.get("/pilot/co/runs")
+async def co_pilot_runs():
+    return pilot_svc.list_runs("CO")
 
 
 # --- Tab8 Content Studio (AI 内容工坊) ---

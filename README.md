@@ -13,7 +13,16 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | Tab5 | Track B 市场情报 / 锚点采集 |
 | Tab6 | Brainstorm Lab AI 策略工作台 |
 | Tab7 | Track C 海关 CSV 导入 + 展会参展商 |
-| Tab8 | **AI 内容工坊** — KEYWORD / SEO META / SLUG / 产品描述 / 文章 |
+| Tab8 | **AI 内容工坊** — KEYWORD / SEO META / SLUG / 产品描述 / 文章（含多语言批量） |
+
+## Phase 1.5 西语试点
+
+| 脚本 | 说明 |
+|------|------|
+| `bash scripts/mx_pilot.sh` | 墨西哥 MX：Track B → Brainstorm → Track A 入队 |
+| `bash scripts/co_pilot.sh` | 哥伦比亚 CO：同上 |
+| Tab5 面板 | MX / CO 一键试点按钮 |
+| Tab4 面板 | 「执行到期任务」跑入队后的 Track A |
 
 ## 快速启动（开发）
 

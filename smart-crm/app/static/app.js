@@ -383,61 +383,71 @@ document.getElementById('btn-add-schedule').onclick = async () => {
   loadBatches();
 };
 
+document.getElementById('btn-run-due-schedules')?.addEventListener('click', async () => {
+  log('执行到期定时任务…');
+  const res = await api('/schedules/run-due?limit=3&count_per_task=5', { method: 'POST' });
+  log(`到期任务已入队: ${res.queued} 个`);
+  if (res.jobs?.length) {
+    res.jobs.forEach(j => log(`  ${j.city}/${j.category_l3}: batch ${j.batch_id}`));
+  }
+  loadBatches();
+  document.querySelector('[data-tab="results"]')?.click();
+});
+
 // Market Intel Tab5
 async function loadMxPilotStatus() {
   const el = document.getElementById('mx-pilot-status');
   if (!el) return;
   try {
-    const st = await api('/pilot/mx/status');
-    const acc = st.latest_run?.acceptance || {};
-    const totals = st.totals || {};
-    el.innerHTML = `
-      <div class="grid md:grid-cols-3 gap-2 text-xs">
-        <span>情报报告: ${totals.intel_reports || 0}</span>
-        <span>Brainstorm 会话: ${totals.brainstorm_sessions || 0}</span>
-        <span>活跃定时任务: ${totals.active_schedules || 0}</span>
-      </div>
-      ${st.latest_run ? `<p class="mt-2">最近试点: ${st.latest_run.started_at?.slice(0,16) || ''} —
-        B:${acc['1.5.1_track_b_intel'] ? '✓' : '○'}
-        Brainstorm:${acc['1.5.2_brainstorm_cards'] ? '✓' : '○'}
-        入队:${acc['1.5.3_track_a_queued'] ? '✓' : '○'}
-      </p>` : '<p class="mt-2">尚未运行试点，点击上方按钮开始。</p>'}`;
+    const [mx, co] = await Promise.all([
+      api('/pilot/mx/status'),
+      api('/pilot/co/status'),
+    ]);
+    const fmt = (st, label) => {
+      const acc = st.latest_run?.acceptance || {};
+      const t = st.totals || {};
+      return `${label}: 情报${t.intel_reports || 0} / 策略${t.brainstorm_sessions || 0} / 任务${t.active_schedules || 0}
+        ${st.latest_run ? ` | B:${acc.track_b_intel ? '✓' : '○'} Brainstorm:${acc.brainstorm_cards ? '✓' : '○'} 入队:${acc.track_a_queued ? '✓' : '○'}` : ' | 未运行'}`;
+    };
+    el.innerHTML = `<pre class="text-xs whitespace-pre-wrap">${fmt(mx, 'MX')}\n${fmt(co, 'CO')}</pre>`;
   } catch (e) {
     el.textContent = '试点状态加载失败';
   }
 }
 
-document.getElementById('btn-mx-pilot')?.addEventListener('click', async () => {
-  const btn = document.getElementById('btn-mx-pilot');
+async function startPilot(countryIso, btnId) {
+  const btn = document.getElementById(btnId);
   const out = document.getElementById('mx-pilot-result');
   btn.disabled = true;
-  btn.textContent = '试点运行中…';
+  const oldText = btn.textContent;
+  btn.textContent = '运行中…';
   out.classList.remove('hidden');
-  out.textContent = 'Track B → Brainstorm → Track A 入队…';
+  out.textContent = `${countryIso} 试点：Track B → Brainstorm → Track A 入队…`;
   try {
-    const res = await api('/pilot/mx/start', {
+    const res = await api(`/pilot/${countryIso}/start`, {
       method: 'POST',
       body: {
-        city: 'CDMX',
+        country_iso: countryIso,
         category_l3: 'bakeware',
-        cities: ['CDMX', 'Monterrey'],
-        l3_codes: ['bakeware', 'cookware-commercial', 'flatware'],
         anchor_limit: 2,
-        leads_per_task: 5,
         enqueue_track_a: true,
       },
     });
     out.textContent = JSON.stringify(res, null, 2);
-    log(`MX 试点完成 session=${res.session_id}`);
+    log(`${countryIso} 试点完成 session=${res.session_id}`);
     loadMxPilotStatus();
     loadMarket();
+    loadBatches();
   } catch (e) {
     out.textContent = String(e);
   } finally {
     btn.disabled = false;
-    btn.textContent = '一键启动 MX 试点';
+    btn.textContent = oldText;
   }
-});
+}
+
+document.getElementById('btn-mx-pilot')?.addEventListener('click', () => startPilot('MX', 'btn-mx-pilot'));
+document.getElementById('btn-co-pilot')?.addEventListener('click', () => startPilot('CO', 'btn-co-pilot'));
 
 async function loadMarket() {
   loadMxPilotStatus();

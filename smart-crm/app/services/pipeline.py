@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from datetime import datetime
 from typing import Any, AsyncGenerator
 
@@ -75,7 +76,9 @@ class PipelineService:
                 return
 
             concurrency = int(self.config_store.get("max_concurrency", "5"))
-            sem = asyncio.Semaphore(concurrency)
+            if os.getenv("USE_SQLITE", "").lower() in ("1", "true", "yes"):
+                concurrency = 1
+            sem = asyncio.Semaphore(max(1, concurrency))
 
             async def process_one(idx: int, item: dict[str, Any]) -> dict[str, Any]:
                 async with sem:

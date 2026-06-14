@@ -95,6 +95,7 @@
             <input id="sched-keyword" class="input" placeholder="定时关键词" />
             <input id="sched-interval" type="number" class="input" value="24" />
             <button id="btn-add-schedule" class="btn-primary">添加定时任务</button>
+            <button id="btn-run-due-schedules" class="btn-secondary w-full mt-2">执行到期任务（试点入队后）</button>
             <div id="schedule-list" class="mt-4 space-y-2 text-sm"></div>
           </div>
         </div>
@@ -106,10 +107,13 @@
       <div class="card mb-6 border border-emerald-900/50 bg-emerald-950/20">
         <div class="flex flex-wrap justify-between items-start gap-4">
           <div>
-            <h2 class="text-lg font-semibold text-emerald-400">Phase 1.5 — 墨西哥试点向导</h2>
-            <p class="text-sm text-slate-400 mt-1">Track B 锚点采集 → Brainstorm 策略 → Track A 定时入队（CDMX + Monterrey × Top 3 L3）</p>
+            <h2 class="text-lg font-semibold text-emerald-400">Phase 1.5 — 西语试点向导</h2>
+            <p class="text-sm text-slate-400 mt-1">Track B 锚点 → Brainstorm → Track A 入队（MX / CO）</p>
           </div>
-          <button id="btn-mx-pilot" class="btn-primary">一键启动 MX 试点</button>
+          <div class="flex gap-2">
+            <button id="btn-mx-pilot" class="btn-primary">MX 墨西哥试点</button>
+            <button id="btn-co-pilot" class="btn-secondary">CO 哥伦比亚试点</button>
+          </div>
         </div>
         <div id="mx-pilot-status" class="mt-4 text-sm text-slate-400">加载试点状态…</div>
         <pre id="mx-pilot-result" class="mt-3 text-xs bg-slate-900 rounded p-3 overflow-auto max-h-48 hidden"></pre>

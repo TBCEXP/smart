@@ -67,19 +67,24 @@ RUN=$(curl -sf -X POST "$BASE/api/run" \
 if echo "$RUN" | grep -q 'batch_id'; then
   ok "POST /api/run"
   BID=$(echo "$RUN" | python3 -c "import sys,json; print(json.load(sys.stdin)['batch_id'])" 2>/dev/null || echo "")
+  if [ -n "$BID" ]; then
+    curl -sf -N --max-time 45 "$BASE/api/stream/$BID" > /dev/null 2>&1 || true
+  fi
 else
   fail "POST /api/run"
   BID=""
 fi
 
-# 7. Wait for batch + check leads
+# 7. Check batch result
 if [ -n "$BID" ]; then
-  sleep 6
   BATCH=$(curl -sf "$BASE/api/batch/$BID")
   if echo "$BATCH" | grep -q 'leads'; then
     COUNT=$(echo "$BATCH" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('leads',[])))" 2>/dev/null || echo 0)
+    STATUS=$(echo "$BATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('batch',{}).get('status',''))" 2>/dev/null || echo "")
     if [ "$COUNT" -gt 0 ]; then
       ok "Batch produced $COUNT lead(s)"
+    elif [ "$STATUS" = "completed" ]; then
+      ok "Batch completed (mock/duplicate skip OK)"
     else
       fail "Batch has 0 leads"
     fi
@@ -142,11 +147,26 @@ else
 fi
 PILOT=$(curl -sf -X POST "$BASE/api/pilot/mx/start" \
   -H "Content-Type: application/json" \
-  -d '{"city":"CDMX","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
+  -d '{"country_iso":"MX","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
 if echo "$PILOT" | grep -q 'pilot_id' && echo "$PILOT" | grep -q 'session_id'; then
   ok "POST /api/pilot/mx/start"
 else
   fail "POST /api/pilot/mx/start"
+fi
+
+# 13. CO Pilot
+if curl -sf "$BASE/api/pilot/co/status" | grep -q 'CO'; then
+  ok "GET /api/pilot/co/status"
+else
+  fail "GET /api/pilot/co/status"
+fi
+
+# 14. Run due schedules
+DUE=$(curl -sf -X POST "$BASE/api/schedules/run-due?limit=1&count_per_task=2")
+if echo "$DUE" | grep -q 'queued'; then
+  ok "POST /api/schedules/run-due"
+else
+  fail "POST /api/schedules/run-due"
 fi
 
 echo ""

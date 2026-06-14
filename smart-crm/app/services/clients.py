@@ -85,13 +85,16 @@ class ExaClient:
         return []
 
     def _mock_results(self, query: str, num_results: int) -> list[dict[str, Any]]:
-        slug = re.sub(r"[^a-z0-9]+", "-", query.lower())[:40].strip("-")
+        import uuid
+
+        slug = re.sub(r"[^a-z0-9]+", "-", query.lower())[:30].strip("-") or "lead"
+        run_id = uuid.uuid4().hex[:8]
         return [
             {
                 "title": f"Mock Company {i+1} - {query[:30]}",
-                "url": f"https://{slug}-{i+1}.example.com",
+                "url": f"https://{slug}-{run_id}-{i+1}.example.com",
                 "text": f"Mock Exa result for query: {query}",
-                "domain": f"{slug}-{i+1}.example.com",
+                "domain": f"{slug}-{run_id}-{i+1}.example.com",
             }
             for i in range(min(num_results, 5))
         ]
