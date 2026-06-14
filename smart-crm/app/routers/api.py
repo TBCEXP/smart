@@ -42,6 +42,8 @@ from app.config import (
     FileUploadUrlRequest,
     BarcodeValidateRequest,
     PrepressReviewRequest,
+    ProductionInspectionRequest,
+    ProductionHumanReviewRequest,
     TradeShowCrawlRequest,
 )
 from app.database import ASYNC_DB_URL, get_session
@@ -60,6 +62,7 @@ from app.models.entities import (
     SalesOrderLine,
     FileTransfer,
     PrepressReview,
+    ProductionInspection,
     ShareLink,
     StrategyAction,
     StrategySession,
@@ -102,6 +105,11 @@ from app.services.r2_client import R2Client
 from app.services.files import file_dict
 from app.services.notify import notify_share_link
 from app.services.prepress import review_dict, run_prepress_analysis, seed_prepress_reviews
+from app.services.production_inspect import (
+    inspection_dict,
+    run_production_analysis,
+    seed_production_inspections,
+)
 from app.services.barcode_engine import generate_barcode_svg, validate_barcode
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
@@ -234,6 +242,13 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             .where(PrepressReview.active.is_(True))
         )
     ).scalar_one()
+    production_inspections = (
+        await db.execute(
+            select(func.count())
+            .select_from(ProductionInspection)
+            .where(ProductionInspection.active.is_(True))
+        )
+    ).scalar_one()
     return {
         "phase1": {
             "factories": factories,
@@ -254,6 +269,10 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
         "phase4": {
             "prepress_reviews": prepress_reviews,
             "rule_engine": True,
+        },
+        "phase5": {
+            "production_inspections": production_inspections,
+            "opencv_align": True,
         },
     }
 
@@ -292,6 +311,8 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
             "phase4_prepress_seeded": biz.get("phase4", {}).get("prepress_reviews", 0) >= 1,
             "phase4_rule_engine": biz.get("phase4", {}).get("rule_engine", False),
+            "phase5_inspection_seeded": biz.get("phase5", {}).get("production_inspections", 0) >= 1,
+            "phase5_opencv_align": biz.get("phase5", {}).get("opencv_align", False),
         },
         "business": biz,
         "milestones": (await _phase15_milestones(db))["milestones"],
@@ -347,12 +368,18 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         f"- 前稿比对任务: {biz.get('phase4', {}).get('prepress_reviews', 0)}",
         f"- 规则引擎（条码/OCR/图形 diff）: {'✓' if biz.get('phase4', {}).get('rule_engine') else '○'}",
         "",
+        "## Phase 5 大货实拍 AI",
+        "",
+        f"- 实拍检测任务: {biz.get('phase5', {}).get('production_inspections', 0)}",
+        f"- OpenCV 对齐比对: {'✓' if biz.get('phase5', {}).get('opencv_align') else '○'}",
+        "",
         "## 验收命令",
         "",
         "```bash",
         "bash scripts/run_all_tests.sh http://YOUR_HOST:8000",
         "bash scripts/phase3_verify.sh http://YOUR_HOST:8000",
         "bash scripts/phase4_verify.sh http://YOUR_HOST:8000",
+        "bash scripts/phase5_verify.sh http://YOUR_HOST:8000",
         "bash scripts/phase2_live.sh http://YOUR_HOST:8000",
         "bash scripts/prod_onboard.sh http://YOUR_HOST:8000 --full",
         "```",
@@ -797,6 +824,102 @@ async def run_prepress_review(
     await db.commit()
     await db.refresh(review)
     return review_dict(review)
+
+
+@router.get("/inspections/production")
+async def list_production_inspections(db: AsyncSession = Depends(get_db)):
+    """大货实拍检测任务列表。"""
+    result = await db.execute(
+        select(ProductionInspection)
+        .where(ProductionInspection.active.is_(True))
+        .order_by(ProductionInspection.created_at.desc())
+    )
+    return [inspection_dict(r) for r in result.scalars().all()]
+
+
+@router.post("/inspections/production")
+async def create_production_inspection(
+    req: ProductionInspectionRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    row = ProductionInspection(
+        title=req.title,
+        order_id=req.order_id or None,
+        prepress_review_id=req.prepress_review_id or None,
+        approved_image=req.approved_image or "fixture://inspection/approved_box.png",
+        photo_image=req.photo_image or "fixture://inspection/production_photo.png",
+        notes=req.notes,
+        created_by=session.email,
+        status="draft",
+        human_review_status="pending",
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return inspection_dict(row)
+
+
+@router.get("/inspections/production/{inspection_id}")
+async def get_production_inspection(inspection_id: str, db: AsyncSession = Depends(get_db)):
+    row = await db.get(ProductionInspection, inspection_id)
+    if not row or not row.active:
+        raise HTTPException(404, "Production inspection not found")
+    return inspection_dict(row)
+
+
+@router.post("/inspections/production/{inspection_id}/run")
+async def run_production_inspection(
+    inspection_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """OpenCV 对齐后与确稿比对。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    row = await db.get(ProductionInspection, inspection_id)
+    if not row or not row.active:
+        raise HTTPException(404, "Production inspection not found")
+    row.status = "running"
+    await db.commit()
+    result = run_production_analysis(row)
+    row.result_json = result
+    row.verdict = result.get("verdict", "pending")
+    row.status = "done"
+    row.ran_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(row)
+    return inspection_dict(row)
+
+
+@router.patch("/inspections/production/{inspection_id}/review")
+async def human_review_production_inspection(
+    inspection_id: str,
+    req: ProductionHumanReviewRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """人工终审（通过/驳回）。"""
+    session = await session_from_request(request, db)
+    if not session or session.portal != "admin":
+        raise HTTPException(401, "Admin session required")
+    row = await db.get(ProductionInspection, inspection_id)
+    if not row or not row.active:
+        raise HTTPException(404, "Production inspection not found")
+    status = req.human_review_status.strip().lower()
+    if status not in {"approved", "rejected", "pending"}:
+        raise HTTPException(400, "human_review_status must be approved/rejected/pending")
+    row.human_review_status = status
+    row.human_review_notes = req.human_review_notes
+    row.human_reviewed_by = session.email
+    row.human_reviewed_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(row)
+    return inspection_dict(row)
 
 
 @router.post("/leads/{lead_id}/enrich-contact")

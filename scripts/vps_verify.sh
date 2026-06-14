@@ -111,6 +111,11 @@ if bash "$(dirname "$0")/phase4_verify.sh" "$BASE"; then
 else
   warn "phase4_verify.sh 有失败项"
 fi
+if bash "$(dirname "$0")/phase5_verify.sh" "$BASE"; then
+  ok "phase5_verify.sh"
+else
+  warn "phase5_verify.sh 有失败项"
+fi
 
 echo ""
 echo "=== VPS 验收: ${PASS} 通过, ${WARN} 警告, ${FAIL} 失败 ==="

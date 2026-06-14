@@ -1,6 +1,6 @@
 # SMART CRM — 项目状态（交接）
 
-> 最后更新：**Phase 4 已合并 main**（印刷前稿 AI 规则引擎），待 VPS + API Key 生产验收。
+> 最后更新：**Phase 5 已合并 main**（大货实拍 OpenCV + 人工终审），待 VPS + API Key 生产验收。
 
 ## 已完成
 
@@ -14,7 +14,7 @@
 | Tab8 内容工坊 | ✅ | es/en/pt 批量 SEO + ZIP |
 | Tab9 试点看板 | ✅ | 里程碑、WhatsApp、KB 检索、报告导出 |
 | Exa 查询质量 | ✅ | L3 西语模板 + `resolve_exa_query` 管线接入 |
-| 验收脚本 | ✅ | smoke 41+、phase15、phase1–**phase4** |
+| 验收脚本 | ✅ | smoke 42+、phase15、phase1–**phase5** |
 | Phase 1 员工业务 | ✅ | 工厂/订单/品类树、ERP 桥接、飞书只读、角色过滤 |
 | TBCEXP 桥接 | ✅ | `POST /api/bridge/tbcexp/{id}`（Mock 或 live HTTP） |
 | 文档 | ✅ | 部署、上线引导、飞书字段、路线图、**合并清单** |
@@ -113,6 +113,18 @@ sudo bash scripts/setup_backup_cron.sh
 
 详见 [PHASE4_PREPRESS.md](PHASE4_PREPRESS.md)。
 
+## Phase 5 大货实拍 AI
+
+| 功能 | 状态 |
+|------|------|
+| OpenCV ORB 对齐 | ✅ homography + resize 回退 |
+| 确稿像素 diff | ✅ 规则阈值判定 |
+| 人工终审 | ✅ PATCH approved/rejected |
+| 员工后台大货实拍 Tab | ✅ `/admin/dashboard` |
+| 验收脚本 | ✅ `phase5_verify.sh` |
+
+详见 [PHASE5_PRODUCTION.md](PHASE5_PRODUCTION.md)。
+
 ## Phase 1+（ERP 深度对接）
 
 员工门户、工厂目录、订单、包装 AI — 见 [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)，在 Phase 1.5 生产验收通过后启动。
@@ -120,5 +132,5 @@ sudo bash scripts/setup_backup_cron.sh
 ## 仓库
 
 - GitHub: `https://github.com/TBCEXP/smart`
-- 主分支: `main`（已含 Phase 1.5 + Phase 1–4）
+- 主分支: `main`（已含 Phase 1.5 + Phase 1–5）
 - 原功能分支: `cursor/exa-query-latam-pilot-c2f3`（已 fast-forward 合并）

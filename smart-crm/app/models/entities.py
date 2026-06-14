@@ -393,6 +393,31 @@ class PrepressReview(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class ProductionInspection(Base):
+    """Phase 5 大货实拍检测（OpenCV 对齐 + 确稿比对 + 人工终审）。"""
+
+    __tablename__ = "production_inspections"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    order_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("sales_orders.id"))
+    prepress_review_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("prepress_reviews.id"))
+    approved_image: Mapped[str] = mapped_column(String(1024), default="")
+    photo_image: Mapped[str] = mapped_column(String(1024), default="")
+    status: Mapped[str] = mapped_column(String(32), default="draft")
+    verdict: Mapped[str] = mapped_column(String(32), default="")
+    result_json: Mapped[Optional[dict]] = mapped_column(JSON, default=None)
+    human_review_status: Mapped[str] = mapped_column(String(32), default="pending")
+    human_review_notes: Mapped[str] = mapped_column(Text, default="")
+    human_reviewed_by: Mapped[str] = mapped_column(String(256), default="")
+    created_by: Mapped[str] = mapped_column(String(256), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    ran_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    human_reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class OutreachLog(Base):
     """人工触达记录（WhatsApp / 邮件），用于 1.5.5 回复率跟踪。"""
 

@@ -46,11 +46,14 @@ PROTECTED_POST_PATHS = (
     "/api/files/transfers/",
     "/api/prepress/reviews",
     "/api/prepress/reviews/",
+    "/api/inspections/production",
+    "/api/inspections/production/",
 )
 
 PROTECTED_PATCH_PREFIXES = (
     "/api/orders/",
     "/api/catalog/documents/",
+    "/api/inspections/production/",
 )
 
 

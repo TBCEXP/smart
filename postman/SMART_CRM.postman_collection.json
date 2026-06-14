@@ -592,6 +592,41 @@
           }
         }
       ]
+    },
+    {
+      "name": "12 Phase 5 Production Inspect",
+      "item": [
+        {
+          "name": "List Production Inspections",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/inspections/production"
+          }
+        },
+        {
+          "name": "Run Production Inspection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/inspections/production/REPLACE_INSP_ID/run"
+          }
+        },
+        {
+          "name": "Human Review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"human_review_status\":\"approved\",\"human_review_notes\":\"OK\"}"
+            },
+            "url": "{{base_url}}/api/inspections/production/REPLACE_INSP_ID/review"
+          }
+        }
+      ]
     }
   ]
 }

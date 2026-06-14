@@ -260,6 +260,11 @@ if curl -sf "$BASE/api/prepress/reviews" | grep -q 'barcode_expected'; then
 else
   fail "GET /api/prepress/reviews"
 fi
+if curl -sf "$BASE/api/inspections/production" | grep -q 'approved_image'; then
+  ok "GET /api/inspections/production"
+else
+  fail "GET /api/inspections/production"
+fi
 if curl -sf "$BASE/api/system/handoff-report" | grep -q 'SMART CRM 交接报告'; then
   ok "GET /api/system/handoff-report"
 else

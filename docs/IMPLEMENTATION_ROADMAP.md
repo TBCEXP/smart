@@ -44,7 +44,7 @@
 | Tab9 试点看板 + WhatsApp 触达 | 1.5.5 | **已实现** API + UI + `outreach_pilot.sh` | 人工发送 WhatsApp |
 | RackNerd 实机部署 | §0C Docker+Nginx | 脚本齐全 + CI，`bootstrap_vps.sh` | **未在 VPS 跑通** |
 | 每日备份 | 0.7 | `scripts/backup_daily.sh` | 需配置 cron |
-| 工厂目录/报价/大文件 | 第二期–第三期 | **Phase 2/3/4 已落地**；大货实拍 AI 未开始 |
+| 工厂目录/报价/大文件/包装 AI | 第二期–第五期 | **Phase 2–5 已落地** |
 
 **结论：** 功能骨架与 1.5 验收脚本已齐，**不等于生产验收通过**。  
 科学做法：第零期 VPS 部署 + 真实 API Key → 跑 1.5 验收脚本 → 再进第一期门户。
@@ -119,9 +119,10 @@
 
 ---
 
-### 第五期 — 大货实拍 AI
+### 第五期 — 大货实拍 AI ✅（已落地 MVP）
 
-- OpenCV 对齐 + 与确稿找不同 + 人工终审
+- OpenCV ORB 对齐 + 确稿像素 diff + 人工终审 PATCH
+- 验收：`bash scripts/phase5_verify.sh`
 
 ---
 

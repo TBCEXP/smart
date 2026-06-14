@@ -53,6 +53,14 @@ B2B 智能获客面板 — 实施须遵循 **[docs/IMPLEMENTATION_ROADMAP.md](do
 | `bash scripts/phase4_verify.sh` | 前稿 AI 验收 |
 | `docs/PHASE4_PREPRESS.md` | Phase 4 功能说明 |
 
+## Phase 5 大货实拍 AI
+
+| 脚本 / 页面 | 说明 |
+|-------------|------|
+| `/admin/dashboard` → 大货实拍 | OpenCV 对齐 + 人工终审 |
+| `bash scripts/phase5_verify.sh` | 实拍 AI 验收 |
+| `docs/PHASE5_PRODUCTION.md` | Phase 5 功能说明 |
+
 ## Phase 1.5 西语试点
 
 | 脚本 | 说明 |
