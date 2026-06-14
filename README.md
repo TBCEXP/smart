@@ -150,8 +150,10 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |
 | 生产上线引导 | [docs/PRODUCTION_ONBOARDING.md](docs/PRODUCTION_ONBOARDING.md) |
-| 发布完整性检查 | `bash scripts/release_check.sh [URL]` |
-| VPS 上线引导 | [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) |
+| 代码终检 | `bash scripts/go_live.sh [URL]` |
+| 发布完整性 | `bash scripts/release_check.sh [URL]` |
+| 项目交接 | [docs/HANDOFF.md](docs/HANDOFF.md) |
+| VPS 上线 | [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
 | API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |
 

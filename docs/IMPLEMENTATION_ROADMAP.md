@@ -162,42 +162,34 @@ L4  Apollo 补邮箱（按需单条，非批量扫）
 
 ---
 
-## 六、v2.0.0 完成清单（Phase 0–5）
+## 六、v2.1.0 完成清单（代码交付）
 
-当前分支 `main` @ **v2.0.0** — 路线图 MVP 代码已闭环：
+当前分支 `main` @ **v2.1.0** — 路线图 + 增量功能全部闭环：
 
 | 阶段 | 状态 | 验收 |
 |------|------|------|
 | Phase 0 基础设施 | ✅ | Docker、Nginx、CI/CD、备份 |
 | Phase 1.5 拉美试点 | ✅ | MX/CO 向导、里程碑、KB、Track C |
-| Phase 1 员工业务 | ✅ | 工厂/订单/品类、ERP 桥接 |
+| Phase 1 员工业务 | ✅ | 工厂/订单/品类、ERP 字段映射 |
 | Phase 2 目录门户 | ✅ | R2、分享、客户门户 |
-| Phase 3 大文件/通知 | ✅ | 上传 URL、邮件通知 |
-| Phase 4 印刷前稿 AI | ✅ | 条码、文本/图形 diff |
-| Phase 5 大货实拍 AI | ✅ | OpenCV 对齐、人工终审 |
+| Phase 3 大文件 | ✅ | Tus 断点续传、邮件通知 |
+| Phase 4 印刷前稿 | ✅ | 条码 + OCR + ZBar + diff |
+| Phase 5 大货实拍 | ✅ | OpenCV 对齐、人工终审 |
 
-**本地终验收：**
+**代码终检：**
 
 ```bash
-bash scripts/final_acceptance.sh http://127.0.0.1:8000
-bash scripts/acceptance_report.sh http://127.0.0.1:8000
+bash scripts/go_live.sh http://127.0.0.1:8000
+bash scripts/release_check.sh http://127.0.0.1:8000
 ```
 
-**用户需配合（生产阻塞项）：**
-- [ ] RackNerd VPS + `df -h` / `free -h` 输出
-- [ ] 域名 + DNS 指向 VPS
-- [ ] GitHub Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`
-- [ ] Exa / Firecrawl / OpenAI / 飞书 凭据
-- [ ] Cloudflare R2（目录 PDF + 大文件）
-- [ ] TBCEXP ERP URL（可选）
-
-**增量迭代（不阻塞上线）：** 待 TBCEXP 提供 OpenAPI 后微调字段映射。
+**生产阻塞（需团队）：** 见 [HANDOFF.md](HANDOFF.md)、[VPS_ONBOARDING.md](VPS_ONBOARDING.md)
 
 ---
 
 ## 七、与上期实现的差异说明
 
 上期一次性实现了 Tab1–7 全部 UI 和数据模型，**跳过了第零期验收**。  
-本期已按路线图 **回填生产必需项并完成 Phase 0–5**，版本 **2.0.0**。
+本期已按路线图 **完成 Phase 0–5 及 v2.1.0 增量功能**。代码交付见 [HANDOFF.md](HANDOFF.md)。
 
-VPS + 真实 API Key 就绪后，执行 `scripts/prod_onboard.sh --full` 完成生产验收。
+VPS + 真实 API Key 就绪后：`bash scripts/go_live.sh https://crm.yourdomain.com`

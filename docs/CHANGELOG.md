@@ -20,6 +20,14 @@
 - Tus `HEAD` 响应 `Upload-Offset` 头
 - OpenCV / Tesseract / libzbar Docker 运行时依赖
 
+### Added (onboard)
+
+- `go_live.sh` — 代码终检三连（release + erp + final）
+- `release_check.sh` — v2.1.0 发布完整性
+- `docs/VPS_ONBOARDING.md`、`docs/HANDOFF.md`
+- 应用版本号统一 **2.1.0**
+- Postman ERP + v2.1 端点
+
 ### Tests
 
 - pytest **39/39**
