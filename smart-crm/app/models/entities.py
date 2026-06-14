@@ -228,6 +228,7 @@ class ContentDraft(Base):
     __tablename__ = "content_drafts"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    batch_id: Mapped[Optional[str]] = mapped_column(String(36), index=True)
     content_type: Mapped[str] = mapped_column(String(32), index=True)
     language: Mapped[str] = mapped_column(String(8), default="es")
     country_iso: Mapped[str] = mapped_column(String(8), default="")

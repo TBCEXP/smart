@@ -147,6 +147,17 @@ class ContentGenerateRequest(BaseModel):
     target_audience: str = "hospitality_wholesaler"
 
 
+class ContentBatchGenerateRequest(BaseModel):
+    content_type: str = "seo_pack"
+    product_name: str
+    category_l3: str = ""
+    languages: list[str] = Field(default_factory=lambda: ["es", "en", "pt"])
+    country_iso: str = ""
+    input_notes: str = ""
+    tone: str = "professional_b2b"
+    target_audience: str = "hospitality_wholesaler"
+
+
 class ContentUpdateRequest(BaseModel):
     title: str = ""
     slug: str = ""

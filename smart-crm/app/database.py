@@ -45,6 +45,24 @@ async def init_db() -> None:
                 await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             except Exception:
                 pass
+        # Lightweight schema patch for existing deployments
+        try:
+            if "sqlite" in ASYNC_DB_URL:
+                cols = await conn.execute(text("PRAGMA table_info(content_drafts)"))
+                names = {row[1] for row in cols.fetchall()}
+                if "batch_id" not in names:
+                    await conn.execute(
+                        text("ALTER TABLE content_drafts ADD COLUMN batch_id VARCHAR(36)")
+                    )
+            elif "postgresql" in ASYNC_DB_URL:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE content_drafts "
+                        "ADD COLUMN IF NOT EXISTS batch_id VARCHAR(36)"
+                    )
+                )
+        except Exception:
+            pass
 
 
 @asynccontextmanager

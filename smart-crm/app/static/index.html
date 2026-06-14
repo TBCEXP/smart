@@ -185,16 +185,24 @@
               <option value="pt">葡萄牙语</option>
               <option value="fr">法语</option>
             </select>
+            <div class="text-xs text-slate-400 space-y-1">
+              <p>批量多语言（勾选后点批量生成）</p>
+              <label class="inline-flex items-center gap-2 mr-3"><input type="checkbox" class="ct-batch-lang" value="es" checked /> 西语</label>
+              <label class="inline-flex items-center gap-2 mr-3"><input type="checkbox" class="ct-batch-lang" value="en" checked /> 英语</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" class="ct-batch-lang" value="pt" checked /> 葡语</label>
+            </div>
             <input id="ct-country" class="input" placeholder="目标国家 ISO (MX)" value="MX" />
             <textarea id="ct-notes" class="input h-24" placeholder="补充：材质、MOQ、认证、卖点…"></textarea>
-            <button id="btn-content-gen" class="btn-primary w-full">AI 生成内容</button>
+            <button id="btn-content-gen" class="btn-primary w-full">AI 生成内容（单语言）</button>
+            <button id="btn-content-batch" class="btn-secondary w-full">批量多语言生成</button>
           </div>
           <div id="ct-history" class="mt-4 text-xs space-y-1 max-h-40 overflow-y-auto"></div>
         </div>
         <div class="md:col-span-2 card">
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-semibold text-emerald-400">生成结果（可编辑）</h3>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+              <div id="ct-lang-tabs" class="hidden flex gap-1 text-xs"></div>
               <button id="btn-content-save" class="btn-secondary text-sm hidden">保存修改</button>
               <button id="btn-content-export" class="btn-secondary text-sm hidden">导出 .md</button>
             </div>

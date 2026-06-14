@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -17,6 +18,13 @@ CONTENT_TYPES = {
     "product_description": "B2B 产品描述",
     "category_page": "品类落地页",
     "blog_article": "SEO 博客文章",
+}
+
+LANGUAGE_LABELS = {
+    "es": "西班牙语",
+    "en": "英语",
+    "pt": "葡萄牙语",
+    "fr": "法语",
 }
 
 
@@ -43,6 +51,7 @@ class ContentStudioService:
         tone: str = "professional_b2b",
         target_audience: str = "hospitality_wholesaler",
         created_by: str = "",
+        batch_id: str | None = None,
     ) -> ContentDraft:
         prompts = load_prompts()
         studio = prompts.get("content_studio", {})
@@ -92,6 +101,7 @@ class ContentStudioService:
             keywords = [k.strip() for k in keywords.split(",")]
 
         draft = ContentDraft(
+            batch_id=batch_id,
             content_type=content_type,
             language=language,
             country_iso=country_iso.upper(),
@@ -121,12 +131,50 @@ class ContentStudioService:
         await db.refresh(draft)
         return draft
 
+    async def generate_batch(
+        self,
+        db: AsyncSession,
+        content_type: str,
+        product_name: str,
+        languages: list[str],
+        category_l3: str = "",
+        country_iso: str = "",
+        input_notes: str = "",
+        tone: str = "professional_b2b",
+        target_audience: str = "hospitality_wholesaler",
+        created_by: str = "",
+    ) -> tuple[str, list[ContentDraft]]:
+        batch_id = str(uuid.uuid4())
+        langs = [lang.strip().lower() for lang in languages if lang.strip()]
+        if not langs:
+            langs = ["es", "en", "pt"]
+
+        drafts: list[ContentDraft] = []
+        for language in langs:
+            draft = await self.generate(
+                db,
+                content_type=content_type,
+                product_name=product_name,
+                category_l3=category_l3,
+                language=language,
+                country_iso=country_iso,
+                input_notes=input_notes,
+                tone=tone,
+                target_audience=target_audience,
+                created_by=created_by,
+                batch_id=batch_id,
+            )
+            drafts.append(draft)
+        return batch_id, drafts
+
     def to_dict(self, draft: ContentDraft) -> dict[str, Any]:
         return {
             "id": draft.id,
+            "batch_id": draft.batch_id,
             "content_type": draft.content_type,
             "content_type_label": CONTENT_TYPES.get(draft.content_type, draft.content_type),
             "language": draft.language,
+            "language_label": LANGUAGE_LABELS.get(draft.language, draft.language),
             "country_iso": draft.country_iso,
             "category_l3": draft.category_l3,
             "product_name": draft.product_name,

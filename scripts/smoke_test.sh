@@ -124,6 +124,14 @@ if echo "$CT" | grep -q 'slug'; then
 else
   fail "POST /api/content/generate"
 fi
+CTB=$(curl -sf -X POST "$BASE/api/content/generate-batch" \
+  -H "Content-Type: application/json" \
+  -d '{"content_type":"seo_pack","product_name":"Batch test product","category_l3":"bakeware","languages":["es","en"]}')
+if echo "$CTB" | grep -q 'batch_id' && echo "$CTB" | grep -q '"language":"es"' && echo "$CTB" | grep -q '"language":"en"'; then
+  ok "POST /api/content/generate-batch"
+else
+  fail "POST /api/content/generate-batch"
+fi
 
 echo ""
 echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="

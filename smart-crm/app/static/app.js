@@ -60,25 +60,83 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 });
 
 let currentDraftId = null;
+let currentBatchDrafts = [];
+
+function getContentForm() {
+  return {
+    content_type: document.getElementById('ct-type').value,
+    product_name: document.getElementById('ct-product').value.trim(),
+    category_l3: document.getElementById('ct-l3').value,
+    country_iso: document.getElementById('ct-country').value,
+    input_notes: document.getElementById('ct-notes').value,
+  };
+}
+
+function getBatchLanguages() {
+  return [...document.querySelectorAll('.ct-batch-lang:checked')].map(el => el.value);
+}
 
 // Tab8 Content Studio
 document.getElementById('btn-content-gen').onclick = async () => {
-  const product = document.getElementById('ct-product').value.trim();
-  if (!product) return alert('请填写产品/主题名称');
+  const form = getContentForm();
+  if (!form.product_name) return alert('请填写产品/主题名称');
   document.getElementById('ct-result').innerHTML = '<p class="text-amber-400">AI 生成中…</p>';
+  hideBatchTabs();
   const res = await api('/content/generate', {
     method: 'POST',
-    body: {
-      content_type: document.getElementById('ct-type').value,
-      product_name: product,
-      category_l3: document.getElementById('ct-l3').value,
-      language: document.getElementById('ct-lang').value,
-      country_iso: document.getElementById('ct-country').value,
-      input_notes: document.getElementById('ct-notes').value,
-    },
+    body: { ...form, language: document.getElementById('ct-lang').value },
   });
+  currentBatchDrafts = [];
   renderContentDraft(res);
   loadContentHistory();
+};
+
+document.getElementById('btn-content-batch').onclick = async () => {
+  const form = getContentForm();
+  if (!form.product_name) return alert('请填写产品/主题名称');
+  const languages = getBatchLanguages();
+  if (!languages.length) return alert('请至少勾选一种语言');
+  document.getElementById('ct-result').innerHTML = `<p class="text-amber-400">批量生成中（${languages.join(', ')}）…</p>`;
+  const res = await api('/content/generate-batch', {
+    method: 'POST',
+    body: { ...form, languages },
+  });
+  currentBatchDrafts = res.drafts || [];
+  renderBatchDrafts(currentBatchDrafts);
+  loadContentHistory();
+};
+
+function hideBatchTabs() {
+  const tabs = document.getElementById('ct-lang-tabs');
+  tabs.classList.add('hidden');
+  tabs.innerHTML = '';
+}
+
+function renderBatchTabs(drafts, activeId) {
+  const tabs = document.getElementById('ct-lang-tabs');
+  if (!drafts || drafts.length < 2) {
+    hideBatchTabs();
+    return;
+  }
+  tabs.classList.remove('hidden');
+  tabs.innerHTML = drafts.map(d => `
+    <button type="button"
+      class="px-2 py-1 rounded ${d.id === activeId ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}"
+      onclick="switchBatchDraft('${d.id}')">${d.language_label || d.language}</button>
+  `).join('');
+}
+
+function renderBatchDrafts(drafts) {
+  if (!drafts.length) return;
+  renderBatchTabs(drafts, drafts[0].id);
+  renderContentDraft(drafts[0]);
+}
+
+window.switchBatchDraft = (id) => {
+  const draft = currentBatchDrafts.find(d => d.id === id);
+  if (!draft) return;
+  renderBatchTabs(currentBatchDrafts, id);
+  renderContentDraft(draft);
 };
 
 function renderContentDraft(d) {
@@ -130,12 +188,24 @@ document.getElementById('btn-content-export').onclick = () => {
 async function loadContentHistory() {
   const drafts = await api('/content/drafts');
   document.getElementById('ct-history').innerHTML = drafts
-    .map(d => `<div class="cursor-pointer hover:text-emerald-400 truncate" onclick="loadDraft('${d.id}')">${d.content_type_label}: ${d.product_name?.slice(0,30)}</div>`)
+    .map(d => {
+      const lang = d.language_label || d.language || '';
+      const batch = d.batch_id ? ' [批量]' : '';
+      return `<div class="cursor-pointer hover:text-emerald-400 truncate" onclick="loadDraft('${d.id}')">${d.content_type_label}: ${d.product_name?.slice(0,24)} (${lang})${batch}</div>`;
+    })
     .join('') || '<span class="text-slate-500">暂无历史</span>';
 }
 
 window.loadDraft = async (id) => {
   const d = await api(`/content/drafts/${id}`);
+  if (d.batch_id) {
+    const batch = await api(`/content/batches/${d.batch_id}`);
+    currentBatchDrafts = batch.drafts || [];
+    renderBatchTabs(currentBatchDrafts, d.id);
+  } else {
+    currentBatchDrafts = [];
+    hideBatchTabs();
+  }
   renderContentDraft(d);
 };
 

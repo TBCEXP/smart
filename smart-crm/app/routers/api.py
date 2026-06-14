@@ -18,6 +18,7 @@ from app.config import (
     BrainstormActionRequest,
     BrainstormRequest,
     ConfigPayload,
+    ContentBatchGenerateRequest,
     ContentGenerateRequest,
     ContentUpdateRequest,
     FeishuWebhookRequest,
@@ -636,10 +637,53 @@ async def content_generate(req: ContentGenerateRequest, db: AsyncSession = Depen
     return content_svc.to_dict(draft)
 
 
+@router.post("/content/generate-batch")
+async def content_generate_batch(
+    req: ContentBatchGenerateRequest, db: AsyncSession = Depends(get_db)
+):
+    batch_id, drafts = await content_svc.generate_batch(
+        db,
+        content_type=req.content_type,
+        product_name=req.product_name,
+        languages=req.languages,
+        category_l3=req.category_l3,
+        country_iso=req.country_iso,
+        input_notes=req.input_notes,
+        tone=req.tone,
+        target_audience=req.target_audience,
+    )
+    return {
+        "batch_id": batch_id,
+        "product_name": req.product_name,
+        "content_type": req.content_type,
+        "languages": [d.language for d in drafts],
+        "drafts": [content_svc.to_dict(d) for d in drafts],
+    }
+
+
+@router.get("/content/batches/{batch_id}")
+async def get_content_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(ContentDraft)
+        .where(ContentDraft.batch_id == batch_id)
+        .order_by(ContentDraft.language)
+    )
+    drafts = result.scalars().all()
+    if not drafts:
+        raise HTTPException(404, "Batch not found")
+    return {
+        "batch_id": batch_id,
+        "product_name": drafts[0].product_name,
+        "content_type": drafts[0].content_type,
+        "drafts": [content_svc.to_dict(d) for d in drafts],
+    }
+
+
 @router.get("/content/drafts")
 async def list_content_drafts(
     content_type: str = "",
     language: str = "",
+    batch_id: str = "",
     db: AsyncSession = Depends(get_db),
 ):
     q = select(ContentDraft).order_by(ContentDraft.created_at.desc())
@@ -647,6 +691,8 @@ async def list_content_drafts(
         q = q.where(ContentDraft.content_type == content_type)
     if language:
         q = q.where(ContentDraft.language == language)
+    if batch_id:
+        q = q.where(ContentDraft.batch_id == batch_id)
     result = await db.execute(q.limit(50))
     return [content_svc.to_dict(d) for d in result.scalars().all()]
 
