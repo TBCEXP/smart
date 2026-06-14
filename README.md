@@ -48,6 +48,16 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 
 一次性在 GitHub 配置 Secrets：`VPS_HOST`、`VPS_USER`、`VPS_SSH_KEY`。
 
+## Cursor Skill 与测试（改代码时用）
+
+| 用途 | 文档/脚本 |
+|------|-----------|
+| 复制提示词给 Cursor | [docs/CURSOR_PROMPTS.md](docs/CURSOR_PROMPTS.md) |
+| 改完自动验收 | `bash scripts/smoke_test.sh` |
+| 手动验收清单 | [docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md) |
+| Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
+| API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |
+
 ## 默认测试账号
 
 | 邮箱 | 门户 |

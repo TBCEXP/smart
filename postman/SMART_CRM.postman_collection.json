@@ -1,0 +1,191 @@
+{
+  "info": {
+    "name": "SMART CRM API",
+    "description": "B2B 智能获客面板 API 集合。设置变量 base_url 和 session_token。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "session_token", "value": "" },
+    { "key": "batch_id", "value": "" },
+    { "key": "session_id", "value": "" },
+    { "key": "lead_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 Health & Status",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/health"
+          }
+        },
+        {
+          "name": "Integrations Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/integrations/status"
+          }
+        },
+        {
+          "name": "Get Config (masked)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/config"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Auth",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@example.com\",\"portal\":\"admin\"}"
+            },
+            "url": "{{base_url}}/api/auth/otp/send"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@example.com\",\"code\":\"123456\",\"portal\":\"admin\"}"
+            },
+            "url": "{{base_url}}/api/auth/otp/verify"
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/auth/session"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Brainstorm Lab",
+      "item": [
+        {
+          "name": "Generate Strategy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j.session_id) pm.collectionVariables.set('session_id', j.session_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"country_iso\":\"MX\",\"city\":\"CDMX\",\"category_l3\":\"bakeware\",\"language\":\"es\"}"
+            },
+            "url": "{{base_url}}/api/brainstorm/generate"
+          }
+        },
+        {
+          "name": "Enqueue Track A",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Token", "value": "{{session_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"session_id\":\"{{session_id}}\",\"action_type\":\"track_a_job\",\"payload\":{}}"
+            },
+            "url": "{{base_url}}/api/brainstorm/actions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Lead Acquisition",
+      "item": [
+        {
+          "name": "Run Batch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j.batch_id) pm.collectionVariables.set('batch_id', j.batch_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"keyword\":\"mayorista moldes repostería CDMX\",\"industry\":\"跨境电商\",\"count\":3,\"country_iso\":\"MX\",\"city\":\"CDMX\",\"category_l3\":\"bakeware\"}"
+            },
+            "url": "{{base_url}}/api/run"
+          }
+        },
+        {
+          "name": "Get Batch",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/batch/{{batch_id}}"
+          }
+        },
+        {
+          "name": "Confirm Lead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/confirm/{{lead_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Market Intel & Geo",
+      "item": [
+        {
+          "name": "List Anchors MX",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/market/anchors?country_iso=MX"
+          }
+        },
+        {
+          "name": "Geo Config",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/geo/config"
+          }
+        },
+        {
+          "name": "KB Search",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/kb/search?q=bakeware Mexico&limit=5"
+          }
+        }
+      ]
+    }
+  ]
+}

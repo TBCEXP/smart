@@ -71,6 +71,37 @@ async def health():
     return {"status": "ok", "time": datetime.utcnow().isoformat()}
 
 
+@router.get("/integrations/status")
+async def integrations_status():
+    """Check which external APIs are configured (vs mock mode)."""
+    cfg = config_store.load()
+    keys = [
+        ("exa", "exa_api_key", "Exa 语义搜索"),
+        ("firecrawl", "firecrawl_api_key", "Firecrawl 网站分析"),
+        ("openai", "openai_api_key", "OpenAI 开发信/Brainstorm"),
+        ("feishu", "feishu_app_id", "飞书入库"),
+        ("resend", "resend_api_key", "邮件 OTP/通知"),
+        ("apollo", "apollo_api_key", "Apollo 联系人补充"),
+        ("importgenius", "importgenius_api_key", "海关数据"),
+        ("tbcexp", "tbcexp_api_url", "TBCEXP ERP"),
+    ]
+    services = []
+    configured = 0
+    for sid, key, label in keys:
+        val = cfg.get(key, "")
+        ok = bool(val and val.strip())
+        if ok:
+            configured += 1
+        services.append({"id": sid, "label": label, "configured": ok, "mode": "live" if ok else "mock"})
+    return {
+        "configured_count": configured,
+        "total": len(keys),
+        "production_ready": configured >= 4,
+        "note": "production_ready 需要至少 Exa+Firecrawl+OpenAI+飞书",
+        "services": services,
+    }
+
+
 @router.get("/config")
 async def get_config():
     return config_store.masked()

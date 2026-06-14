@@ -64,7 +64,10 @@ class PipelineService:
             yield {"event": "start", "batch_id": batch.id, "total": count}
 
             try:
-                results = await self.exa.search(keyword, count)
+                results = await self.exa.search(
+                    keyword, count, search_type=search_type,
+                    country_iso=country_iso, city=city,
+                )
             except Exception as exc:
                 batch.status = "failed"
                 await db.commit()
@@ -98,9 +101,13 @@ class PipelineService:
                         f"Country: {country_iso} City: {city} Category: {category_l3}\n"
                         f"Language: {language}"
                     )
-                    outreach = await self.llm.complete(system, user)
+                    from app.services.exa_utils import parse_outreach_response
+
+                    raw_outreach = await self.llm.complete(system, user, json_mode=True)
+                    parsed = parse_outreach_response(raw_outreach)
+                    outreach = parsed["email_body"]
                     whatsapp_tpl = outreach_cfg.get("whatsapp_template", "")
-                    whatsapp = whatsapp_tpl.format(
+                    whatsapp = parsed.get("whatsapp_intro") or whatsapp_tpl.format(
                         contact_name="equipo de compras",
                         sender_name="Export Team",
                         company=item.get("title", "su empresa"),
@@ -120,6 +127,8 @@ class PipelineService:
                         firecrawl_summary=fc_summary[:4000],
                         outreach_email=outreach,
                         whatsapp_intro=whatsapp[:500],
+                        subject_lines=parsed.get("subject_lines", "")[:500],
+                        lead_score=parsed.get("lead_score", "B"),
                         preferred_channel="whatsapp" if language == "es" else "email",
                         language=language,
                         country_iso=country_iso,

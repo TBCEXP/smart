@@ -7,27 +7,22 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import get_session
 from app.services.auth import AuthService
 
-# 公开路径（无需登录）
+# 完全公开（无需登录）
 PUBLIC_PREFIXES = (
     "/api/health",
+    "/api/integrations/",
     "/api/auth/",
     "/api/webhooks/",
+    "/api/stream/",
     "/static/",
     "/s/",
 )
 
-# 获客面板页面只读浏览允许；写操作需登录
 PUBLIC_GET_PATHS = {"/", "/admin", "/portal"}
 
-PROTECTED_WRITE_PREFIXES = (
+# 仅保护敏感写操作：API Key 保存、确认入库、ERP 同步、发信
+PROTECTED_POST_PATHS = (
     "/api/config",
-    "/api/run",
-    "/api/schedules",
-    "/api/brainstorm/",
-    "/api/market/",
-    "/api/import/",
-    "/api/tradeshows/",
-    "/api/geo/",
     "/api/confirm/",
     "/api/regenerate/",
     "/api/bridge/",
@@ -36,32 +31,24 @@ PROTECTED_WRITE_PREFIXES = (
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
+    """
+    获客面板（Tab1-7）保持 PDF 原设计：无需登录即可跑批次。
+    仅保护 API Key 配置与销售确认类操作；生产环境建议 Nginx 层再加 IP 限制。
+    """
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
         if any(path.startswith(p) for p in PUBLIC_PREFIXES):
             return await call_next(request)
 
-        if request.method == "GET" and path in PUBLIC_GET_PATHS:
+        if request.method == "GET":
             return await call_next(request)
 
-        # GET 读接口：批次/结果/配置掩码 允许面板演示；生产可收紧
-        if request.method == "GET" and (
-            path.startswith("/api/batch")
-            or path.startswith("/api/batches")
-            or path == "/api/config"
-            or path.startswith("/api/stream/")
-            or path.startswith("/api/market/")
-            or path.startswith("/api/brainstorm/")
-            or path.startswith("/api/import/")
-            or path.startswith("/api/tradeshows")
-            or path.startswith("/api/geo/")
-        ):
+        if path in PUBLIC_GET_PATHS:
             return await call_next(request)
 
-        needs_auth = request.method != "GET" or any(
-            path.startswith(p) for p in PROTECTED_WRITE_PREFIXES
-        )
+        needs_auth = any(path.startswith(p) for p in PROTECTED_POST_PATHS)
         if not needs_auth:
             return await call_next(request)
 

@@ -27,13 +27,17 @@ industries:
       - /catalog
       - /wholesale
       - /about
+      - /contacto
     outreach_language: es
 
 brainstorm_system: |
   You are a B2B foreign trade strategist for kitchen and hotel supplies exporters.
   Given country, city, L3 category, and optional market intel, produce structured JSON only.
   Focus on importers, distributors, OEM buyers, and hospitality wholesalers.
-  Output must be actionable for automated lead generation pipelines.
+  Output JSON with keys: icp, keywords (es/en arrays), channel_plan, seeds, action_plan.
+  keywords.es must have 5-10 actionable Exa search phrases in Spanish.
+  seeds.similar_search_queries must use category:company prefix where appropriate.
+  Never return markdown or prose outside JSON.
 
 brainstorm_output_schema:
   icp:
@@ -92,9 +96,14 @@ exa_query_templates:
 outreach:
   hospitality_es:
     system: |
-      Write a personalized B2B cold email in Spanish for kitchen/hotel supplies.
-      Mention MOQ, lead time, NSF/EU food contact certifications, OEM capability.
-      Keep professional, concise, 150-220 words. Include 2 subject lines and A/B/C score.
+      You write B2B cold outreach for kitchen/hotel supplies exporters targeting Latin America.
+      Return JSON only with keys:
+        email_body (Spanish, 150-220 words, professional),
+        subject_lines (array of 2 Spanish subject lines),
+        lead_score (A/B/C based on website fit for wholesale/OEM),
+        whatsapp_intro (Spanish, max 280 chars, casual-professional).
+      Mention MOQ, lead time, NSF/EU food contact certification, OEM capability when relevant.
+      Reference something specific from the company website summary.
     whatsapp_template: |
       Hola {contact_name}, soy {sender_name} de {company}.
       Vimos que {company_signal}. Fabricamos {category_l3} con certificación alimentaria y OEM.
@@ -119,7 +128,8 @@ feishu_extended_fields:
 track_b_prompt: |
   Analyze scraped product catalog pages from a hospitality/kitchen anchor company.
   Summarize top L3 categories, price bands, materials, and differences vs US Choice/Winco benchmarks.
-  Return JSON with category_l3 rankings and sales_signal high/medium/low.
+  Return JSON with keys: top_l3 (array), l3_heat (object), product_examples (array),
+  trend_summary (string), sales_signal (high/medium/low).
 
 track_c_hs_defaults:
   cookware-commercial: ["732393", "73239390"]
