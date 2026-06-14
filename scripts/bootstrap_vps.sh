@@ -35,11 +35,17 @@ echo "==> 运行 install.sh"
 bash scripts/install.sh
 
 echo ""
+echo "==> 运行 preflight（系统体检）"
+bash scripts/preflight.sh || true
+
+echo ""
 echo "=== Bootstrap 完成 ==="
 echo ""
+PUBLIC_IP=$(curl -sf ifconfig.me 2>/dev/null || echo 'VPS_IP')
 echo "后续步骤:"
-echo "  1. 浏览器打开 http://$(curl -sf ifconfig.me 2>/dev/null || echo 'VPS_IP'):8000"
-echo "  2. Tab2 配置 API Key → 检测连通性"
-echo "  3. GitHub Secrets: VPS_HOST / VPS_USER / VPS_SSH_KEY（自动部署）"
-echo "  4. sudo bash scripts/setup_https.sh crm.yourdomain.com"
-echo "  5. bash scripts/pilot_live.sh http://127.0.0.1:8000"
+echo "  1. 浏览器打开 http://${PUBLIC_IP}:8000"
+echo "  2. /admin 登录 → Tab2 配置 API Key"
+echo "  3. bash scripts/prod_onboard.sh http://127.0.0.1:8000"
+echo "  4. GitHub Secrets: VPS_HOST / VPS_USER / VPS_SSH_KEY（自动部署）"
+echo "  5. sudo bash scripts/setup_https.sh crm.yourdomain.com"
+echo "  6. bash scripts/prod_onboard.sh https://crm.yourdomain.com --full"

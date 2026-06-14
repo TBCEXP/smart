@@ -251,6 +251,58 @@
           }
         }
       ]
+    },
+    {
+      "name": "07 Phase 1.5 Dashboard",
+      "item": [
+        {
+          "name": "Stats Overview",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/stats/overview"
+          }
+        },
+        {
+          "name": "Outreach Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/outreach/stats"
+          }
+        },
+        {
+          "name": "Log WhatsApp Outreach",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lead_id\":\"{{lead_id}}\",\"channel\":\"whatsapp\",\"country_iso\":\"MX\",\"message_preview\":\"Hola, somos fabricante de moldes.\"}"
+            },
+            "url": "{{base_url}}/api/outreach/log"
+          }
+        },
+        {
+          "name": "List Outreach Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/outreach/logs?channel=whatsapp"
+          }
+        },
+        {
+          "name": "KB Index Lead",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/kb/index/{{lead_id}}"
+          }
+        },
+        {
+          "name": "KB Search CO Bakeware",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/kb/search?q=bakeware%20MX&limit=5"
+          }
+        }
+      ]
     }
   ]
 }

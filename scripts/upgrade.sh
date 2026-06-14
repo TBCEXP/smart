@@ -49,6 +49,12 @@ sleep 5
 if curl -sf http://127.0.0.1:8000/api/health; then
   echo ""
   echo "✓ 升级成功 — 版本 $VERSION"
+  echo "==> 快速验收"
+  if bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick; then
+    echo "✓ phase15_verify --quick 通过"
+  else
+    echo "⚠ phase15_verify 有未达标项（Mock 模式可忽略）"
+  fi
 else
   echo "✗ 健康检查失败，请执行: docker compose logs smart-crm --tail 50"
   exit 1

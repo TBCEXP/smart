@@ -78,7 +78,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | HTTPS 配置 | `sudo bash scripts/setup_https.sh crm.domain.com` |
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |
-| 手动验收清单 | [docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md) |
+| 生产上线引导 | [docs/PRODUCTION_ONBOARDING.md](docs/PRODUCTION_ONBOARDING.md) |
+| 生产一键引导 | `bash scripts/prod_onboard.sh [URL]` 或 `--full` |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
 | API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |
 

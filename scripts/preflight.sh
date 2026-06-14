@@ -48,7 +48,10 @@ done
 # 4. 配置与密钥
 echo ""
 echo "[4] API 配置（data/config.json）"
-DATA_DIR="${DATA_DIR:-smart-crm/data}"
+DATA_DIR="${DATA_DIR:-/var/lib/smart-crm/smart-crm-data}"
+if [ ! -f "$DATA_DIR/config.json" ] && [ -f smart-crm/data/config.json ]; then
+  DATA_DIR="smart-crm/data"
+fi
 if [ -f "$DATA_DIR/config.json" ]; then
   ok "config.json 存在"
   for key in exa_api_key firecrawl_api_key openai_api_key feishu_app_id; do
