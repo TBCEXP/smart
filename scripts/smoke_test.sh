@@ -169,6 +169,18 @@ else
   fail "POST /api/schedules/run-due"
 fi
 
+# 15. Integrations probe + readiness
+if curl -sf -X POST "$BASE/api/integrations/probe" | grep -q 'probes'; then
+  ok "POST /api/integrations/probe"
+else
+  fail "POST /api/integrations/probe"
+fi
+if curl -sf "$BASE/api/system/readiness" | grep -q 'checklist'; then
+  ok "GET /api/system/readiness"
+else
+  fail "GET /api/system/readiness"
+fi
+
 echo ""
 echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="
 [ "$FAIL" -eq 0 ]

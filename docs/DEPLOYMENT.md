@@ -177,5 +177,8 @@ sudo tar xzf /var/lib/smart-crm/backups/pre-upgrade-XXXX.tar.gz -C /
 - [ ] GitHub Secrets 已配置（VPS_HOST / VPS_USER / VPS_SSH_KEY）
 - [ ] push 到 main 后 Actions 显示绿色 ✓
 - [ ] `https://你的域名/api/health` 返回 `{"status":"ok"}`
+- [ ] `bash scripts/vps_verify.sh https://你的域名` 验收通过
+- [ ] Tab2 配置 API Key 后 `POST /api/integrations/probe` 四项 live 通过
+- [ ] `bash scripts/pilot_live.sh https://你的域名` 跑通 MX 试点 + 飞书写入
 
 完成以上后，你以后在 Cursor 改软件 → **Push 一下就能更新网页**。

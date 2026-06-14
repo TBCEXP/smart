@@ -56,6 +56,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'history') loadBatches();
     if (btn.dataset.tab === 'brainstorm') loadBrainstormSessions();
     if (btn.dataset.tab === 'content') loadContentHistory();
+    if (btn.dataset.tab === 'config') { loadConfig(); loadIntegrationStatus(); }
   });
 });
 
@@ -241,6 +242,36 @@ const CONFIG_FIELDS = [
   ['scheduler_enabled', '定时任务 (true/false)'],
 ];
 
+async function loadIntegrationStatus() {
+  const el = document.getElementById('config-integ-status');
+  if (!el) return;
+  try {
+    const st = await api('/integrations/status');
+    const rows = (st.services || [])
+      .map(s => `${s.label}: ${s.configured ? '✓ live' : '○ mock'}`)
+      .join(' · ');
+    el.innerHTML = `<span class="${st.production_ready ? 'text-emerald-400' : 'text-amber-400'}">
+      已配置 ${st.configured_count}/${st.total}
+      ${st.production_ready ? ' — 可跑真实试点' : ' — 请补齐 Exa/Firecrawl/OpenAI/飞书'}
+    </span><br/><span class="text-xs">${rows}</span>`;
+  } catch {
+    el.textContent = '集成状态加载失败';
+  }
+}
+
+document.getElementById('btn-probe-apis')?.addEventListener('click', async () => {
+  const out = document.getElementById('config-probe-result');
+  out.classList.remove('hidden');
+  out.textContent = '探测中…';
+  try {
+    const res = await api('/integrations/probe', { method: 'POST' });
+    out.textContent = JSON.stringify(res, null, 2);
+    loadIntegrationStatus();
+  } catch (e) {
+    out.textContent = String(e);
+  }
+});
+
 async function loadConfig() {
   const cfg = await api('/config');
   const form = document.getElementById('config-form');
@@ -262,6 +293,7 @@ document.getElementById('btn-save-config').onclick = async () => {
   data.extended_feishu_fields = true;
   await api('/config', { method: 'POST', body: data });
   alert('配置已保存');
+  loadIntegrationStatus();
 };
 
 // Run batch
@@ -612,6 +644,7 @@ async function init() {
     document.getElementById('health-badge').textContent = '离线';
   }
   await loadConfig();
+  loadIntegrationStatus();
   geoConfig = await api('/geo/config');
   await api('/geo/seed', { method: 'POST' });
 }

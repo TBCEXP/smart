@@ -47,6 +47,7 @@ from app.services.brainstorm import BrainstormService
 from app.services.config_store import ConfigStore
 from app.services.content_studio import CONTENT_TYPES, ContentStudioService
 from app.services.data_loader import load_batch_file, load_expansion_tiers, load_geo_config
+from app.services.integrations_probe import IntegrationsProbeService
 from app.services.geo_track import GeoSchedulerService, TrackCService, TradeShowService
 from app.services.knowledge_base import KnowledgeBaseService
 from app.services.latam_pilot import LatamPilotService
@@ -64,6 +65,7 @@ auth_svc = AuthService()
 kb_svc = KnowledgeBaseService()
 content_svc = ContentStudioService()
 pilot_svc = LatamPilotService()
+probe_svc = IntegrationsProbeService()
 
 # In-memory SSE queues and scheduler state
 _sse_queues: dict[str, asyncio.Queue] = {}
@@ -108,6 +110,40 @@ async def integrations_status():
         "production_ready": configured >= 4,
         "note": "production_ready 需要至少 Exa+Firecrawl+OpenAI+飞书",
         "services": services,
+    }
+
+
+@router.post("/integrations/probe")
+async def integrations_probe():
+    """对已配置的 API Key 做轻量连通性探测。"""
+    return await probe_svc.probe_all()
+
+
+@router.get("/system/readiness")
+async def system_readiness(db: AsyncSession = Depends(get_db)):
+    """第零期 + 1.5 期合并就绪检查（部署后一键验收）。"""
+    cfg = config_store.load()
+    integ = await integrations_status()
+    mx = await pilot_svc.status(db, "MX")
+    due = await geo_scheduler.get_due_schedules(db)
+    return {
+        "health": "ok",
+        "integrations": integ,
+        "production_ready": integ.get("production_ready", False),
+        "ingest_mode": cfg.get("ingest_mode", "review"),
+        "scheduler_enabled": cfg.get("scheduler_enabled", False),
+        "mx_pilot": {
+            "intel_reports": mx["totals"]["intel_reports"],
+            "active_schedules": mx["totals"]["active_schedules"],
+            "latest_run": mx.get("latest_run"),
+        },
+        "due_schedules": len(due),
+        "checklist": {
+            "api_keys_configured": integ.get("configured_count", 0) >= 4,
+            "pilot_has_run": mx.get("latest_run") is not None,
+            "schedules_queued": mx["totals"]["active_schedules"] > 0,
+            "ready_for_live_pilot": integ.get("production_ready", False),
+        },
     }
 
 

@@ -68,8 +68,13 @@
     <section id="tab-config" class="tab-panel hidden">
       <div class="card max-w-3xl">
         <h2 class="text-lg font-semibold mb-4">API Key 与系统配置</h2>
+        <div id="config-integ-status" class="text-sm text-slate-400 mb-4 p-3 bg-slate-900 rounded">加载集成状态…</div>
         <form id="config-form" class="grid md:grid-cols-2 gap-3"></form>
-        <button id="btn-save-config" class="btn-primary mt-4">保存配置</button>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button id="btn-save-config" class="btn-primary">保存配置</button>
+          <button id="btn-probe-apis" class="btn-secondary">检测 API 连通性</button>
+        </div>
+        <pre id="config-probe-result" class="mt-3 text-xs bg-slate-900 rounded p-3 overflow-auto max-h-48 hidden"></pre>
       </div>
     </section>
 

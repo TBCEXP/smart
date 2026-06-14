@@ -64,6 +64,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 |------|-----------|
 | 复制提示词给 Cursor | [docs/CURSOR_PROMPTS.md](docs/CURSOR_PROMPTS.md) |
 | 改完自动验收 | `bash scripts/smoke_test.sh` |
+| VPS 部署验收 | `bash scripts/vps_verify.sh [URL]` |
+| 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` |
 | 手动验收清单 | [docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
 | API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |
