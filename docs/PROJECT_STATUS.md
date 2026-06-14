@@ -1,6 +1,6 @@
 # SMART CRM — 项目状态（交接）
 
-> 最后更新：**路线图 Phase 0–5 完成**（v2.0.0），待 VPS + API Key 生产验收。
+> 最后更新：**v2.1.0 发布**（Phase 0–5 + 增量），待 VPS + API Key 生产验收。
 
 ## 已完成
 
@@ -56,7 +56,7 @@ sudo bash scripts/setup_backup_cron.sh
 
 | 端点 | 说明 |
 |------|------|
-| `GET /api/health` | 版本 `2.0.0`、build SHA、数据库模式 |
+| `GET /api/health` | 版本 `2.1.0`、build SHA、数据库模式 |
 | `GET /api/system/readiness` | 版本、数据库模式 + Phase 1/2/3 checklist |
 | `GET /api/system/handoff-report` | Phase 0–5 交接 Markdown |
 | `PATCH /api/orders/{id}` | 确认/取消订单（需登录） |

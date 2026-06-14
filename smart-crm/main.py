@@ -108,7 +108,7 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(title="SMART CRM", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="SMART CRM", version="2.1.0", lifespan=lifespan)
 app.add_middleware(AuthMiddleware)
 app.include_router(api_router, prefix="/api")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

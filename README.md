@@ -71,7 +71,7 @@ bash scripts/final_acceptance.sh http://127.0.0.1:8000
 |-------------|------|
 | [docs/PRODUCTION_READY.md](docs/PRODUCTION_READY.md) | VPS + API Key 上线清单 |
 | `bash scripts/final_acceptance.sh` | pytest + smoke + phase1–5 + pre_merge |
-| 应用版本 | **2.0.0**（路线图 MVP 完成） |
+| 应用版本 | **2.1.0** |
 
 ## Phase 1.5 西语试点
 
@@ -150,7 +150,8 @@ cd /opt/smart-crm && sudo bash scripts/upgrade.sh
 | 快速状态 | `bash scripts/status.sh [URL]` |
 | 真实 API 试点 | `bash scripts/pilot_live.sh [URL]` 或 `--co` |
 | 生产上线引导 | [docs/PRODUCTION_ONBOARDING.md](docs/PRODUCTION_ONBOARDING.md) |
-| 生产一键引导 | `bash scripts/prod_onboard.sh [URL]` 或 `--full` |
+| 发布完整性检查 | `bash scripts/release_check.sh [URL]` |
+| VPS 上线引导 | [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) |
 | Postman API 测试 | 导入 [postman/SMART_CRM.postman_collection.json](postman/SMART_CRM.postman_collection.json) |
 | API 集成状态 | `GET /api/integrations/status`（是否 Mock 模式） |
 

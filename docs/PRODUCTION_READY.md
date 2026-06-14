@@ -8,7 +8,7 @@
 ```bash
 cd smart-crm && USE_SQLITE=1 uvicorn main:app --port 8000 &
 bash scripts/final_acceptance.sh http://127.0.0.1:8000
-bash scripts/erp_verify.sh http://127.0.0.1:8000
+bash scripts/release_check.sh http://127.0.0.1:8000
 bash scripts/prod_readiness_check.sh http://127.0.0.1:8000
 ```
 
@@ -19,7 +19,7 @@ bash scripts/prod_readiness_check.sh http://127.0.0.1:8000
 | pytest | 39/39 |
 | smoke | 47+ |
 | phase1–5 verify | 全部通过 |
-| pre_merge_verify | 9/9 |
+| pre_merge_verify | 10/10 |
 
 ## VPS 首次部署
 
@@ -61,4 +61,4 @@ bash scripts/acceptance_report.sh https://crm.domain.com report.md
 
 ## API 版本
 
-应用版本 **2.0.0** — 标志路线图 Phase 0–5 MVP 完成。Phase 3 已含 Tus 断点续传；Phase 4 已含 OCR + ZBar（Docker 默认启用）。后续扩展（ERP 深度对接等）为增量迭代，不阻塞上线。
+应用版本 **2.1.0** — Phase 0–5 + OCR/ZBar/Tus/ERP 字段映射。后续待 TBCEXP OpenAPI 微调。

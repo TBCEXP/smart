@@ -29,7 +29,7 @@ if [ ! -f .env ] && [ -f .env.example ]; then
 fi
 
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
-export VERSION="${VERSION:-2.0.0}"
+export VERSION="${VERSION:-2.1.0}"
 echo "==> 构建并启动容器"
 docker compose build smart-crm
 docker compose up -d

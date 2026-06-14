@@ -37,7 +37,7 @@ fi
 # 3. 重建镜像
 echo "==> [3/5] docker compose build smart-crm"
 export IMAGE_TAG="${IMAGE_TAG:-$GIT_SHA}"
-export VERSION="${VERSION:-2.0.0}"
+export VERSION="${VERSION:-2.1.0}"
 export BUILD_SHA="${BUILD_SHA:-$GIT_SHA}"
 docker compose build smart-crm
 

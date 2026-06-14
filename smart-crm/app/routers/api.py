@@ -161,7 +161,7 @@ async def health():
     payload = {
         "status": "ok",
         "time": datetime.utcnow().isoformat(),
-        "version": os.getenv("VERSION", "2.0.0"),
+        "version": os.getenv("VERSION", "2.1.0"),
         "db": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
     }
     build = os.getenv("BUILD_SHA", "").strip()
@@ -358,7 +358,7 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
     lines = [
         "# SMART CRM 交接报告",
         "",
-        "> 路线图 Phase 0–5 代码验收完成（v2.0.0）",
+        "> 路线图 Phase 0–5 代码验收完成（v2.1.0）",
         f"- 生成时间: {datetime.utcnow().isoformat()}Z",
         f"- production_ready: {ready.get('production_ready')}",
         f"- API Keys: {integ.get('configured_count', 0)}/{integ.get('total', 0)}",

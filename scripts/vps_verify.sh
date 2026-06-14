@@ -24,10 +24,10 @@ else
   echo "请先: cd /opt/smart-crm && docker compose up -d"
   exit 1
 fi
-if curl -sf "$BASE/api/health" | grep -q '"version":"2.0'; then
-  ok "GET /api/health (v2.0.x)"
+if curl -sf "$BASE/api/health" | grep -qE '"version":"2\.[01]'; then
+  ok "GET /api/health (v2.x)"
 else
-  warn "health 版本非 v2.0.x — 检查 VERSION 环境变量"
+  warn "health 版本非 v2.x — 检查 VERSION 环境变量"
 fi
 
 echo ""

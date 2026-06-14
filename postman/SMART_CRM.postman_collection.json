@@ -627,6 +627,68 @@
           }
         }
       ]
+    },
+    {
+      "name": "13 ERP Bridge",
+      "item": [
+        {
+          "name": "Field Map",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/bridge/tbcexp/field-map"
+          }
+        },
+        {
+          "name": "List ERP Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/bridge/tbcexp/orders?limit=10"
+          }
+        },
+        {
+          "name": "Sync ERP Orders",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/bridge/tbcexp/orders/sync?limit=10"
+          }
+        },
+        {
+          "name": "Push Lead to ERP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-Session-Token", "value": "{{session_token}}" }],
+            "url": "{{base_url}}/api/bridge/tbcexp/{{lead_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 v2.1 Incremental",
+      "item": [
+        {
+          "name": "Tus Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/files/tus/status"
+          }
+        },
+        {
+          "name": "OCR Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/prepress/ocr/status"
+          }
+        },
+        {
+          "name": "Barcode Scan Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/prepress/barcode/scan/status"
+          }
+        }
+      ]
     }
   ]
 }
