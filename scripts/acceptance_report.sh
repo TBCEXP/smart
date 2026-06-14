@@ -32,6 +32,9 @@ c = d.get('checklist', {})
 b = d.get('business', {})
 print('版本:', d.get('integrations', {}).get('note', 'ok'))
 print('production_ready:', d.get('production_ready'))
+blockers = d.get('production_blockers', {})
+print('blocking_count:', blockers.get('blocking_count'))
+print('live_ready:', blockers.get('live_ready'))
 print('checklist:', json.dumps(c, ensure_ascii=False))
 for k in ('phase1','phase2','phase3','phase4','phase5'):
     if k in b:
@@ -47,4 +50,4 @@ echo ""
 head -12 "$HANDOFF"
 echo "..."
 echo ""
-echo "终验收: bash scripts/final_acceptance.sh $BASE"
+echo "终验收: bash scripts/go_live.sh $BASE"

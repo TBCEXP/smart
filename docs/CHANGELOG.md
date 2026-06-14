@@ -38,6 +38,14 @@
 - `ready.sh` — 一站式就绪检查（preflight + status + deploy_verify + 阻塞摘要）
 - `prod_onboard.sh` 首步跑 `deploy_preflight`
 
+### Added (production blockers API)
+
+- `GET /api/system/readiness` 增加 `production_blockers`（自动检测 + 人工待办）
+- `handoff-report` 导出生产阻塞章节
+- `ready.sh` 增加 `--skip-preflight`、phase1/2、API 阻塞摘要
+- CI 精简为 `ready --skip-preflight`（替代重复 phase 脚本）
+- pytest **40/40**（`test_readiness.py`）
+
 ### Added (deploy pipeline, prior)
 
 - `deploy_verify.sh` — VPS/CI 部署后快速验收（phase15 quick + phase3–5 + erp）

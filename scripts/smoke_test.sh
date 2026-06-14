@@ -245,10 +245,10 @@ if curl -sf -X POST "$BASE/api/integrations/probe" | grep -q 'probes'; then
 else
   fail "POST /api/integrations/probe"
 fi
-if curl -sf "$BASE/api/system/readiness" | grep -q 'phase3_files_seeded'; then
-  ok "GET /api/system/readiness (phase3 checklist)"
+if curl -sf "$BASE/api/system/readiness" | grep -q 'production_blockers'; then
+  ok "GET /api/system/readiness (production_blockers)"
 else
-  fail "GET /api/system/readiness (phase3 checklist)"
+  fail "GET /api/system/readiness (production_blockers)"
 fi
 if curl -sf "$BASE/api/files/transfers" | grep -q 'download_url'; then
   ok "GET /api/files/transfers"

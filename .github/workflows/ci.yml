@@ -42,32 +42,11 @@ jobs:
       - name: Smoke test
         run: bash scripts/smoke_test.sh http://127.0.0.1:8000
 
-      - name: Phase 1.5 quick verify
-        run: bash scripts/phase15_verify.sh http://127.0.0.1:8000 --quick
-
-      - name: Phase 1 verify
-        run: bash scripts/phase1_verify.sh http://127.0.0.1:8000
-
-      - name: Phase 2 verify
-        run: bash scripts/phase2_verify.sh http://127.0.0.1:8000
-
-      - name: Phase 3 verify
-        run: bash scripts/phase3_verify.sh http://127.0.0.1:8000
-
-      - name: Phase 4 verify
-        run: bash scripts/phase4_verify.sh http://127.0.0.1:8000
-
-      - name: Phase 5 verify
-        run: bash scripts/phase5_verify.sh http://127.0.0.1:8000
-
-      - name: ERP bridge verify
-        run: bash scripts/erp_verify.sh http://127.0.0.1:8000
+      - name: Ready check (runtime)
+        run: bash scripts/ready.sh http://127.0.0.1:8000 --skip-preflight
 
       - name: Release check (skip pytest)
         run: bash scripts/release_check.sh http://127.0.0.1:8000 --skip-pytest
-
-      - name: Deploy verify
-        run: bash scripts/deploy_verify.sh http://127.0.0.1:8000
 
   postgres-smoke:
     runs-on: ubuntu-latest

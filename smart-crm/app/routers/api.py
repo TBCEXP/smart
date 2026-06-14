@@ -298,6 +298,65 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
     }
 
 
+def _production_blockers(integ: dict[str, Any], biz: dict[str, Any]) -> dict[str, Any]:
+    """可自动检测的生产阻塞项 + 人工待办索引。"""
+    base = settings.app_base_url.rstrip("/")
+    https_ok = base.startswith("https://") and "localhost" not in base and "127.0.0.1" not in base
+    api_ready = bool(integ.get("production_ready"))
+    r2_ok = bool(biz.get("phase2", {}).get("r2_configured"))
+    erp_ok = bool(biz.get("phase1", {}).get("erp_configured"))
+
+    detected = [
+        {"id": "code", "done": True, "blocking": False, "label": "代码验收", "hint": "bash scripts/go_live.sh"},
+        {
+            "id": "api_keys",
+            "done": api_ready,
+            "blocking": not api_ready,
+            "label": "API Key ≥4",
+            "hint": "Tab2 配置 Exa/Firecrawl/OpenAI/飞书",
+        },
+        {
+            "id": "https",
+            "done": https_ok,
+            "blocking": not https_ok,
+            "label": "HTTPS 域名",
+            "hint": f"APP_BASE_URL={base}",
+        },
+        {
+            "id": "r2",
+            "done": r2_ok,
+            "blocking": False,
+            "label": "Cloudflare R2",
+            "hint": "Tab2 配置 R2（推荐）",
+        },
+        {
+            "id": "erp",
+            "done": erp_ok,
+            "blocking": False,
+            "label": "TBCEXP ERP",
+            "hint": "Tab2 配置 ERP URL（可选）",
+        },
+    ]
+    manual = [
+        {"id": "vps", "label": "RackNerd VPS", "hint": "sudo bash scripts/bootstrap_vps.sh"},
+        {"id": "github_secrets", "label": "GitHub Secrets", "hint": "VPS_HOST / VPS_USER / VPS_SSH_KEY"},
+        {"id": "backup_cron", "label": "每日备份", "hint": "sudo bash scripts/setup_backup_cron.sh"},
+    ]
+    blocking = [d for d in detected if d["blocking"]] + manual[:2]
+    return {
+        "code_complete": True,
+        "live_ready": api_ready and https_ok,
+        "blocking_count": len(blocking),
+        "detected": detected,
+        "manual": manual,
+        "next_commands": [
+            "bash scripts/ready.sh",
+            "bash scripts/onboard_checklist.sh",
+            "bash scripts/go_live.sh",
+        ],
+    }
+
+
 @router.get("/system/readiness")
 async def system_readiness(db: AsyncSession = Depends(get_db)):
     """第零期 + 1.5 期 + Phase 1/2 合并就绪检查（部署后一键验收）。"""
@@ -345,6 +404,7 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "db_mode": "postgresql" if "postgresql" in ASYNC_DB_URL else "sqlite",
             "search_engine": "pgvector" if "postgresql" in ASYNC_DB_URL else "cosine_json",
         },
+        "production_blockers": _production_blockers(integ, biz),
     }
 
 
@@ -402,17 +462,30 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         f"- 实拍检测任务: {biz.get('phase5', {}).get('production_inspections', 0)}",
         f"- OpenCV 对齐比对: {'✓' if biz.get('phase5', {}).get('opencv_align') else '○'}",
         "",
+        "## 生产阻塞",
+        "",
+    ]
+    blockers = ready.get("production_blockers", {})
+    for item in blockers.get("detected", []):
+        mark = "✓" if item.get("done") else ("✗" if item.get("blocking") else "○")
+        lines.append(f"- {mark} {item.get('label')}: {item.get('hint', '')}")
+    lines.append("")
+    lines.append("### 人工待办")
+    lines.append("")
+    for item in blockers.get("manual", []):
+        lines.append(f"- [ ] {item.get('label')}: {item.get('hint', '')}")
+    lines.extend([
+        "",
         "## 验收命令",
         "",
         "```bash",
-        "bash scripts/run_all_tests.sh http://YOUR_HOST:8000",
-        "bash scripts/phase3_verify.sh http://YOUR_HOST:8000",
-        "bash scripts/phase4_verify.sh http://YOUR_HOST:8000",
-        "bash scripts/phase5_verify.sh http://YOUR_HOST:8000",
-        "bash scripts/phase2_live.sh http://YOUR_HOST:8000",
+        "bash scripts/ready.sh http://YOUR_HOST:8000",
+        "bash scripts/go_live.sh http://YOUR_HOST:8000",
+        "bash scripts/onboard_checklist.sh http://YOUR_HOST:8000",
         "bash scripts/prod_onboard.sh http://YOUR_HOST:8000 --full",
+        "bash scripts/acceptance_report.sh http://YOUR_HOST:8000",
         "```",
-    ]
+    ])
     body = "\n".join(lines)
     return PlainTextResponse(
         body,

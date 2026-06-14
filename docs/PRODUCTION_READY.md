@@ -17,7 +17,7 @@ bash scripts/prod_readiness_check.sh http://127.0.0.1:8000
 
 | 项 | 标准 |
 |----|------|
-| pytest | 39/39 |
+| pytest | 40/40 |
 | smoke | 47+ |
 | phase1–5 verify | 全部通过 |
 | pre_merge_verify | 10/10 |

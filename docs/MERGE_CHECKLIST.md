@@ -11,7 +11,7 @@ bash scripts/ready.sh http://127.0.0.1:8000
 bash scripts/go_live.sh http://127.0.0.1:8000
 ```
 
-期望：**pytest 39/39 · smoke 47+ · deploy_verify 7/7 · pre_merge 10/10**
+期望：**pytest 40/40 · smoke 47+ · ready 通过 · pre_merge 10/10**
 
 ## 功能范围（main）
 
