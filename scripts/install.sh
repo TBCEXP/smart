@@ -63,8 +63,9 @@ fi
 
 echo ""
 echo "安装完成:"
-echo "  - 获客面板: http://127.0.0.1:8000  (Nginx 反代: http://服务器IP)"
-echo "  - 员工登录: http://127.0.0.1:8000/admin"
+echo "  - 本机验收: http://127.0.0.1:8000/api/health"
+echo "  - 外网面板: http://服务器公网IP/  (Nginx :80 反代，:8000 仅本机)"
+echo "  - 员工登录: http://服务器公网IP/admin"
 echo "  - 数据目录: $DATA_DIR/smart-crm-data"
 echo "  - 下一步:"
 echo "      1. Tab2 配置 Exa / Firecrawl / OpenAI / 飞书 API Key"
