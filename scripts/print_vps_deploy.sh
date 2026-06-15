@@ -25,6 +25,7 @@ cat <<EOF
 curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/bootstrap_vps.sh | sudo bash
 # 或已克隆:
 # cd /opt/smart-crm && sudo bash scripts/upgrade.sh
+cd /opt/smart-crm
 curl -sf http://127.0.0.1:8000/api/health
 bash scripts/production_start.sh http://127.0.0.1:8000 ${IP}
 EOF
