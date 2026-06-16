@@ -40,11 +40,25 @@
     </div>
 
     <p id="login-msg" class="text-sm mt-4 hidden" role="status"></p>
-    <a href="/" class="text-sm text-emerald-400 mt-4 inline-block">← 返回获客面板</a>
+    <p class="text-xs text-slate-500 mt-4">登录后可访问获客面板（Tab1–9）与后台功能</p>
   </div>
   <script>
     const portal = location.pathname.includes('portal') ? 'portal' : 'admin';
     document.getElementById('login-portal').value = portal;
+
+    function saveSession(token) {
+      localStorage.setItem('session_token', token);
+      document.cookie = `session_token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 14}; SameSite=Lax`;
+    }
+
+    function afterLogin(p) {
+      const next = new URLSearchParams(location.search).get('next');
+      if (next && next.startsWith('/')) {
+        location.href = next;
+        return;
+      }
+      location.href = p === 'admin' ? '/' : '/portal/dashboard';
+    }
 
     function friendlyError(detail) {
       if (!detail) return '请求失败，请稍后重试';
@@ -122,8 +136,8 @@
       }
       const res = await post('/api/auth/otp/verify', { email, code, portal: p });
       if (res.session_token) {
-        localStorage.setItem('session_token', res.session_token);
-        location.href = p === 'admin' ? '/admin/dashboard' : '/portal/dashboard';
+        saveSession(res.session_token);
+        afterLogin(p);
         return;
       }
       showMsg(friendlyError(res.detail), true);

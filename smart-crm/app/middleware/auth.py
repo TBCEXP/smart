@@ -1,88 +1,99 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.database import get_session
 from app.services.auth import AuthService
 
-# 完全公开（无需登录）
-PUBLIC_PREFIXES = (
+# 完全公开 API（无需登录）
+PUBLIC_API_PREFIXES = (
     "/api/health",
-    "/api/integrations/",
     "/api/auth/",
     "/api/webhooks/",
-    "/api/stream/",
-    "/static/",
-    "/s/",
+    "/api/share/",
 )
 
-PUBLIC_GET_PATHS = {
-    "/",
+# 运维探测用，不暴露业务数据
+PUBLIC_API_EXACT = {
+    "/api/integrations/status",
+}
+
+PUBLIC_PAGE_PATHS = {
     "/admin",
-    "/admin/leads",
-    "/admin/dashboard",
     "/portal",
-    "/portal/dashboard",
+    "/auth/callback",
     "/docs/feishu-fields",
 }
 
-# 仅保护敏感写操作：API Key 保存、确认入库、ERP 同步、发信
-PROTECTED_POST_PATHS = (
-    "/api/config",
-    "/api/confirm/",
-    "/api/regenerate/",
-    "/api/bridge/",
-    "/api/send-email",
-    "/api/integrations/feishu/test-write",
-    "/api/factories",
-    "/api/orders",
-    "/api/orders/from-lead/",
-    "/api/share/links",
-    "/api/catalog/documents",
-    "/api/catalog/documents/",
-)
+# 需登录才能访问的页面（未登录重定向到登录页）
+PROTECTED_PAGE_PATHS = {
+    "/",
+    "/admin/leads",
+    "/admin/dashboard",
+    "/portal/dashboard",
+}
 
-PROTECTED_PATCH_PREFIXES = (
-    "/api/orders/",
-    "/api/catalog/documents/",
-)
+
+def _extract_token(request: Request) -> str | None:
+    token = request.headers.get("X-Session-Token") or request.cookies.get("session_token")
+    if not token and request.url.path.startswith("/api/stream/"):
+        token = request.query_params.get("token")
+    return token or None
+
+
+def _login_redirect(request: Request) -> RedirectResponse:
+    path = request.url.path
+    portal = "portal" if path.startswith("/portal") else "admin"
+    next_path = quote(path, safe="/")
+    return RedirectResponse(f"/{portal}?next={next_path}", status_code=302)
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
-    获客面板（Tab1-7）保持 PDF 原设计：无需登录即可跑批次。
-    仅保护 API Key 配置与销售确认类操作；生产环境建议 Nginx 层再加 IP 限制。
+    获客面板与业务 API 均需登录；分享链接、健康检查、登录接口保持公开。
     """
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        if any(path.startswith(p) for p in PUBLIC_PREFIXES):
+        if path.startswith("/static/"):
             return await call_next(request)
 
-        if request.method == "GET":
+        if path.startswith("/s/"):
             return await call_next(request)
 
-        if path in PUBLIC_GET_PATHS:
+        if path in PUBLIC_PAGE_PATHS:
             return await call_next(request)
 
-        needs_auth = any(path.startswith(p) for p in PROTECTED_POST_PATHS)
-        if request.method == "PATCH":
-            needs_auth = needs_auth or any(path.startswith(p) for p in PROTECTED_PATCH_PREFIXES)
+        if any(path.startswith(p) for p in PUBLIC_API_PREFIXES):
+            return await call_next(request)
+
+        if path in PUBLIC_API_EXACT:
+            return await call_next(request)
+
+        needs_auth = path in PROTECTED_PAGE_PATHS or path.startswith("/api/")
         if not needs_auth:
             return await call_next(request)
 
-        token = request.headers.get("X-Session-Token") or request.cookies.get("session_token")
+        token = _extract_token(request)
         if not token:
-            return JSONResponse({"detail": "Authentication required"}, status_code=401)
+            if path.startswith("/api/"):
+                return JSONResponse({"detail": "Authentication required"}, status_code=401)
+            return _login_redirect(request)
 
         auth = AuthService()
         async with get_session() as db:
             session = await auth.get_session(db, token)
             if not session:
-                return JSONResponse({"detail": "Invalid or expired session"}, status_code=401)
+                if path.startswith("/api/"):
+                    return JSONResponse(
+                        {"detail": "Invalid or expired session"}, status_code=401
+                    )
+                return _login_redirect(request)
             request.state.user_email = session.email
             request.state.user_role = session.role
             request.state.user_portal = session.portal

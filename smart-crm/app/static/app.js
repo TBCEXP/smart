@@ -20,10 +20,48 @@ async function api(path, opts = {}) {
     opts.body = JSON.stringify(opts.body);
   }
   const res = await fetch(`${API}${path}`, { ...opts, headers });
+  if (res.status === 401) {
+    localStorage.removeItem('session_token');
+    document.cookie = 'session_token=; path=/; max-age=0';
+    location.href = `/admin?next=${encodeURIComponent(location.pathname)}`;
+    throw new Error('请先登录');
+  }
   if (!res.ok) throw new Error(await res.text());
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('json')) return res.json();
   return res.text();
+}
+
+function logout() {
+  localStorage.removeItem('session_token');
+  document.cookie = 'session_token=; path=/; max-age=0';
+  location.href = '/admin';
+}
+
+async function updateAuthHeader() {
+  const loginLink = document.getElementById('login-link');
+  const logoutBtn = document.getElementById('logout-btn');
+  const userBadge = document.getElementById('user-badge');
+  const token = localStorage.getItem('session_token');
+  if (!token) {
+    loginLink?.classList.remove('hidden');
+    logoutBtn?.classList.add('hidden');
+    userBadge?.classList.add('hidden');
+    return;
+  }
+  try {
+    const session = await api('/auth/session');
+    loginLink?.classList.add('hidden');
+    logoutBtn?.classList.remove('hidden');
+    if (userBadge) {
+      userBadge.textContent = session.email;
+      userBadge.classList.remove('hidden');
+    }
+  } catch {
+    loginLink?.classList.remove('hidden');
+    logoutBtn?.classList.add('hidden');
+    userBadge?.classList.add('hidden');
+  }
 }
 
 function log(msg) {
@@ -383,7 +421,11 @@ document.getElementById('btn-run').onclick = async () => {
   log(`启动批次: ${keyword}`);
   const { batch_id } = await api('/run', { method: 'POST', body });
   currentBatchId = batch_id;
-  const es = new EventSource(`${API}/stream/${batch_id}`);
+  const streamToken = localStorage.getItem('session_token') || '';
+  const streamUrl = streamToken
+    ? `${API}/stream/${batch_id}?token=${encodeURIComponent(streamToken)}`
+    : `${API}/stream/${batch_id}`;
+  const es = new EventSource(streamUrl);
   es.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data.event === 'lead') {
@@ -909,7 +951,24 @@ async function loadReadinessBadge() {
 }
 
 // Init
+async function requireAuth() {
+  const token = localStorage.getItem('session_token');
+  if (!token) {
+    location.href = `/admin?next=${encodeURIComponent(location.pathname)}`;
+    return false;
+  }
+  try {
+    await api('/auth/session');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function init() {
+  if (!(await requireAuth())) return;
+  document.getElementById('logout-btn')?.addEventListener('click', logout);
+  await updateAuthHeader();
   fillL3Selects();
   try {
     const health = await api('/health');
