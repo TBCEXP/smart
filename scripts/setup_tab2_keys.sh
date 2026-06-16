@@ -40,7 +40,7 @@ cat <<'EOF'
 | Key | 用途 |
 |-----|------|
 | Cloudflare R2 | 目录 PDF + 大文件（account_id/access_key/secret/bucket） |
-| Resend | 分享链接邮件 |
+| Resend | **登录验证码 / 分享链接邮件**（强烈建议） |
 | TBCEXP ERP | 订单同步（api_url + token，可选） |
 
 === 配置步骤 ===
