@@ -40,7 +40,7 @@ fi
 
 echo ""
 echo "[3] 路线图验收"
-for script in smoke_test.sh phase3_verify.sh phase4_verify.sh phase5_verify.sh erp_verify.sh; do
+for script in smoke_test.sh phase4_verify.sh phase5_verify.sh erp_verify.sh; do
   if bash "$(dirname "$0")/$script" "$BASE" >/dev/null 2>&1; then
     ok "$script"
   else
@@ -52,7 +52,7 @@ echo ""
 echo "[4] 生产阻塞清单（需用户提供）"
 block "RackNerd VPS IP + GitHub Secrets (VPS_HOST/USER/SSH_KEY)"
 block "域名 + DNS → HTTPS (setup_https.sh)"
-warn "Cloudflare R2 — 目录 PDF + 大文件实传"
+warn "Cloudflare R2 — 目录 PDF 直传（大文件中转已禁用）"
 warn "TBCEXP ERP URL/Token — 真实字段对齐（当前 Mock 可用）"
 warn "Resend API Key — 分享邮件实发（可选）"
 

@@ -12,7 +12,7 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
       <div>
         <h1 class="text-xl font-bold text-emerald-400">SMART CRM 员工后台</h1>
-        <p id="user-info" class="text-xs text-slate-400">Phase 1–5 · 线索 / 工厂 / 订单 / 目录 / 大文件 / 前稿 / 实拍</p>
+        <p id="user-info" class="text-xs text-slate-400">Phase 1–5 · 线索 / 工厂 / 订单 / 目录 / 前稿 / 实拍</p>
       </div>
       <div class="flex gap-2 text-sm">
         <a href="/" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">获客面板</a>
@@ -25,7 +25,6 @@
       <button data-panel="orders" class="tab-btn">订单</button>
       <button data-panel="catalog" class="tab-btn">品类树</button>
       <button data-panel="documents" class="tab-btn">工厂目录</button>
-      <button data-panel="files" class="tab-btn">大文件</button>
       <button data-panel="prepress" class="tab-btn">印刷前稿</button>
       <button data-panel="production" class="tab-btn">大货实拍</button>
     </nav>
@@ -161,28 +160,6 @@
       </div>
     </section>
 
-    <!-- File transfers (Phase 3) -->
-    <section id="panel-files" class="panel hidden">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="card">
-          <h2 class="font-semibold mb-3">大文件中转</h2>
-          <div id="files-list" class="space-y-3 text-sm"></div>
-        </div>
-        <div class="card">
-          <h2 class="font-semibold mb-3">新增大文件元数据</h2>
-          <div class="space-y-2">
-            <input id="file-title" class="input" placeholder="文件名称（如 包装设计稿 v2）" />
-            <input id="file-email" class="input" placeholder="客户邮箱" value="customer@example.com" />
-            <input id="file-size" type="number" class="input" placeholder="大小 MB" value="45" step="0.1" />
-            <input id="file-type" class="input" placeholder="MIME 类型" value="application/zip" />
-            <textarea id="file-notes" class="input" rows="2" placeholder="备注"></textarea>
-            <button id="btn-add-file" class="btn-primary w-full">保存元数据</button>
-          </div>
-          <p class="text-xs text-slate-500 mt-3">实体文件通过 R2 预签名上传；分享时可邮件通知客户。</p>
-        </div>
-      </div>
-    </section>
-
     <!-- Prepress (Phase 4) -->
     <section id="panel-prepress" class="panel hidden">
       <div class="grid md:grid-cols-2 gap-6">
@@ -262,7 +239,6 @@ Made in Ch1na</textarea>
         if (btn.dataset.panel === 'orders') loadOrders();
         if (btn.dataset.panel === 'catalog') loadCatalog();
         if (btn.dataset.panel === 'documents') loadDocuments();
-        if (btn.dataset.panel === 'files') loadFiles();
         if (btn.dataset.panel === 'prepress') loadPrepress();
         if (btn.dataset.panel === 'production') loadProduction();
       };
@@ -328,64 +304,6 @@ Made in Ch1na</textarea>
         if (r.notify) alert(r.notify.detail || r.notify.mode);
         prompt('目录分享链接', r.url);
       }
-    }
-
-    async function shareFile(fileId, defaultEmail) {
-      const email = prompt('客户邮箱（留空则不发通知）', defaultEmail || '');
-      const r = await api('/share/links', {
-        method: 'POST',
-        body: JSON.stringify({
-          resource_type: 'file',
-          resource_id: fileId,
-          customer_email: email || '',
-          ttl_days: 14,
-          notify_email: !!email,
-        }),
-      });
-      if (r.url) {
-        if (r.notify) alert(r.notify.detail || r.notify.mode);
-        prompt('大文件分享链接', r.url);
-      }
-    }
-
-    async function requestFileUploadUrl(fileId) {
-      const r = await api(`/files/transfers/${fileId}/upload-url`, {
-        method: 'POST',
-        body: JSON.stringify({ update_file_url: true }),
-      });
-      if (r.upload_url) {
-        prompt('R2 预签名上传 URL（curl PUT）', r.upload_url);
-      } else {
-        alert(r.detail || 'R2 未配置，请在 Tab2 填写凭据');
-      }
-    }
-
-    async function loadFiles() {
-      const list = await fetch('/api/files/transfers').then((r) => r.json());
-      const el = document.getElementById('files-list');
-      el.innerHTML = (list || []).map((f) => {
-        const storage = f.storage === 'r2_pending'
-          ? '<span class="text-amber-400">文件待 R2</span>'
-          : (f.download_url
-            ? `<a class="text-emerald-400" href="${f.download_url}" target="_blank">下载</a>`
-            : `<span class="text-slate-500">${f.storage || '-'}</span>`);
-        return `<div class="p-3 rounded bg-slate-900/50" data-fid="${f.id}">
-          <div class="flex justify-between gap-2"><strong>${f.title}</strong><span>${f.file_size_mb}MB</span></div>
-          <div class="text-slate-400">${f.content_type} · ${f.customer_email || '未指定客户'}</div>
-          <div class="text-xs text-slate-500 mt-1">${f.notes || ''}</div>
-          <div class="mt-2 flex flex-wrap gap-2 text-xs">
-            ${storage}
-            <button class="text-amber-400" data-file-upload="${f.id}">上传 URL</button>
-            <button class="text-emerald-400" data-file-share="${f.id}" data-email="${f.customer_email || ''}">分享+通知</button>
-          </div>
-        </div>`;
-      }).join('') || '<p class="text-slate-500">暂无大文件，请右侧新增</p>';
-      el.querySelectorAll('[data-file-upload]').forEach((btn) => {
-        btn.onclick = () => requestFileUploadUrl(btn.dataset.fileUpload);
-      });
-      el.querySelectorAll('[data-file-share]').forEach((btn) => {
-        btn.onclick = () => shareFile(btn.dataset.fileShare, btn.dataset.email);
-      });
     }
 
     async function runPrepress(reviewId) {
@@ -727,20 +645,6 @@ Made in Ch1na</textarea>
         }),
       });
       loadProduction();
-    };
-
-    document.getElementById('btn-add-file').onclick = async () => {
-      await api('/files/transfers', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: document.getElementById('file-title').value,
-          customer_email: document.getElementById('file-email').value,
-          file_size_mb: parseFloat(document.getElementById('file-size').value) || 0,
-          content_type: document.getElementById('file-type').value,
-          notes: document.getElementById('file-notes').value,
-        }),
-      });
-      loadFiles();
     };
 
     document.getElementById('btn-add-document').onclick = async () => {

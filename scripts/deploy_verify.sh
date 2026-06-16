@@ -31,7 +31,7 @@ if bash "$SCRIPT_DIR/phase15_verify.sh" "$BASE" --quick >/dev/null 2>&1; then
 else
   fail "phase15_verify --quick"
 fi
-for script in phase3_verify.sh phase4_verify.sh phase5_verify.sh erp_verify.sh; do
+for script in phase4_verify.sh phase5_verify.sh erp_verify.sh; do
   if bash "$SCRIPT_DIR/$script" "$BASE" >/dev/null 2>&1; then
     ok "$script"
   else

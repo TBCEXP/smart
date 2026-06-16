@@ -216,29 +216,6 @@ class ShareLinkRequest(BaseModel):
     notify_message: str = ""
 
 
-class FileTransferRequest(BaseModel):
-    title: str
-    customer_email: str = ""
-    order_id: str = ""
-    file_url: str = ""
-    file_size_mb: float = 0.0
-    content_type: str = "application/octet-stream"
-    notes: str = ""
-
-
-class FileUploadUrlRequest(BaseModel):
-    key: str = ""
-    content_type: str = "application/octet-stream"
-    ttl_seconds: int = 900
-    update_file_url: bool = True
-
-
-class TusCreateRequest(BaseModel):
-    upload_length: int | None = None
-    filename: str = "upload.bin"
-    content_type: str = "application/octet-stream"
-
-
 class CatalogUploadUrlRequest(BaseModel):
     key: str = ""
     content_type: str = "application/pdf"

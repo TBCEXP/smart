@@ -5,7 +5,6 @@ from typing import Any
 
 from app.config import settings
 from app.services.config_store import ConfigStore
-from app.services.tus_upload import TUS_SCHEME, parse_tus_url
 
 R2_SCHEME_RE = re.compile(r"^r2://([^/]+)/(.+)$")
 
@@ -77,24 +76,6 @@ class R2Client:
                 "download_url": file_url,
                 "mode": "public",
                 "detail": "直接 HTTPS 链接",
-            }
-
-        if file_url.startswith(TUS_SCHEME):
-            parsed = parse_tus_url(file_url)
-            if not parsed:
-                return {
-                    "storage": "tus_error",
-                    "download_url": None,
-                    "mode": "error",
-                    "detail": "无效的 tus:// URL",
-                }
-            upload_id, _ = parsed
-            base = settings.app_base_url.rstrip("/")
-            return {
-                "storage": "tus",
-                "download_url": f"{base}/api/files/tus/{upload_id}/content",
-                "mode": "local",
-                "detail": "断点续传本地文件",
             }
 
         return {

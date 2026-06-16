@@ -42,9 +42,6 @@ PROTECTED_POST_PATHS = (
     "/api/share/links",
     "/api/catalog/documents",
     "/api/catalog/documents/",
-    "/api/files/transfers",
-    "/api/files/transfers/",
-    "/api/files/tus/",
     "/api/prepress/reviews",
     "/api/prepress/reviews/",
     "/api/inspections/production",
@@ -71,9 +68,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method == "GET":
-            return await call_next(request)
-
-        if request.method == "HEAD" and path.startswith("/api/files/tus/"):
             return await call_next(request)
 
         if path in PUBLIC_GET_PATHS:

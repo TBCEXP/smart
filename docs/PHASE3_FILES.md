@@ -1,35 +1,23 @@
-# Phase 3 — 大文件中转与分享通知
+# Phase 3 — 大文件中转（已禁用）
 
-## 功能
+> **v2.1.0+ 低配置 VPS：** 大文件中转与 Tus 本地上传已移除，避免占满 VPS 磁盘。  
+> 目录 PDF 请使用 **Phase 2** 的 R2 预签名直传（文件不进 VPS）。
 
-| 能力 | 说明 |
+## 仍可用
+
+| 功能 | 说明 |
 |------|------|
-| `FileTransfer` 元数据 | 大文件信息存 DB，实体文件存 R2 |
-| `GET/POST /api/files/transfers` | 列表与创建 |
-| `POST /api/files/transfers/{id}/upload-url` | R2 预签名上传 |
-| `GET /api/files/tus/status` | Tus 断点续传状态 |
-| `POST /api/files/transfers/{id}/tus` | 创建 Tus 上传会话 |
-| `PATCH /api/files/tus/{id}` | 追加数据块（断点续传） |
-| `HEAD /api/files/tus/{id}` | 查询当前偏移 |
-| 分享 `resource_type=file` | `/s/{token}` 公开查看下载 |
-| 分享邮件通知 | `POST /api/share/links` + `notify_email: true` |
+| 分享链接 + 邮件通知 | 订单、目录、工厂列表（`resource_type`: order / catalog / factories） |
+| Phase 2 目录 PDF | `POST /api/catalog/documents/{id}/upload-url` → R2 直传 |
 
-## 邮件通知
+## 已移除
 
-- 配置 Tab2 `resend_api_key` 后走 Resend 实发
-- 未配置时写入 `smart-crm/data/auth_emails.log`（与 OTP 相同）
+- `GET/POST /api/files/transfers`
+- Tus 断点续传 `/api/files/tus/*`
+- 员工后台「大文件」Tab
 
-## 验收
+## VPS 清理（若曾上传过）
 
 ```bash
-bash scripts/phase3_verify.sh http://127.0.0.1:8000
+rm -rf /var/lib/smart-crm/smart-crm-data/tus/
 ```
-
-## 员工后台
-
-`/admin/dashboard` → **大文件** Tab：列表、创建元数据、R2 上传 URL、分享+邮件通知。
-
-## 生产依赖（可选）
-
-- R2 凭据：真实大文件上传
-- Resend API Key：分享链接邮件实发

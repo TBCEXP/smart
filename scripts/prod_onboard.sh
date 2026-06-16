@@ -106,16 +106,6 @@ if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
 fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " Phase 3 — 大文件 / 分享通知"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-bash "$SCRIPT_DIR/phase3_verify.sh" "$BASE"
-if [ -f "$SCRIPT_DIR/../smart-crm/data/auth_emails.log" ]; then
-  echo ""
-  bash "$SCRIPT_DIR/phase3_live.sh" "$BASE" || true
-fi
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo " Phase 4 — 印刷前稿 AI"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

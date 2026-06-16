@@ -250,15 +250,10 @@ if curl -sf "$BASE/api/system/readiness" | grep -q 'production_blockers'; then
 else
   fail "GET /api/system/readiness (production_blockers)"
 fi
-if curl -sf "$BASE/api/files/transfers" | grep -q 'download_url'; then
-  ok "GET /api/files/transfers"
+if curl -sf "$BASE/api/system/readiness" | grep -q 'phase3_large_files_disabled'; then
+  ok "GET /api/system/readiness (phase3 large files disabled)"
 else
-  fail "GET /api/files/transfers"
-fi
-if curl -sf "$BASE/api/files/tus/status" | grep -q '"protocol"'; then
-  ok "GET /api/files/tus/status"
-else
-  fail "GET /api/files/tus/status"
+  fail "GET /api/system/readiness (phase3)"
 fi
 if curl -sf "$BASE/api/bridge/tbcexp/field-map" | grep -q '"version"'; then
   ok "GET /api/bridge/tbcexp/field-map"
