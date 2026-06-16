@@ -2220,7 +2220,7 @@ async def send_otp(req: AuthEmailRequest, db: AsyncSession = Depends(get_db)):
     try:
         return await auth_svc.send_otp(db, req.email, req.portal)
     except PermissionError as exc:
-        raise HTTPException(403, str(exc)) from exc
+        raise HTTPException(403, "该邮箱未授权，请使用 Hotmail/Outlook/Gmail 个人邮箱") from exc
 
 
 @router.post("/auth/otp/verify")
@@ -2242,7 +2242,7 @@ async def send_magic(req: AuthEmailRequest, db: AsyncSession = Depends(get_db)):
     try:
         return await auth_svc.send_magic_link(db, req.email, req.portal)
     except PermissionError as exc:
-        raise HTTPException(403, str(exc)) from exc
+        raise HTTPException(403, "该邮箱未授权，请使用 Hotmail/Outlook/Gmail 个人邮箱") from exc
 
 
 @router.get("/auth/magic")
