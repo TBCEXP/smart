@@ -101,7 +101,6 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 
 let currentDraftId = null;
 let currentBatchDrafts = [];
-let currentBatchId = null;
 
 function getContentForm() {
   return {
@@ -350,13 +349,19 @@ function updateOnboardBanner(productionReady) {
 }
 
 async function loadConfig() {
-  const cfg = await api('/config');
   const form = document.getElementById('config-form');
-  form.innerHTML = CONFIG_FIELDS.map(
-    ([key, label]) =>
-      `<label class="block text-sm"><span class="text-slate-400">${label}</span>
-       <input name="${key}" class="input mt-1" value="${cfg[key] ?? ''}" /></label>`
-  ).join('');
+  if (!form) return;
+  form.innerHTML = '<p class="text-sm text-slate-400 col-span-2">加载配置中…</p>';
+  try {
+    const cfg = await api('/config');
+    form.innerHTML = CONFIG_FIELDS.map(
+      ([key, label]) =>
+        `<label class="block text-sm"><span class="text-slate-400">${label}</span>
+         <input name="${key}" class="input mt-1" value="${cfg[key] ?? ''}" autocomplete="off" /></label>`
+    ).join('');
+  } catch (e) {
+    form.innerHTML = `<p class="text-sm text-red-400 col-span-2">配置加载失败：${e.message || e}。请先 <a href="/admin?next=/" class="text-emerald-400 underline">登录</a> 后重试。</p>`;
+  }
 }
 
 document.getElementById('btn-save-config').onclick = async () => {
@@ -368,9 +373,13 @@ document.getElementById('btn-save-config').onclick = async () => {
   });
   data.max_concurrency = parseInt(data.max_concurrency) || 5;
   data.extended_feishu_fields = true;
-  await api('/config', { method: 'POST', body: data });
-  alert('配置已保存');
-  loadIntegrationStatus();
+  try {
+    await api('/config', { method: 'POST', body: data });
+    alert('配置已保存');
+    loadIntegrationStatus();
+  } catch (e) {
+    alert(`保存失败：${e.message || e}\n请先登录 /admin`);
+  }
 };
 
 // Run batch
@@ -977,11 +986,13 @@ async function init() {
   } catch {
     document.getElementById('health-badge').textContent = '离线';
   }
-  await loadConfig();
-  loadIntegrationStatus();
-  loadReadinessBadge();
-  geoConfig = await api('/geo/config');
-  await api('/geo/seed', { method: 'POST' });
+  try {
+    geoConfig = await api('/geo/config');
+    await api('/geo/seed', { method: 'POST' });
+  } catch {
+    /* geo optional on first paint */
+  }
+  await loadReadinessBadge();
 }
 
 init();
