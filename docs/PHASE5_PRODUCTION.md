@@ -1,36 +1,7 @@
-# Phase 5 — 大货实拍 AI
+# Phase 5 — 大货实拍 AI（已移除）
 
-## 功能
+> 产品定位调整为 **专注 B2B 搜客**。OpenCV 实拍对齐比对已从 v2.1.0 精简版移除。
 
-| 能力 | 说明 |
-|------|------|
-| OpenCV ORB 对齐 | 实拍图与确稿 homography 对齐（失败则 resize 回退） |
-| 像素差异 | 对齐后计算 diff 百分比 |
-| 人工终审 | `PATCH .../review` 通过/驳回 |
-| 规则判定 | `passed` / `warnings` / `failed`（辅助人工，非 LLM） |
+原功能：确稿 vs 实拍 ORB 对齐、差异百分比、人工终审。
 
-## API
-
-| 端点 | 说明 |
-|------|------|
-| `GET/POST /api/inspections/production` | 检测任务 |
-| `POST /api/inspections/production/{id}/run` | OpenCV 比对 |
-| `PATCH /api/inspections/production/{id}/review` | 人工终审 |
-
-## 验收
-
-```bash
-bash scripts/phase5_verify.sh http://127.0.0.1:8000
-```
-
-## 员工后台
-
-`/admin/dashboard` → **大货实拍** Tab。
-
-## 依赖
-
-- `opencv-python-headless` — 对齐与 diff
-
-## 演示数据
-
-`data/fixtures/inspection/approved_box.png` + `production_photo.png`（启动种子自动绘制）。
+如需恢复，见 git 历史 `production_inspect.py` / `phase5_verify.sh`。

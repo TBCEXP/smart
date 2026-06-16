@@ -12,7 +12,7 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
       <div>
         <h1 class="text-xl font-bold text-emerald-400">SMART CRM 员工后台</h1>
-        <p id="user-info" class="text-xs text-slate-400">Phase 1–5 · 线索 / 工厂 / 订单 / 目录 / 前稿 / 实拍</p>
+        <p id="user-info" class="text-xs text-slate-400">搜客 · 线索 / 工厂 / 订单 / 目录</p>
       </div>
       <div class="flex gap-2 text-sm">
         <a href="/" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700">获客面板</a>
@@ -25,8 +25,6 @@
       <button data-panel="orders" class="tab-btn">订单</button>
       <button data-panel="catalog" class="tab-btn">品类树</button>
       <button data-panel="documents" class="tab-btn">工厂目录</button>
-      <button data-panel="prepress" class="tab-btn">印刷前稿</button>
-      <button data-panel="production" class="tab-btn">大货实拍</button>
     </nav>
   </header>
 
@@ -160,49 +158,6 @@
       </div>
     </section>
 
-    <!-- Prepress (Phase 4) -->
-    <section id="panel-prepress" class="panel hidden">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="card">
-          <h2 class="font-semibold mb-3">前稿比对任务</h2>
-          <div id="prepress-list" class="space-y-3 text-sm"></div>
-        </div>
-        <div class="card">
-          <h2 class="font-semibold mb-3">新建比对任务</h2>
-          <div class="space-y-2">
-            <input id="pp-title" class="input" placeholder="任务名称" />
-            <input id="pp-barcode" class="input" placeholder="期望条码 EAN-13" value="5901234123457" />
-            <textarea id="pp-ref-text" class="input" rows="3" placeholder="参考稿文字（OCR 或手输）">Commercial Bakeware Set
-SKU: BK-DEMO-01
-Made in China</textarea>
-            <textarea id="pp-cand-text" class="input" rows="3" placeholder="候选稿文字">Commercial Bakeware Set
-SKU: BK-DEMO-01
-Made in Ch1na</textarea>
-            <button id="btn-add-prepress" class="btn-primary w-full">保存任务</button>
-          </div>
-          <p class="text-xs text-slate-500 mt-3">规则引擎：条码校验 + 文本 diff + 图形 diff（非 LLM 一票否决）。</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Production inspection (Phase 5) -->
-    <section id="panel-production" class="panel hidden">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="card">
-          <h2 class="font-semibold mb-3">大货实拍检测</h2>
-          <div id="production-list" class="space-y-3 text-sm"></div>
-        </div>
-        <div class="card">
-          <h2 class="font-semibold mb-3">新建检测任务</h2>
-          <div class="space-y-2">
-            <input id="pi-title" class="input" placeholder="任务名称" value="订单出货抽检" />
-            <input id="pi-notes" class="input" placeholder="备注" />
-            <button id="btn-add-production" class="btn-primary w-full">保存（使用演示图）</button>
-          </div>
-          <p class="text-xs text-slate-500 mt-3">OpenCV 对齐确稿 vs 实拍；AI 结果后需人工终审。</p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <script>
@@ -239,8 +194,6 @@ Made in Ch1na</textarea>
         if (btn.dataset.panel === 'orders') loadOrders();
         if (btn.dataset.panel === 'catalog') loadCatalog();
         if (btn.dataset.panel === 'documents') loadDocuments();
-        if (btn.dataset.panel === 'prepress') loadPrepress();
-        if (btn.dataset.panel === 'production') loadProduction();
       };
     });
 
@@ -304,81 +257,6 @@ Made in Ch1na</textarea>
         if (r.notify) alert(r.notify.detail || r.notify.mode);
         prompt('目录分享链接', r.url);
       }
-    }
-
-    async function runPrepress(reviewId) {
-      const r = await api(`/prepress/reviews/${reviewId}/run`, { method: 'POST' });
-      if (r.verdict) {
-        alert(`判定: ${r.verdict}\n条码: ${r.result?.summary?.barcode_ok}\n文本相似度: ${r.result?.summary?.text_similarity}\n像素差异: ${r.result?.summary?.pixel_diff_pct}%`);
-      }
-      loadPrepress();
-    }
-
-    async function loadPrepress() {
-      const list = await fetch('/api/prepress/reviews').then((r) => r.json());
-      const el = document.getElementById('prepress-list');
-      const verdictColor = { passed: 'text-emerald-400', warnings: 'text-amber-400', failed: 'text-red-400' };
-      el.innerHTML = (list || []).map((p) => {
-        const vc = verdictColor[p.verdict] || 'text-slate-400';
-        const summary = p.result?.summary || {};
-        return `<div class="p-3 rounded bg-slate-900/50">
-          <div class="flex justify-between gap-2"><strong>${p.title}</strong><span class="${vc}">${p.verdict || p.status}</span></div>
-          <div class="text-slate-400">条码 ${p.barcode_expected || '-'} · ${p.barcode_symbology}</div>
-          <div class="text-xs text-slate-500 mt-1">${summary.text_similarity != null ? `文本 ${(summary.text_similarity * 100).toFixed(1)}%` : '未运行'} · ${summary.pixel_diff_pct != null ? `像素 ${summary.pixel_diff_pct}%` : ''}</div>
-          <div class="mt-2 flex gap-2 text-xs">
-            <button class="text-emerald-400" data-pp-run="${p.id}">运行比对</button>
-          </div>
-        </div>`;
-      }).join('') || '<p class="text-slate-500">暂无前稿任务，请右侧新建</p>';
-      el.querySelectorAll('[data-pp-run]').forEach((btn) => {
-        btn.onclick = () => runPrepress(btn.dataset.ppRun);
-      });
-    }
-
-    async function runProduction(inspectionId) {
-      const r = await api(`/inspections/production/${inspectionId}/run`, { method: 'POST' });
-      if (r.verdict) {
-        alert(`AI 判定: ${r.verdict}\n对齐: ${r.result?.summary?.alignment}\n差异: ${r.result?.summary?.diff_pct}%`);
-      }
-      loadProduction();
-    }
-
-    async function humanReviewProduction(inspectionId) {
-      const notes = prompt('终审备注', '');
-      if (notes === null) return;
-      const status = confirm('通过终审？取消=驳回') ? 'approved' : 'rejected';
-      await api(`/inspections/production/${inspectionId}/review`, {
-        method: 'PATCH',
-        body: JSON.stringify({ human_review_status: status, human_review_notes: notes }),
-      });
-      loadProduction();
-    }
-
-    async function loadProduction() {
-      const list = await fetch('/api/inspections/production').then((r) => r.json());
-      const el = document.getElementById('production-list');
-      const verdictColor = { passed: 'text-emerald-400', warnings: 'text-amber-400', failed: 'text-red-400' };
-      const humanColor = { approved: 'text-emerald-400', rejected: 'text-red-400', pending: 'text-slate-400' };
-      el.innerHTML = (list || []).map((p) => {
-        const vc = verdictColor[p.verdict] || 'text-slate-400';
-        const hc = humanColor[p.human_review_status] || 'text-slate-400';
-        const summary = p.result?.summary || {};
-        return `<div class="p-3 rounded bg-slate-900/50">
-          <div class="flex justify-between gap-2"><strong>${p.title}</strong><span class="${vc}">${p.verdict || p.status}</span></div>
-          <div class="text-slate-400">${summary.alignment || '未运行'} · ${summary.diff_pct != null ? summary.diff_pct + '%' : '-'}</div>
-          <div class="text-xs mt-1 ${hc}">人工: ${p.human_review_status}</div>
-          <div class="mt-2 flex gap-2 text-xs">
-            <button class="text-emerald-400" data-pi-run="${p.id}">运行检测</button>
-            <button class="text-amber-400" data-pi-human="${p.id}">人工终审</button>
-          </div>
-        </div>`;
-      }).join('') || '<p class="text-slate-500">暂无检测任务</p>';
-      el.querySelectorAll('[data-pi-run]').forEach((btn) => {
-        btn.onclick = () => runProduction(btn.dataset.piRun);
-      });
-      el.querySelectorAll('[data-pi-human]').forEach((btn) => {
-        btn.onclick = () => humanReviewProduction(btn.dataset.piHuman);
-      });
     }
 
     async function requestUploadUrl(docId) {
@@ -617,35 +495,6 @@ Made in Ch1na</textarea>
     };
 
     document.getElementById('btn-erp-orders').onclick = loadErpOrders;
-
-    document.getElementById('btn-add-prepress').onclick = async () => {
-      await api('/prepress/reviews', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: document.getElementById('pp-title').value || '新前稿比对',
-          barcode_expected: document.getElementById('pp-barcode').value,
-          barcode_symbology: 'ean13',
-          reference_text: document.getElementById('pp-ref-text').value,
-          candidate_text: document.getElementById('pp-cand-text').value,
-          reference_image: 'fixture://ref_label.png',
-          candidate_image: 'fixture://cand_label.png',
-        }),
-      });
-      loadPrepress();
-    };
-
-    document.getElementById('btn-add-production').onclick = async () => {
-      await api('/inspections/production', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: document.getElementById('pi-title').value || '大货抽检',
-          notes: document.getElementById('pi-notes').value,
-          approved_image: 'fixture://inspection/approved_box.png',
-          photo_image: 'fixture://inspection/production_photo.png',
-        }),
-      });
-      loadProduction();
-    };
 
     document.getElementById('btn-add-document').onclick = async () => {
       const emails = document.getElementById('doc-emails').value

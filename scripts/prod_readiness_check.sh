@@ -40,7 +40,7 @@ fi
 
 echo ""
 echo "[3] 路线图验收"
-for script in smoke_test.sh phase4_verify.sh phase5_verify.sh erp_verify.sh; do
+for script in smoke_test.sh erp_verify.sh; do
   if bash "$(dirname "$0")/$script" "$BASE" >/dev/null 2>&1; then
     ok "$script"
   else

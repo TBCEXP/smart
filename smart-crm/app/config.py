@@ -290,36 +290,3 @@ class CatalogDocumentUpdateRequest(BaseModel):
     active: bool | None = None
 
 
-class BarcodeValidateRequest(BaseModel):
-    value: str
-    symbology: str = "ean13"
-
-
-class PrepressReviewRequest(BaseModel):
-    title: str
-    order_id: str = ""
-    reference_image: str = ""
-    candidate_image: str = ""
-    barcode_expected: str = ""
-    barcode_symbology: str = "ean13"
-    reference_text: str = ""
-    candidate_text: str = ""
-    notes: str = ""
-
-
-class OcrExtractRequest(BaseModel):
-    image: str
-
-
-class ProductionInspectionRequest(BaseModel):
-    title: str
-    order_id: str = ""
-    prepress_review_id: str = ""
-    approved_image: str = ""
-    photo_image: str = ""
-    notes: str = ""
-
-
-class ProductionHumanReviewRequest(BaseModel):
-    human_review_status: str = "approved"
-    human_review_notes: str = ""

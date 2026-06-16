@@ -260,26 +260,6 @@ if curl -sf "$BASE/api/bridge/tbcexp/field-map" | grep -q '"version"'; then
 else
   fail "GET /api/bridge/tbcexp/field-map"
 fi
-if curl -sf "$BASE/api/prepress/reviews" | grep -q 'barcode_expected'; then
-  ok "GET /api/prepress/reviews"
-else
-  fail "GET /api/prepress/reviews"
-fi
-if curl -sf "$BASE/api/prepress/ocr/status" | grep -q '"available"'; then
-  ok "GET /api/prepress/ocr/status"
-else
-  fail "GET /api/prepress/ocr/status"
-fi
-if curl -sf "$BASE/api/prepress/barcode/scan/status" | grep -q '"available"'; then
-  ok "GET /api/prepress/barcode/scan/status"
-else
-  fail "GET /api/prepress/barcode/scan/status"
-fi
-if curl -sf "$BASE/api/inspections/production" | grep -q 'approved_image'; then
-  ok "GET /api/inspections/production"
-else
-  fail "GET /api/inspections/production"
-fi
 if curl -sf "$BASE/api/system/handoff-report" | grep -q 'SMART CRM 交接报告'; then
   ok "GET /api/system/handoff-report"
 else

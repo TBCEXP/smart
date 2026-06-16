@@ -38,11 +38,6 @@ from app.config import (
     ScheduleRequest,
     SendEmailRequest,
     ShareLinkRequest,
-    BarcodeValidateRequest,
-    OcrExtractRequest,
-    PrepressReviewRequest,
-    ProductionInspectionRequest,
-    ProductionHumanReviewRequest,
     TradeShowCrawlRequest,
 )
 from app.database import ASYNC_DB_URL, get_session
@@ -59,8 +54,6 @@ from app.models.entities import (
     Schedule,
     SalesOrder,
     SalesOrderLine,
-    PrepressReview,
-    ProductionInspection,
     ShareLink,
     StrategyAction,
     StrategySession,
@@ -101,15 +94,6 @@ from app.services.pipeline import PipelineService, TrackBService, seed_geo_data
 from app.config import settings
 from app.services.r2_client import R2Client
 from app.services.notify import notify_share_link
-from app.services.prepress import review_dict, run_prepress_analysis, seed_prepress_reviews
-from app.services.ocr_engine import extract_text, tesseract_available
-from app.services.barcode_scanner import decode_barcodes, zbar_available
-from app.services.production_inspect import (
-    inspection_dict,
-    run_production_analysis,
-    seed_production_inspections,
-)
-from app.services.barcode_engine import generate_barcode_svg, validate_barcode
 from app.services.share import create_share_link, resolve_share, seed_portal_demo
 from app.services.tbcexp_client import TbcexpClient
 from app.services.tbcexp_mapping import field_map_documentation, sync_erp_orders
@@ -232,20 +216,6 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             )
         )
     ).scalar_one()
-    prepress_reviews = (
-        await db.execute(
-            select(func.count())
-            .select_from(PrepressReview)
-            .where(PrepressReview.active.is_(True))
-        )
-    ).scalar_one()
-    production_inspections = (
-        await db.execute(
-            select(func.count())
-            .select_from(ProductionInspection)
-            .where(ProductionInspection.active.is_(True))
-        )
-    ).scalar_one()
     return {
         "phase1": {
             "factories": factories,
@@ -264,16 +234,6 @@ async def _phase_business_stats(db: AsyncSession) -> dict[str, Any]:
             "large_file_upload": False,
             "reason": "disabled on low-disk VPS; catalog PDFs use Phase 2 R2 direct upload",
             "notify_service": True,
-        },
-        "phase4": {
-            "prepress_reviews": prepress_reviews,
-            "rule_engine": True,
-            "ocr_available": tesseract_available(),
-            "zbar_available": zbar_available(),
-        },
-        "phase5": {
-            "production_inspections": production_inspections,
-            "opencv_align": True,
         },
     }
 
@@ -370,12 +330,6 @@ async def system_readiness(db: AsyncSession = Depends(get_db)):
             "phase2_r2_optional": biz["phase2"]["r2_configured"],
             "phase3_large_files_disabled": not biz.get("phase3", {}).get("large_file_upload", True),
             "phase3_share_notify": biz.get("phase3", {}).get("notify_service", False),
-            "phase4_prepress_seeded": biz.get("phase4", {}).get("prepress_reviews", 0) >= 1,
-            "phase4_rule_engine": biz.get("phase4", {}).get("rule_engine", False),
-            "phase4_ocr_available": biz.get("phase4", {}).get("ocr_available", False),
-            "phase4_zbar_available": biz.get("phase4", {}).get("zbar_available", False),
-            "phase5_inspection_seeded": biz.get("phase5", {}).get("production_inspections", 0) >= 1,
-            "phase5_opencv_align": biz.get("phase5", {}).get("opencv_align", False),
         },
         "business": biz,
         "milestones": (await _phase15_milestones(db))["milestones"],
@@ -397,7 +351,7 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
     lines = [
         "# SMART CRM 交接报告",
         "",
-        "> 路线图 Phase 0–5 代码验收完成（v2.1.0）",
+        "> 专注 B2B 搜客（v2.1.0 精简版）",
         f"- 生成时间: {datetime.utcnow().isoformat()}Z",
         f"- production_ready: {ready.get('production_ready')}",
         f"- API Keys: {integ.get('configured_count', 0)}/{integ.get('total', 0)}",
@@ -428,18 +382,6 @@ async def handoff_report(db: AsyncSession = Depends(get_db)):
         "- 大文件中转: 已禁用（低配置 VPS 不占本地磁盘）",
         f"- 分享邮件通知: {'✓' if biz.get('phase3', {}).get('notify_service') else '○'}",
         "- 目录 PDF 请用 Phase 2 R2 直传",
-        "",
-        "## Phase 4 印刷前稿 AI",
-        "",
-        f"- 前稿比对任务: {biz.get('phase4', {}).get('prepress_reviews', 0)}",
-        f"- 规则引擎（条码/OCR/图形 diff）: {'✓' if biz.get('phase4', {}).get('rule_engine') else '○'}",
-        f"- Tesseract OCR: {'✓' if biz.get('phase4', {}).get('ocr_available') else '○ (Docker 镜像默认启用)'}",
-        f"- ZBar 条码识图: {'✓' if biz.get('phase4', {}).get('zbar_available') else '○ (Docker 镜像默认启用)'}",
-        "",
-        "## Phase 5 大货实拍 AI",
-        "",
-        f"- 实拍检测任务: {biz.get('phase5', {}).get('production_inspections', 0)}",
-        f"- OpenCV 对齐比对: {'✓' if biz.get('phase5', {}).get('opencv_align') else '○'}",
         "",
         "## 生产阻塞",
         "",
@@ -751,220 +693,6 @@ async def update_catalog_document(
     factory = await db.get(Factory, doc.factory_id)
     return catalog_dict(doc, factory, r2_svc)
 
-
-@router.post("/prepress/barcode/validate")
-async def prepress_barcode_validate(req: BarcodeValidateRequest):
-    """条码校验（EAN-13 / Code128 规则引擎）。"""
-    return validate_barcode(req.value, req.symbology)
-
-
-@router.post("/prepress/barcode/generate")
-async def prepress_barcode_generate(req: BarcodeValidateRequest):
-    """生成条码 SVG（用于前稿预览）。"""
-    return generate_barcode_svg(req.value, req.symbology)
-
-
-@router.get("/prepress/barcode/scan/status")
-async def prepress_barcode_scan_status():
-    """ZBar 条码识图是否可用（Docker 镜像默认已安装）。"""
-    return {"available": zbar_available(), "engine": "zbar"}
-
-
-@router.post("/prepress/barcode/scan")
-async def prepress_barcode_scan(req: OcrExtractRequest):
-    """从本地/fixture 图片识别条码。"""
-    from app.services.prepress import resolve_image_path
-
-    path = resolve_image_path(req.image)
-    if not path:
-        raise HTTPException(404, "Image not found")
-    return decode_barcodes(path)
-
-
-@router.get("/prepress/ocr/status")
-async def prepress_ocr_status():
-    """Tesseract OCR 是否可用（Docker 镜像默认已安装）。"""
-    return {"available": tesseract_available(), "engine": "tesseract"}
-
-
-@router.post("/prepress/ocr/extract")
-async def prepress_ocr_extract(req: OcrExtractRequest):
-    """从本地/fixture 图片提取文字（规则引擎辅助，非 LLM）。"""
-    from app.services.prepress import resolve_image_path
-
-    path = resolve_image_path(req.image)
-    if not path:
-        raise HTTPException(404, "Image not found")
-    return extract_text(path)
-
-
-@router.get("/prepress/reviews")
-async def list_prepress_reviews(db: AsyncSession = Depends(get_db)):
-    """印刷前稿比对任务列表。"""
-    result = await db.execute(
-        select(PrepressReview)
-        .where(PrepressReview.active.is_(True))
-        .order_by(PrepressReview.created_at.desc())
-    )
-    return [review_dict(r) for r in result.scalars().all()]
-
-
-@router.post("/prepress/reviews")
-async def create_prepress_review(
-    req: PrepressReviewRequest,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """创建前稿比对任务。"""
-    session = await session_from_request(request, db)
-    if not session or session.portal != "admin":
-        raise HTTPException(401, "Admin session required")
-    review = PrepressReview(
-        title=req.title,
-        order_id=req.order_id or None,
-        reference_image=req.reference_image,
-        candidate_image=req.candidate_image,
-        barcode_expected=req.barcode_expected,
-        barcode_symbology=req.barcode_symbology,
-        reference_text=req.reference_text,
-        candidate_text=req.candidate_text,
-        notes=req.notes,
-        created_by=session.email,
-        status="draft",
-    )
-    db.add(review)
-    await db.commit()
-    await db.refresh(review)
-    return review_dict(review)
-
-
-@router.get("/prepress/reviews/{review_id}")
-async def get_prepress_review(review_id: str, db: AsyncSession = Depends(get_db)):
-    review = await db.get(PrepressReview, review_id)
-    if not review or not review.active:
-        raise HTTPException(404, "Prepress review not found")
-    return review_dict(review)
-
-
-@router.post("/prepress/reviews/{review_id}/run")
-async def run_prepress_review(
-    review_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """运行条码 + 文本 diff + 图形 diff 规则引擎。"""
-    session = await session_from_request(request, db)
-    if not session or session.portal != "admin":
-        raise HTTPException(401, "Admin session required")
-    review = await db.get(PrepressReview, review_id)
-    if not review or not review.active:
-        raise HTTPException(404, "Prepress review not found")
-    review.status = "running"
-    await db.commit()
-    result = run_prepress_analysis(review)
-    review.result_json = result
-    review.verdict = result.get("verdict", "pending")
-    review.status = "done"
-    review.ran_at = datetime.utcnow()
-    await db.commit()
-    await db.refresh(review)
-    return review_dict(review)
-
-
-@router.get("/inspections/production")
-async def list_production_inspections(db: AsyncSession = Depends(get_db)):
-    """大货实拍检测任务列表。"""
-    result = await db.execute(
-        select(ProductionInspection)
-        .where(ProductionInspection.active.is_(True))
-        .order_by(ProductionInspection.created_at.desc())
-    )
-    return [inspection_dict(r) for r in result.scalars().all()]
-
-
-@router.post("/inspections/production")
-async def create_production_inspection(
-    req: ProductionInspectionRequest,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    session = await session_from_request(request, db)
-    if not session or session.portal != "admin":
-        raise HTTPException(401, "Admin session required")
-    row = ProductionInspection(
-        title=req.title,
-        order_id=req.order_id or None,
-        prepress_review_id=req.prepress_review_id or None,
-        approved_image=req.approved_image or "fixture://inspection/approved_box.png",
-        photo_image=req.photo_image or "fixture://inspection/production_photo.png",
-        notes=req.notes,
-        created_by=session.email,
-        status="draft",
-        human_review_status="pending",
-    )
-    db.add(row)
-    await db.commit()
-    await db.refresh(row)
-    return inspection_dict(row)
-
-
-@router.get("/inspections/production/{inspection_id}")
-async def get_production_inspection(inspection_id: str, db: AsyncSession = Depends(get_db)):
-    row = await db.get(ProductionInspection, inspection_id)
-    if not row or not row.active:
-        raise HTTPException(404, "Production inspection not found")
-    return inspection_dict(row)
-
-
-@router.post("/inspections/production/{inspection_id}/run")
-async def run_production_inspection(
-    inspection_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """OpenCV 对齐后与确稿比对。"""
-    session = await session_from_request(request, db)
-    if not session or session.portal != "admin":
-        raise HTTPException(401, "Admin session required")
-    row = await db.get(ProductionInspection, inspection_id)
-    if not row or not row.active:
-        raise HTTPException(404, "Production inspection not found")
-    row.status = "running"
-    await db.commit()
-    result = run_production_analysis(row)
-    row.result_json = result
-    row.verdict = result.get("verdict", "pending")
-    row.status = "done"
-    row.ran_at = datetime.utcnow()
-    await db.commit()
-    await db.refresh(row)
-    return inspection_dict(row)
-
-
-@router.patch("/inspections/production/{inspection_id}/review")
-async def human_review_production_inspection(
-    inspection_id: str,
-    req: ProductionHumanReviewRequest,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """人工终审（通过/驳回）。"""
-    session = await session_from_request(request, db)
-    if not session or session.portal != "admin":
-        raise HTTPException(401, "Admin session required")
-    row = await db.get(ProductionInspection, inspection_id)
-    if not row or not row.active:
-        raise HTTPException(404, "Production inspection not found")
-    status = req.human_review_status.strip().lower()
-    if status not in {"approved", "rejected", "pending"}:
-        raise HTTPException(400, "human_review_status must be approved/rejected/pending")
-    row.human_review_status = status
-    row.human_review_notes = req.human_review_notes
-    row.human_reviewed_by = session.email
-    row.human_reviewed_at = datetime.utcnow()
-    await db.commit()
-    await db.refresh(row)
-    return inspection_dict(row)
 
 
 @router.post("/leads/{lead_id}/enrich-contact")
