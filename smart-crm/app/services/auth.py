@@ -12,6 +12,41 @@ from app.config import settings
 from app.models.entities import AuthToken, AuthWhitelist, UserSession
 from app.services.config_store import ConfigStore
 
+# 个人邮箱域名（无需事先加白名单，首次登录自动注册）
+PERSONAL_EMAIL_DOMAINS = frozenset({
+    "gmail.com",
+    "googlemail.com",
+    "yahoo.com",
+    "icloud.com",
+    "me.com",
+    "mac.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "msn.com",
+    "foxmail.com",
+    "qq.com",
+    "163.com",
+    "126.com",
+    "proton.me",
+    "protonmail.com",
+})
+
+
+def email_domain(email: str) -> str:
+    parts = email.lower().strip().split("@")
+    return parts[-1] if len(parts) == 2 else ""
+
+
+def is_personal_email_domain(domain: str) -> bool:
+    """Hotmail/Outlook 等区域后缀 + 常见个人邮箱。"""
+    d = domain.lower().strip()
+    if not d:
+        return False
+    if d in PERSONAL_EMAIL_DOMAINS:
+        return True
+    return d.startswith(("hotmail.", "outlook.", "live."))
+
 
 class AuthService:
     def __init__(self) -> None:
@@ -31,6 +66,42 @@ class AuthService:
                 db.add(AuthWhitelist(email=email, portal=portal, role=role))
         await db.commit()
 
+    def _personal_domains_allowed(self) -> set[str]:
+        extra = self.config.get("auth_personal_domains", "")
+        allowed = set(PERSONAL_EMAIL_DOMAINS)
+        for part in extra.split(","):
+            part = part.strip().lower()
+            if part:
+                allowed.add(part)
+        return allowed
+
+    def _allows_personal_email(self, email: str) -> bool:
+        if self.config.get("auth_allow_personal_email", "true").lower() not in (
+            "true",
+            "1",
+            "yes",
+        ):
+            return False
+        domain = email_domain(email)
+        if not domain:
+            return False
+        if domain in self._personal_domains_allowed():
+            return True
+        return is_personal_email_domain(domain)
+
+    async def ensure_whitelist_for_login(
+        self, db: AsyncSession, email: str, portal: str
+    ) -> None:
+        """个人邮箱（Hotmail/Outlook/Gmail 等）首次登录自动写入白名单。"""
+        email = email.lower().strip()
+        if await self.is_whitelisted(db, email, portal):
+            return
+        if not self._allows_personal_email(email):
+            return
+        role = "admin" if portal == "admin" else "customer"
+        db.add(AuthWhitelist(email=email, portal=portal, role=role))
+        await db.commit()
+
     async def is_whitelisted(self, db: AsyncSession, email: str, portal: str) -> bool:
         result = await db.execute(
             select(AuthWhitelist).where(
@@ -45,8 +116,12 @@ class AuthService:
         return "".join(random.choices(string.digits, k=6))
 
     async def send_otp(self, db: AsyncSession, email: str, portal: str) -> dict[str, str]:
+        email = email.lower().strip()
+        await self.ensure_whitelist_for_login(db, email, portal)
         if not await self.is_whitelisted(db, email, portal):
-            raise PermissionError("Email not authorized")
+            raise PermissionError(
+                "Email not authorized — use Hotmail/Outlook/Gmail or ask admin to whitelist"
+            )
         code = self._generate_otp()
         token = AuthToken(
             email=email.lower(),
@@ -65,8 +140,12 @@ class AuthService:
         return {"status": "sent", "type": "otp"}
 
     async def send_magic_link(self, db: AsyncSession, email: str, portal: str) -> dict[str, str]:
+        email = email.lower().strip()
+        await self.ensure_whitelist_for_login(db, email, portal)
         if not await self.is_whitelisted(db, email, portal):
-            raise PermissionError("Email not authorized")
+            raise PermissionError(
+                "Email not authorized — use Hotmail/Outlook/Gmail or ask admin to whitelist"
+            )
         token_value = secrets.token_urlsafe(32)
         token = AuthToken(
             email=email.lower(),

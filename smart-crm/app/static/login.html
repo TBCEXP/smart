@@ -10,8 +10,8 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
   <div class="card w-full max-w-md">
     <h1 class="text-xl font-bold text-emerald-400 mb-2">SMART CRM 登录</h1>
-    <p class="text-sm text-slate-400 mb-6">员工 /admin · 客户 /portal · OTP + 魔法链接</p>
-    <input id="login-email" type="email" class="input mb-3" placeholder="邮箱" />
+    <p class="text-sm text-slate-400 mb-6">员工 /admin · 客户 /portal · 支持 Hotmail / Outlook / Gmail 等个人邮箱</p>
+    <input id="login-email" type="email" class="input mb-3" placeholder="例如 tbcexp@hotmail.com" />
     <select id="login-portal" class="input mb-4">
       <option value="admin">员工后台 /admin</option>
       <option value="portal">客户门户 /portal</option>
@@ -31,14 +31,24 @@
 
     async function post(url, body) {
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      return r.json();
+      const data = await r.json();
+      if (!r.ok) {
+        return { detail: data.detail || r.statusText, ...data };
+      }
+      return data;
     }
 
     document.getElementById('btn-otp-send').onclick = async () => {
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const p = document.getElementById('login-portal').value;
+      if (!email) {
+        document.getElementById('login-msg').textContent = '请填写邮箱';
+        return;
+      }
       const res = await post('/api/auth/otp/send', { email, portal: p });
-      document.getElementById('login-msg').textContent = JSON.stringify(res);
+      document.getElementById('login-msg').textContent = res.detail
+        ? res.detail
+        : (res.status === 'sent' ? '验证码已发送（未配 Resend 时见 auth_emails.log）' : JSON.stringify(res));
     };
 
     document.getElementById('btn-magic-send').onclick = async () => {
