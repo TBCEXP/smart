@@ -10,6 +10,36 @@ FAIL=0
 ok()   { echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
+get_session_token() {
+  if [ -n "${SESSION_TOKEN:-}" ]; then
+    echo "$SESSION_TOKEN"
+    return
+  fi
+  local email="${AUTH_EMAIL:-admin@example.com}"
+  local log="${AUTH_LOG:-}"
+  if [ -z "$log" ]; then
+    for p in /var/lib/smart-crm/auth_emails.log /workspace/smart-crm/data/auth_emails.log ./smart-crm/data/auth_emails.log; do
+      [ -f "$p" ] && log="$p" && break
+    done
+  fi
+  curl -sf -X POST "$BASE/api/auth/otp/send" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$email\",\"portal\":\"admin\"}" > /dev/null || true
+  sleep 1
+  local code=""
+  if [ -n "$log" ] && [ -f "$log" ]; then
+    code=$(grep -oE '[0-9]{6}' "$log" | tail -1 || true)
+  fi
+  if [ -z "$code" ]; then
+    echo ""
+    return
+  fi
+  VERIFY=$(curl -sf -X POST "$BASE/api/auth/otp/verify" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$email\",\"code\":\"$code\",\"portal\":\"admin\"}" || echo '{}')
+  echo "$VERIFY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_token',''))" 2>/dev/null || echo ""
+}
+
 echo "=== SMART CRM Smoke Test ==="
 echo "Base: $BASE"
 echo ""
@@ -31,68 +61,86 @@ if curl -sf "$BASE/docs/feishu-fields" | grep -q '飞书多维表格'; then
 else
   fail "GET /docs/feishu-fields"
 fi
-if curl -sf "$BASE/api/kb/status" | grep -q 'search_engine'; then
-  ok "GET /api/kb/status"
+ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/")
+if [ "$ROOT_CODE" = "302" ]; then
+  ok "GET / redirects when unauthenticated"
 else
-  fail "GET /api/kb/status"
+  fail "GET / redirects when unauthenticated (got $ROOT_CODE)"
+fi
+if curl -sf "$BASE/api/share/invalid-token-test" | grep -q '"valid":false'; then
+  ok "GET /api/share/{token} (invalid, public)"
+else
+  fail "GET /api/share/{token} (invalid)"
 fi
 
-# 2. Integrations status
+# 2. Integrations status (public)
 if curl -sf "$BASE/api/integrations/status" | grep -q 'configured_count'; then
   ok "GET /api/integrations/status"
 else
   fail "GET /api/integrations/status"
 fi
 
+TOKEN=$(get_session_token)
+if [ -z "$TOKEN" ]; then
+  echo "  ✗ 无法获取 session_token（请设置 SESSION_TOKEN 或确保 auth_emails.log 可读）"
+  FAIL=$((FAIL+1))
+  echo ""
+  echo "=== Smoke: ${PASS} passed, ${FAIL} failed ==="
+  exit 1
+fi
+HDR=(-H "X-Session-Token: $TOKEN")
+echo "  ✓ session_token 已获取"
+
+if curl -sf "${HDR[@]}" "$BASE/api/kb/status" | grep -q 'search_engine'; then
+  ok "GET /api/kb/status"
+else
+  fail "GET /api/kb/status"
+fi
+
 # 3. Geo config
-if curl -sf "$BASE/api/geo/config" | grep -q 'MX'; then
+if curl -sf "${HDR[@]}" "$BASE/api/geo/config" | grep -q 'MX'; then
   ok "GET /api/geo/config (MX present)"
 else
   fail "GET /api/geo/config"
 fi
 
 # 4. Exa query preview + leads list
-if curl -sf "$BASE/api/exa/preview-query?category_l3=bakeware&country_iso=MX&city=CDMX" | grep -q 'resolved_query'; then
+if curl -sf "${HDR[@]}" "$BASE/api/exa/preview-query?category_l3=bakeware&country_iso=MX&city=CDMX" | grep -q 'resolved_query'; then
   ok "GET /api/exa/preview-query"
 else
   fail "GET /api/exa/preview-query"
 fi
-if curl -sf "$BASE/api/leads?limit=5" | grep -q '"leads"'; then
+if curl -sf "${HDR[@]}" "$BASE/api/leads?limit=5" | grep -q '"leads"'; then
   ok "GET /api/leads"
 else
   fail "GET /api/leads"
 fi
-if curl -sf "$BASE/admin/leads" | grep -q '员工后台'; then
+if curl -sf "${HDR[@]}" "$BASE/admin/leads" | grep -q '员工后台'; then
   ok "GET /admin/leads (dashboard)"
 else
   fail "GET /admin/leads (dashboard)"
 fi
-if curl -sf "$BASE/api/catalog/tree" | grep -q 'bakeware'; then
+if curl -sf "${HDR[@]}" "$BASE/api/catalog/tree" | grep -q 'bakeware'; then
   ok "GET /api/catalog/tree"
 else
   fail "GET /api/catalog/tree"
 fi
-if curl -sf "$BASE/api/factories" | grep -q 'F-SD-01'; then
+if curl -sf "${HDR[@]}" "$BASE/api/factories" | grep -q 'F-SD-01'; then
   ok "GET /api/factories"
 else
   fail "GET /api/factories"
 fi
-if curl -sf "$BASE/api/feishu/records/mock-test" | grep -q 'record_id'; then
+if curl -sf "${HDR[@]}" "$BASE/api/feishu/records/mock-test" | grep -q 'record_id'; then
   ok "GET /api/feishu/records/{id}"
 else
   fail "GET /api/feishu/records/{id}"
 fi
-if curl -sf "$BASE/portal/dashboard" | grep -q '客户门户'; then
+if curl -sf "${HDR[@]}" "$BASE/portal/dashboard" | grep -q '客户门户'; then
   ok "GET /portal/dashboard"
 else
   fail "GET /portal/dashboard"
 fi
-if curl -sf "$BASE/api/share/invalid-token-test" | grep -q '"valid":false'; then
-  ok "GET /api/share/{token} (invalid)"
-else
-  fail "GET /api/share/{token}"
-fi
-if curl -sf "$BASE/api/catalog/documents" | grep -q '商用锅具\|title'; then
+if curl -sf "${HDR[@]}" "$BASE/api/catalog/documents" | grep -q '商用锅具\|title'; then
   ok "GET /api/catalog/documents"
 else
   fail "GET /api/catalog/documents"
@@ -100,7 +148,7 @@ fi
 
 # 5. Brainstorm generate
 BS=$(curl -sf -X POST "$BASE/api/brainstorm/generate" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"country_iso":"MX","city":"CDMX","category_l3":"bakeware","language":"es"}')
 if echo "$BS" | grep -q 'session_id'; then
   ok "POST /api/brainstorm/generate"
@@ -113,7 +161,7 @@ fi
 # 5. Brainstorm action
 if [ -n "$SID" ]; then
   if curl -sf -X POST "$BASE/api/brainstorm/actions" \
-    -H "Content-Type: application/json" \
+    "${HDR[@]}" -H "Content-Type: application/json" \
     -d "{\"session_id\":\"$SID\",\"action_type\":\"similar_search\",\"payload\":{}}" | grep -q 'done'; then
     ok "POST /api/brainstorm/actions"
   else
@@ -124,13 +172,13 @@ fi
 # 6. Run batch (mock mode OK) — unique keyword avoids duplicate-domain skip
 UNIQ_KW="mayorista moldes repostería CDMX smoke-$(date +%s)"
 RUN=$(curl -sf -X POST "$BASE/api/run" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d "{\"keyword\":\"$UNIQ_KW\",\"industry\":\"跨境电商\",\"count\":2,\"country_iso\":\"MX\",\"city\":\"CDMX\",\"category_l3\":\"bakeware\"}")
 if echo "$RUN" | grep -q 'batch_id'; then
   ok "POST /api/run"
   BID=$(echo "$RUN" | python3 -c "import sys,json; print(json.load(sys.stdin)['batch_id'])" 2>/dev/null || echo "")
   if [ -n "$BID" ]; then
-    curl -sf -N --max-time 45 "$BASE/api/stream/$BID" > /dev/null 2>&1 || true
+    curl -sf -N --max-time 45 "$BASE/api/stream/$BID?token=$TOKEN" > /dev/null 2>&1 || true
   fi
 else
   fail "POST /api/run"
@@ -139,7 +187,7 @@ fi
 
 # 7. Check batch result
 if [ -n "$BID" ]; then
-  BATCH=$(curl -sf "$BASE/api/batch/$BID")
+  BATCH=$(curl -sf "${HDR[@]}" "$BASE/api/batch/$BID")
   if echo "$BATCH" | grep -q 'leads'; then
     COUNT=$(echo "$BATCH" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('leads',[])))" 2>/dev/null || echo 0)
     STATUS=$(echo "$BATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('batch',{}).get('status',''))" 2>/dev/null || echo "")
@@ -156,7 +204,7 @@ if [ -n "$BID" ]; then
 fi
 
 # 8. KB search
-if curl -sf "$BASE/api/kb/search?q=bakeware%20Mexico" | grep -q 'results'; then
+if curl -sf "${HDR[@]}" "$BASE/api/kb/search?q=bakeware%20Mexico" | grep -q 'results'; then
   ok "GET /api/kb/search"
 else
   fail "GET /api/kb/search"
@@ -172,20 +220,20 @@ else
 fi
 
 # 10. Market anchors
-if curl -sf "$BASE/api/market/anchors?country_iso=MX" | grep -q 'Vasconia'; then
+if curl -sf "${HDR[@]}" "$BASE/api/market/anchors?country_iso=MX" | grep -q 'Vasconia'; then
   ok "GET /api/market/anchors (MX)"
 else
   fail "GET /api/market/anchors"
 fi
 
 # 11. Content Studio (Tab8)
-if curl -sf "$BASE/api/content/types" | grep -q 'seo_pack'; then
+if curl -sf "${HDR[@]}" "$BASE/api/content/types" | grep -q 'seo_pack'; then
   ok "GET /api/content/types"
 else
   fail "GET /api/content/types"
 fi
 CT=$(curl -sf -X POST "$BASE/api/content/generate" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"content_type":"seo_pack","product_name":"Test product SEO","category_l3":"bakeware","language":"es"}')
 if echo "$CT" | grep -q 'slug'; then
   ok "POST /api/content/generate"
@@ -193,7 +241,7 @@ else
   fail "POST /api/content/generate"
 fi
 CTB=$(curl -sf -X POST "$BASE/api/content/generate-batch" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"content_type":"seo_pack","product_name":"Batch test product","category_l3":"bakeware","languages":["es","en"]}')
 if echo "$CTB" | grep -q 'batch_id' && echo "$CTB" | grep -q '"language":"es"' && echo "$CTB" | grep -q '"language":"en"'; then
   ok "POST /api/content/generate-batch"
@@ -202,13 +250,13 @@ else
 fi
 
 # 12. MX Pilot (Phase 1.5)
-if curl -sf "$BASE/api/pilot/mx/status" | grep -q 'phase'; then
+if curl -sf "${HDR[@]}" "$BASE/api/pilot/mx/status" | grep -q 'phase'; then
   ok "GET /api/pilot/mx/status"
 else
   fail "GET /api/pilot/mx/status"
 fi
 PILOT=$(curl -sf -X POST "$BASE/api/pilot/mx/start" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"country_iso":"MX","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
 if echo "$PILOT" | grep -q 'pilot_id' && echo "$PILOT" | grep -q 'session_id'; then
   ok "POST /api/pilot/mx/start"
@@ -217,13 +265,13 @@ else
 fi
 
 # 13. CO Pilot
-if curl -sf "$BASE/api/pilot/co/status" | grep -q 'CO'; then
+if curl -sf "${HDR[@]}" "$BASE/api/pilot/co/status" | grep -q 'CO'; then
   ok "GET /api/pilot/co/status"
 else
   fail "GET /api/pilot/co/status"
 fi
 CO_PILOT=$(curl -sf -X POST "$BASE/api/pilot/co/start" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"country_iso":"CO","city":"Bogotá","category_l3":"bakeware","anchor_limit":1,"enqueue_track_a":true}')
 if echo "$CO_PILOT" | grep -q 'pilot_id'; then
   ok "POST /api/pilot/co/start"
@@ -232,7 +280,7 @@ else
 fi
 
 # 14. Run due schedules
-DUE=$(curl -sf -X POST "$BASE/api/schedules/run-due?limit=1&count_per_task=2")
+DUE=$(curl -sf -X POST "$BASE/api/schedules/run-due?limit=1&count_per_task=2" "${HDR[@]}")
 if echo "$DUE" | grep -q 'queued'; then
   ok "POST /api/schedules/run-due"
 else
@@ -240,75 +288,50 @@ else
 fi
 
 # 15. Integrations probe + readiness
-if curl -sf -X POST "$BASE/api/integrations/probe" | grep -q 'probes'; then
+if curl -sf -X POST "$BASE/api/integrations/probe" "${HDR[@]}" | grep -q 'probes'; then
   ok "POST /api/integrations/probe"
 else
   fail "POST /api/integrations/probe"
 fi
-if curl -sf "$BASE/api/system/readiness" | grep -q 'production_blockers'; then
+if curl -sf "${HDR[@]}" "$BASE/api/system/readiness" | grep -q 'production_blockers'; then
   ok "GET /api/system/readiness (production_blockers)"
 else
   fail "GET /api/system/readiness (production_blockers)"
 fi
-if curl -sf "$BASE/api/files/transfers" | grep -q 'download_url'; then
-  ok "GET /api/files/transfers"
+if curl -sf "${HDR[@]}" "$BASE/api/system/readiness" | grep -q 'phase3_large_files_disabled'; then
+  ok "GET /api/system/readiness (phase3 large files disabled)"
 else
-  fail "GET /api/files/transfers"
+  fail "GET /api/system/readiness (phase3)"
 fi
-if curl -sf "$BASE/api/files/tus/status" | grep -q '"protocol"'; then
-  ok "GET /api/files/tus/status"
-else
-  fail "GET /api/files/tus/status"
-fi
-if curl -sf "$BASE/api/bridge/tbcexp/field-map" | grep -q '"version"'; then
+if curl -sf "${HDR[@]}" "$BASE/api/bridge/tbcexp/field-map" | grep -q '"version"'; then
   ok "GET /api/bridge/tbcexp/field-map"
 else
   fail "GET /api/bridge/tbcexp/field-map"
 fi
-if curl -sf "$BASE/api/prepress/reviews" | grep -q 'barcode_expected'; then
-  ok "GET /api/prepress/reviews"
-else
-  fail "GET /api/prepress/reviews"
-fi
-if curl -sf "$BASE/api/prepress/ocr/status" | grep -q '"available"'; then
-  ok "GET /api/prepress/ocr/status"
-else
-  fail "GET /api/prepress/ocr/status"
-fi
-if curl -sf "$BASE/api/prepress/barcode/scan/status" | grep -q '"available"'; then
-  ok "GET /api/prepress/barcode/scan/status"
-else
-  fail "GET /api/prepress/barcode/scan/status"
-fi
-if curl -sf "$BASE/api/inspections/production" | grep -q 'approved_image'; then
-  ok "GET /api/inspections/production"
-else
-  fail "GET /api/inspections/production"
-fi
-if curl -sf "$BASE/api/system/handoff-report" | grep -q 'SMART CRM 交接报告'; then
+if curl -sf "${HDR[@]}" "$BASE/api/system/handoff-report" | grep -q 'SMART CRM 交接报告'; then
   ok "GET /api/system/handoff-report"
 else
   fail "GET /api/system/handoff-report"
 fi
-if curl -sf "$BASE/api/pilot/report" | grep -q 'milestones'; then
+if curl -sf "${HDR[@]}" "$BASE/api/pilot/report" | grep -q 'milestones'; then
   ok "GET /api/pilot/report"
 else
   fail "GET /api/pilot/report"
 fi
-if curl -sf "$BASE/api/pilot/export?format=md" | grep -q 'Phase 1.5'; then
+if curl -sf "${HDR[@]}" "$BASE/api/pilot/export?format=md" | grep -q 'Phase 1.5'; then
   ok "GET /api/pilot/export (markdown)"
 else
   fail "GET /api/pilot/export (markdown)"
 fi
 
 # 16. Stats overview + outreach (Tab9 / 1.5.5)
-if curl -sf "$BASE/api/stats/overview" | grep -q '1_5_5_whatsapp_5'; then
+if curl -sf "${HDR[@]}" "$BASE/api/stats/overview" | grep -q '1_5_5_whatsapp_5'; then
   ok "GET /api/stats/overview (milestones)"
 else
   fail "GET /api/stats/overview (milestones)"
 fi
 OUT=$(curl -sf -X POST "$BASE/api/outreach/log" \
-  -H "Content-Type: application/json" \
+  "${HDR[@]}" -H "Content-Type: application/json" \
   -d '{"company_name":"Smoke Test Co","channel":"whatsapp","country_iso":"MX","message_preview":"Hola smoke test"}')
 if echo "$OUT" | grep -q '"status":"logged"'; then
   ok "POST /api/outreach/log"
@@ -317,21 +340,21 @@ else
   fail "POST /api/outreach/log"
   LOG_ID=""
 fi
-if curl -sf "$BASE/api/outreach/logs" | grep -q 'Smoke Test Co'; then
+if curl -sf "${HDR[@]}" "$BASE/api/outreach/logs" | grep -q 'Smoke Test Co'; then
   ok "GET /api/outreach/logs"
 else
   fail "GET /api/outreach/logs"
 fi
 if [ -n "$LOG_ID" ]; then
   if curl -sf -X PATCH "$BASE/api/outreach/logs/$LOG_ID" \
-    -H "Content-Type: application/json" \
+    "${HDR[@]}" -H "Content-Type: application/json" \
     -d '{"replied":true,"reply_notes":"smoke reply"}' | grep -q '"replied":true'; then
     ok "PATCH /api/outreach/logs/{id}"
   else
     fail "PATCH /api/outreach/logs/{id}"
   fi
 fi
-if curl -sf "$BASE/api/outreach/stats" | grep -q 'whatsapp_sent'; then
+if curl -sf "${HDR[@]}" "$BASE/api/outreach/stats" | grep -q 'whatsapp_sent'; then
   ok "GET /api/outreach/stats"
 else
   fail "GET /api/outreach/stats"

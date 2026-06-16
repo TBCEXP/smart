@@ -3,8 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev libglib2.0-0 libgomp1 \
-    tesseract-ocr tesseract-ocr-eng libzbar0 \
+    gcc libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

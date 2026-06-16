@@ -8,7 +8,38 @@
   @apply bg-slate-900 border border-slate-800 rounded-xl p-5;
 }
 .input {
-  @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500;
+  width: 100%;
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  color: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.input::placeholder {
+  color: #94a3b8;
+}
+.input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35);
+}
+select.input {
+  color-scheme: dark;
+}
+select.input option {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+/* 浏览器自动填充时保持深色可读 */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc;
+  -webkit-box-shadow: 0 0 0 1000px #1e293b inset;
+  box-shadow: 0 0 0 1000px #1e293b inset;
+  border: 1px solid #475569;
 }
 .btn-primary {
   @apply bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg transition;

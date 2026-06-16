@@ -7,58 +7,140 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
   <div class="card w-full max-w-md">
     <h1 class="text-xl font-bold text-emerald-400 mb-2">SMART CRM 登录</h1>
-    <p class="text-sm text-slate-400 mb-6">员工 /admin · 客户 /portal · OTP + 魔法链接</p>
-    <input id="login-email" type="email" class="input mb-3" placeholder="邮箱" />
-    <select id="login-portal" class="input mb-4">
-      <option value="admin">员工后台 /admin</option>
-      <option value="portal">客户门户 /portal</option>
-    </select>
-    <div class="grid grid-cols-2 gap-2 mb-4">
-      <button id="btn-otp-send" class="btn-primary">获取验证码</button>
-      <button id="btn-magic-send" class="btn-secondary">发送登录链接</button>
+    <p class="text-sm text-slate-400 mb-6">员工 /admin · 客户 /portal · 支持 Hotmail / Outlook / Gmail</p>
+
+    <div class="space-y-4">
+      <div>
+        <label for="login-email" class="block text-sm text-slate-300 mb-1.5">邮箱</label>
+        <input id="login-email" type="email" class="input" placeholder="例如 tbcexp@hotmail.com" autocomplete="email" />
+      </div>
+
+      <div>
+        <label for="login-portal" class="block text-sm text-slate-300 mb-1.5">登录身份</label>
+        <select id="login-portal" class="input">
+          <option value="admin">员工后台 /admin</option>
+          <option value="portal">客户门户 /portal</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="btn-otp-send" class="btn-primary">获取验证码</button>
+        <button type="button" id="btn-magic-send" class="btn-secondary">发送登录链接</button>
+      </div>
+
+      <div>
+        <label for="login-otp" class="block text-sm text-slate-300 mb-1.5">验证码</label>
+        <input id="login-otp" class="input" placeholder="6 位数字" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+      </div>
+
+      <button type="button" id="btn-otp-verify" class="btn-primary w-full">验证码登录</button>
     </div>
-    <input id="login-otp" class="input mb-3" placeholder="6 位验证码" maxlength="6" />
-    <button id="btn-otp-verify" class="btn-primary w-full">验证码登录</button>
-    <p id="login-msg" class="text-sm text-slate-400 mt-4"></p>
-    <a href="/" class="text-sm text-emerald-400 mt-4 inline-block">← 返回获客面板</a>
+
+    <p id="login-msg" class="text-sm mt-4 hidden" role="status"></p>
+    <p class="text-xs text-slate-500 mt-4">登录后可访问获客面板（Tab1–9）与后台功能</p>
   </div>
   <script>
     const portal = location.pathname.includes('portal') ? 'portal' : 'admin';
     document.getElementById('login-portal').value = portal;
 
+    function saveSession(token) {
+      localStorage.setItem('session_token', token);
+      document.cookie = `session_token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 14}; SameSite=Lax`;
+    }
+
+    function afterLogin(p) {
+      const next = new URLSearchParams(location.search).get('next');
+      if (next && next.startsWith('/')) {
+        location.href = next;
+        return;
+      }
+      location.href = p === 'admin' ? '/' : '/portal/dashboard';
+    }
+
+    function friendlyError(detail) {
+      if (!detail) return '请求失败，请稍后重试';
+      const d = String(detail);
+      if (d.includes('not authorized') || d.includes('未授权')) {
+        return '该邮箱暂未授权。请使用 Hotmail/Outlook/Gmail 个人邮箱；若仍失败，请在 VPS 执行 upgrade.sh 更新程序。';
+      }
+      if (d.includes('Invalid or expired')) return '验证码错误或已过期，请重新获取';
+      return d;
+    }
+
+    function showMsg(text, isError) {
+      const el = document.getElementById('login-msg');
+      el.textContent = text;
+      el.classList.remove('hidden', 'text-red-400', 'text-emerald-400', 'text-slate-400');
+      el.classList.add(isError ? 'text-red-400' : 'text-emerald-400');
+    }
+
     async function post(url, body) {
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      return r.json();
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      let data = {};
+      try {
+        data = await r.json();
+      } catch (_) {
+        data = { detail: r.statusText };
+      }
+      if (!r.ok) {
+        return { ok: false, detail: data.detail || r.statusText };
+      }
+      return { ok: true, ...data };
     }
 
     document.getElementById('btn-otp-send').onclick = async () => {
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const p = document.getElementById('login-portal').value;
+      if (!email) {
+        showMsg('请填写邮箱', true);
+        return;
+      }
+      showMsg('正在发送验证码…', false);
       const res = await post('/api/auth/otp/send', { email, portal: p });
-      document.getElementById('login-msg').textContent = JSON.stringify(res);
+      if (!res.ok) {
+        showMsg(friendlyError(res.detail), true);
+        return;
+      }
+      showMsg('验证码已发送。未配邮件服务时，请在服务器查看 auth_emails.log', false);
     };
 
     document.getElementById('btn-magic-send').onclick = async () => {
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const p = document.getElementById('login-portal').value;
+      if (!email) {
+        showMsg('请填写邮箱', true);
+        return;
+      }
       const res = await post('/api/auth/magic/send', { email, portal: p });
-      document.getElementById('login-msg').textContent = '登录链接已发送（开发模式见 data/auth_emails.log）';
+      if (!res.ok) {
+        showMsg(friendlyError(res.detail), true);
+        return;
+      }
+      showMsg('登录链接已生成。未配邮件时见服务器 auth_emails.log', false);
     };
 
     document.getElementById('btn-otp-verify').onclick = async () => {
-      const email = document.getElementById('login-email').value;
-      const code = document.getElementById('login-otp').value;
+      const email = document.getElementById('login-email').value.trim();
+      const code = document.getElementById('login-otp').value.trim();
       const p = document.getElementById('login-portal').value;
+      if (!email || !code) {
+        showMsg('请填写邮箱和验证码', true);
+        return;
+      }
       const res = await post('/api/auth/otp/verify', { email, code, portal: p });
       if (res.session_token) {
-        localStorage.setItem('session_token', res.session_token);
-        location.href = p === 'admin' ? '/admin/dashboard' : '/portal/dashboard';
-      } else {
-        document.getElementById('login-msg').textContent = JSON.stringify(res);
+        saveSession(res.session_token);
+        afterLogin(p);
+        return;
       }
+      showMsg(friendlyError(res.detail), true);
     };
   </script>
 </body>
