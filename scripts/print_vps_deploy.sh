@@ -25,6 +25,7 @@ cat <<EOF
 curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/bootstrap_vps.sh | sudo bash
 # 或已克隆:
 # cd /opt/smart-crm && sudo bash scripts/upgrade.sh
+cd /opt/smart-crm
 curl -sf http://127.0.0.1:8000/api/health
 bash scripts/production_start.sh http://127.0.0.1:8000 ${IP}
 EOF
@@ -44,8 +45,9 @@ echo ""
 
 echo "=== C. 公网验收（bootstrap 完成后）==="
 echo ""
-echo "  curl -sf http://${IP}:8000/api/health"
-echo "  bash scripts/vps_verify.sh http://${IP}:8000"
+echo "  浏览器: http://${IP}/admin"
+echo "  curl -sf http://${IP}/api/health"
+echo "  bash scripts/vps_verify.sh http://${IP}"
 echo ""
 
 echo "=== D. HTTPS（有域名后）==="
@@ -56,7 +58,7 @@ echo ""
 
 echo "=== E. Tab2 API Key + 全量验收 ===="
 echo ""
-echo "  bash scripts/setup_tab2_keys.sh http://${IP}:8000"
-echo "  bash scripts/prod_onboard.sh http://${IP}:8000 --full"
+echo "  bash scripts/setup_tab2_keys.sh http://${IP}"
+echo "  bash scripts/prod_onboard.sh http://${IP} --full"
 echo "  bash scripts/go_live.sh https://crm.yourdomain.com"
 echo ""
